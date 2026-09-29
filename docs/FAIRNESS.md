@@ -103,9 +103,17 @@ A modified client can lie about its own name or card count (it pays for those ca
 shout when it has no line (everyone else ignores the shout), or can refuse to show a ball. It
 cannot change anyone else's cards, drum or result.
 
+**Staked rooms** (the devnet build only) keep this protocol and change two inputs: the stakes are
+SOL held by the `wave_duel` program instead of coins, and the client seed is the entropy the
+program fixed when the guest deposited (or when a guest locked a hall), not the roster hash. The
+program replays the round from the revealed seed with the same RNG contract and pays, so the
+screens and the chain agree card for card. The protocol, its trust model and its addresses are in
+[ESCROW.md](ESCROW.md).
+
 ## What the fairness model does not cover
 
-- Coins are play money and never leave the browser, so nothing here is a financial guarantee.
+- Coins are play money and never leave the browser, so nothing here is a financial guarantee. The
+  devnet escrow build is the exception; its own guarantees and their limits are in ESCROW.md.
 - The relays that help peers find each other are public and third-party; they see room codes and
   peer ids, never a seed before its reveal (the host sends the seed directly to peers over WebRTC).
 - Clock skew between phones changes when a ball *appears*, not which ball it is.
