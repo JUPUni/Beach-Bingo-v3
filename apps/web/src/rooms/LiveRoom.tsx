@@ -3,13 +3,14 @@ import { modeInfo, rooms, type RoomPresetId } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { useNow } from '../lib/hooks.ts';
-import { ONCHAIN_STAKES_ENABLED } from '../solana/config.ts';
+import { ONCHAIN_STAKES_ENABLED, shortAddress } from '../solana/config.ts';
 import { useGame } from '../state/store.ts';
 import { Confetti, GreenButton } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { Popup } from '../ui/Popup.tsx';
 import { GameHeader, Stage } from '../ui/Stage.tsx';
+import type { LiveRoomMachine } from './live/machine.ts';
 import { inviteLink, makeCode, maxCardsFor } from './live/protocol.ts';
 import { useLiveRoom } from './live/useLiveRoom.ts';
 import { Caller, Feed, PlayerCards, Results, RoomStat } from './RoomParts.tsx';
@@ -18,6 +19,12 @@ import './rooms.css';
 /** Staked rooms need the flag and a deployed escrow program; the wallet code loads only then. */
 const STAKES = ONCHAIN_STAKES_ENABLED && Boolean(import.meta.env.VITE_WAVE_DUEL_PROGRAM);
 const StakePanel = lazy(() => import('./live/StakePanel.tsx'));
+const HallStakePanel = lazy(() => import('./live/HallStakePanel.tsx'));
+
+/** The escrow panel for the room's stake: the 1v1 panel (which also opens either kind), or the hall's once a hall exists. */
+function StakeSide({ m }: { m: LiveRoomMachine }) {
+  return <Suspense fallback={null}>{m.stake?.kind === 'hall' ? <HallStakePanel m={m} /> : <StakePanel m={m} />}</Suspense>;
+}
 
 /** A bingo hall played with friends over a room code. The rules live in `live/machine.ts`. */
 export default function LiveRoom({ code, host, preset }: { code: string; host: boolean; preset?: RoomPresetId }) {
@@ -48,7 +55,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
 
   const onCell = (cardIndex: number, cell: number) => {
     if (!m || !room || !isDuel || room.phase !== 'drawing') return;
-    const card = room.players.find((p) => p.id === m.selfId)?.cards[cardIndex];
+    const card = room.players.find((p) => p.id === m.playerId)?.cards[cardIndex];
     const value = card?.cells[cell] ?? -1;
     if (value > 0 && room.drawn.includes(value)) {
       sfx.daub();
@@ -96,11 +103,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
       <div className="room__lobby panel">
         <h2>Room closed</h2>
         <p>{m.error}</p>
-        {STAKES && m.stake && (
-          <Suspense fallback={null}>
-            <StakePanel m={m} />
-          </Suspense>
-        )}
+        {STAKES && m.stake && <StakeSide m={m} />}
         <div className="room__buy">
           <GreenButton onClick={() => go({ name: 'rooms' })}>Rooms</GreenButton>
           {(m.hostLeft || host) && (
@@ -119,6 +122,9 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
   } else if (status === 'lobby' && config) {
     const players = m.players;
     const withCards = players.filter((p) => p.cards > 0).length;
+    // A staked hall lists the chain's seats; peers without one are watching until they buy in.
+    const seats = m.isHall ? m.seats : [];
+    const unseated = m.isHall ? players.filter((p) => !seats.some((s) => s.peer?.id === p.id)) : players;
     body = (
       <div className="room__lobby panel">
         <h2>Room {code}</h2>
@@ -132,13 +138,23 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
           🔗 Share the invite link
         </button>
         <ul className="room__players" aria-label="Players">
-          {players.map((p) => (
+          {seats.map((s) => (
+            <li key={s.wallet} className={s.me ? 'is-me' : ''}>
+              <span>{s.host ? '👑' : '🎟️'}</span>
+              <b>{s.peer?.name || shortAddress(s.wallet)}</b>
+              <em>
+                {s.me ? 'you · ' : ''}
+                {s.cards} card{s.cards > 1 ? 's' : ''}
+              </em>
+            </li>
+          ))}
+          {unseated.map((p) => (
             <li key={p.id} className={p.id === m.selfId ? 'is-me' : ''}>
               <span>{p.id === m.hostId ? '👑' : '🏖️'}</span>
               <b>{p.name || 'Joining…'}</b>
               <em>
                 {p.id === m.selfId ? 'you · ' : ''}
-                {p.cards ? `${p.cards} card${p.cards > 1 ? 's' : ''}` : 'no cards yet'}
+                {m.isHall ? 'no seat yet' : p.cards ? `${p.cards} card${p.cards > 1 ? 's' : ''}` : 'no cards yet'}
               </em>
             </li>
           ))}
@@ -154,18 +170,14 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
               ))}
           </div>
         )}
-        {STAKES && livePreset === 'waveRush' && (m.host || m.stake) && (
-          <Suspense fallback={null}>
-            <StakePanel m={m} />
-          </Suspense>
-        )}
+        {STAKES && livePreset === 'waveRush' && (m.host || m.stake) && <StakeSide m={m} />}
         {m.host ? (
           <GreenButton tone="gold" disabled={!m.canStart} onClick={() => m.start()}>
-            {m.canStart ? `Start · ${withCards} players` : `Need ${m.minPlayers} players with cards`}
+            {m.canStart ? `Start · ${m.isHall ? seats.length : withCards} players` : m.isHall ? 'Start · once the table is locked' : `Need ${m.minPlayers} players with cards`}
           </GreenButton>
         ) : (
           <p className="room__count t-outline t-outline--navy">
-            {m.myCards ? `Waiting for ${m.hostName} to start…` : 'Buy a card to play the next round'}
+            {m.myCards ? `Waiting for ${m.hostName} to start…` : m.stake ? 'Take a seat to play the next round' : 'Buy a card to play the next round'}
           </p>
         )}
         <button type="button" className="room__fair" onClick={() => openPopup('fairness')}>
@@ -202,16 +214,19 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
       <div className="room__body">
         {config && m && (
           <div className="room__info">
-            <RoomStat label={m.stake ? 'Stake' : 'Prize pool'} value={m.stake ? `◎${(Number(m.stake.lamports) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 3 })}` : formatCoins(room ? room.pool : m.poolPreview)} />
             <RoomStat
-              label={room ? 'Stage' : 'Players'}
-              value={room ? `${Math.min(room.stage + 1, config.stages.length)}/${config.stages.length}` : m.players.length}
+              label={m.stake ? (m.isHall ? 'A card' : 'Stake') : 'Prize pool'}
+              value={m.stake ? `◎${(Number(m.stake.lamports) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 3 })}` : formatCoins(room ? room.pool : m.poolPreview)}
+            />
+            <RoomStat
+              label={room ? 'Stage' : m.isHall ? 'Seats' : 'Players'}
+              value={room ? `${Math.min(room.stage + 1, config.stages.length)}/${config.stages.length}` : m.isHall && m.stake?.kind === 'hall' ? `${m.seats.length}/${m.stake.maxPlayers}` : m.players.length}
             />
             <RoomStat label={room ? 'Balls' : 'Card'} value={room ? room.drawn.length : config.cardPrice} />
           </div>
         )}
         {body}
-        {room && m && playing && <PlayerCards room={room} playerId={m.selfId} daubs={isDuel ? daubs : undefined} onCell={isDuel ? onCell : undefined} />}
+        {room && m && playing && <PlayerCards room={room} playerId={m.playerId} daubs={isDuel ? daubs : undefined} onCell={isDuel ? onCell : undefined} />}
         {m && <Feed items={m.feed} />}
       </div>
 
@@ -245,9 +260,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
           >
             <div className="popup-center">
               {m.stake ? (
-                <Suspense fallback={null}>
-                  <StakePanel m={m} />
-                </Suspense>
+                <StakeSide m={m} />
               ) : myWin > 0 ? (
                 <div className="reward-pill">
                   <img src={art.iconCoin} alt="" /> +{formatCoins(myWin)}

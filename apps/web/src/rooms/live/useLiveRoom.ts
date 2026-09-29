@@ -108,7 +108,8 @@ function react(machine: LiveRoomMachine, event: LiveEvent): void {
         mode: event.record.preset,
         nonce: 0,
         commitment: event.record.commitment,
-        clientSeed: event.record.rosterHash,
+        // A staked round's client seed is the escrow's entropy; a friends room hashes its roster.
+        clientSeed: event.record.entropy ?? event.record.rosterHash,
         serverSeed: event.record.serverSeed,
         room: event.record.code,
         summary: event.record.summary,

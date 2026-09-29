@@ -7,20 +7,31 @@ import { sfx } from '../../lib/audio.ts';
 import { rpc, walletClient } from '../../solana/client.ts';
 import { CHAIN, CLUSTER, shortAddress } from '../../solana/config.ts';
 import * as duel from '../../solana/waveDuel.ts';
+import * as halls from '../../solana/waveHall.ts';
 import { useGame } from '../../state/store.ts';
 import { GreenButton } from '../../ui/kit.tsx';
 import { toast } from '../../ui/toast.ts';
 import type { LiveRoomMachine } from './machine.ts';
+import { HALL_CARDS, HALL_PLAYERS } from './protocol.ts';
+import { loadConfig, needConfig } from './stakeConfig.ts';
 
 /**
  * The on-chain side of a staked Wave Rush room (programs/wave_duel): the host opens the escrow
  * with a stake, the guest deposits the same, the machine gates the start on the chain's `ready`
  * state and plays the round with the escrow's entropy, and either player settles by revealing
  * the seed. Devnet only, behind VITE_ENABLE_ONCHAIN_STAKES and VITE_WAVE_DUEL_PROGRAM.
+ *
+ * The host's picker also opens a hall (2 to 8 players, 1 to 4 cards each at a stake per card);
+ * once one exists the room mounts HallStakePanel.tsx instead of this panel.
  */
 type Connected = NonNullable<ReturnType<typeof useConnectedWallet>>;
+type Mode = 'duel' | 'hall';
+const MODES: readonly Mode[] = ['duel', 'hall'];
 /** Lamports as numbers for the picker (all well inside a double). */
 const PRESETS = duel.STAKE_PRESETS.map((v) => Number(v));
+const range = (min: number, max: number) => Array.from({ length: max - min + 1 }, (_, i) => min + i);
+const SEATS = range(HALL_PLAYERS.min, HALL_PLAYERS.max);
+const CARDS = range(HALL_CARDS.min, HALL_CARDS.max);
 
 export default function StakePanel({ m }: { m: LiveRoomMachine }) {
   const connected = useConnectedWallet(walletClient);
@@ -50,6 +61,9 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
   const wallet = address(account.address);
   const [busy, setBusy] = useState<string | null>(null);
   const [stakePreset, setStakePreset] = useState<number>(PRESETS[2]!);
+  const [mode, setMode] = useState<Mode>('duel');
+  const [seats, setSeats] = useState<number>(4);
+  const [hostCards, setHostCards] = useState<number>(1);
   const stakeLamports = BigInt(stakePreset);
   const [config, setConfig] = useState<duel.ConfigAccount | null>(null);
   const [slot, setSlot] = useState<bigint | null>(null);
@@ -58,10 +72,7 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
 
   useEffect(() => {
     let cancelled = false;
-    duel
-      .fetchConfig(rpc)
-      .then((c) => !cancelled && setConfig(c))
-      .catch(() => undefined);
+    void loadConfig(() => cancelled).then((c) => !cancelled && c && setConfig(c));
     return () => {
       cancelled = true;
     };
@@ -78,8 +89,8 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
         if (stopped) return;
         m.setChain(
           room
-            ? { state: room.state, guest: room.guest, entropy: room.state === 'ready' ? room.entropy : null, commitment: room.commitment, joinedSlot: room.joinedSlot }
-            : { state: 'closed', guest: null, entropy: null, commitment: m.commitment, joinedSlot: 0n },
+            ? { kind: 'room', state: room.state, guest: room.guest, entropy: room.state === 'ready' ? room.entropy : null, commitment: room.commitment, joinedSlot: room.joinedSlot }
+            : { kind: 'room', state: 'closed', guest: null, entropy: null, commitment: m.commitment, joinedSlot: 0n },
         );
         if (room?.state === 'ready') setSlot(await duel.currentSlot(rpc));
       } catch {
@@ -111,7 +122,19 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
   const openEscrow = () =>
     act('Escrow opened', async () => {
       const sent = await duel.send(rpc, signer, [await duel.openRoomIx(wallet, m.code, stakeLamports, m.commitment)]);
-      m.setStake({ lamports: stakeLamports.toString(), host: wallet, program: duel.program(), room: await duel.roomAddress(wallet, m.code) }, wallet);
+      m.setStake({ kind: 'room', lamports: stakeLamports.toString(), host: wallet, program: duel.program(), room: await duel.roomAddress(wallet, m.code) }, wallet);
+      return sent.signature;
+    });
+
+  const openHall = () =>
+    act('Table opened', async () => {
+      const sent = await duel.send(rpc, signer, [await halls.openHallIx(wallet, m.code, stakeLamports, seats, hostCards, m.commitment)]);
+      const lamports = stakeLamports.toString();
+      m.setStake(
+        { kind: 'hall', lamports, stakePerCard: lamports, maxPlayers: seats, host: wallet, program: duel.program(), room: await halls.hallAddress(wallet, m.code) },
+        wallet,
+        hostCards,
+      );
       return sent.signature;
     });
 
@@ -120,7 +143,7 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
       if (!stake) return null;
       const sent = await duel.send(rpc, signer, [await duel.joinRoomIx(wallet, address(stake.room))]);
       const room = await duel.fetchRoom(rpc, address(stake.room));
-      if (room) m.setChain({ state: room.state, guest: room.guest, entropy: room.entropy, commitment: room.commitment, joinedSlot: room.joinedSlot });
+      if (room) m.setChain({ kind: 'room', state: room.state, guest: room.guest, entropy: room.entropy, commitment: room.commitment, joinedSlot: room.joinedSlot });
       m.seatTaken(wallet);
       return sent.signature;
     });
@@ -135,27 +158,29 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
 
   const settle = () =>
     act('Settled on chain', async () => {
-      if (!stake || !m.revealedSeed || !config) return null;
+      if (!stake || !m.revealedSeed) return null;
+      const cfg = await needConfig(config);
       const room = await duel.fetchRoom(rpc, address(stake.room));
       if (!room) {
         m.settled('closed');
         toast('Already settled by the other player');
         return null;
       }
-      const sent = await duel.send(rpc, signer, [await duel.settleIx(room, config.treasury, wallet, m.revealedSeed)]);
+      const sent = await duel.send(rpc, signer, [await duel.settleIx(room, cfg.treasury, wallet, m.revealedSeed)]);
       m.settled(sent.signature);
       return sent.signature;
     });
 
   const claim = () =>
     act('Pot claimed', async () => {
-      if (!stake || !config) return null;
+      if (!stake) return null;
+      const cfg = await needConfig(config);
       const room = await duel.fetchRoom(rpc, address(stake.room));
       if (!room) {
         m.settled('closed');
         return null;
       }
-      const sent = await duel.send(rpc, signer, [await duel.claimTimeoutIx(room, config.treasury, wallet)]);
+      const sent = await duel.send(rpc, signer, [await duel.claimTimeoutIx(room, cfg.treasury, wallet)]);
       m.settled(sent.signature);
       return sent.signature;
     });
@@ -168,19 +193,35 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
     );
   const feeLine = config ? `${config.feeBps / 100}% of the pot goes to the house` : 'reading the fee…';
 
-  /* ---------- Before an escrow exists: the host picks a stake ---------- */
+  /* ---------- Before an escrow exists: the host picks a stake, as a duel or a hall ---------- */
   if (!stake) {
     if (!m.host || m.status !== 'lobby') return null;
+    const hall = mode === 'hall';
     return (
       <div className="stake">
         <p className="stake__title">Play for SOL on {CLUSTER}</p>
+        <Segmented options={MODES} value={mode} onChange={setMode} render={(v) => (v === 'duel' ? 'Duel (1v1)' : 'Hall')} disabled={busy !== null} />
         <Segmented options={PRESETS} value={stakePreset} onChange={setStakePreset} render={(v) => duel.formatSol(BigInt(v))} disabled={busy !== null} />
+        {hall && (
+          <>
+            <div className="stake__row">
+              <span>Seats</span>
+              <Segmented options={SEATS} value={seats} onChange={setSeats} disabled={busy !== null} />
+            </div>
+            <div className="stake__row">
+              <span>My cards</span>
+              <Segmented options={CARDS} value={hostCards} onChange={setHostCards} disabled={busy !== null} />
+            </div>
+          </>
+        )}
         <p className="small-note">
-          You and your friend each stake the same. The program pays the winner from the revealed seed; a tie splits the pot; {feeLine}.
+          {hall
+            ? `Up to ${seats} players with 1 to 4 cards each at ${duel.formatSol(stakeLamports)} a card. A guest locks the table, you start, and every card full on the winning ball takes an equal share of the pot; ${feeLine}.`
+            : `You and your friend each stake the same. The program pays the winner from the revealed seed; a tie splits the pot; ${feeLine}.`}{' '}
           Wallet {shortAddress(wallet)}.
         </p>
-        <GreenButton tone="gold" disabled={busy !== null || config?.paused} onClick={openEscrow}>
-          {busy ?? `Open escrow · ${duel.formatSol(stakeLamports)}`}
+        <GreenButton tone="gold" disabled={busy !== null || config?.paused} onClick={hall ? openHall : openEscrow}>
+          {busy ?? (hall ? `Open a table · ${hostCards} card${hostCards > 1 ? 's' : ''} · ${duel.formatSol(stakeLamports * BigInt(hostCards))}` : `Open escrow · ${duel.formatSol(stakeLamports)}`)}
         </GreenButton>
       </div>
     );
@@ -188,9 +229,9 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
 
   /* ---------- An escrow exists ---------- */
   const amount = duel.formatSol(BigInt(stake.lamports));
-  const state = chain?.state ?? 'reading';
+  const state = chain?.kind === 'room' ? chain.state : 'reading';
   const iAmSeated = m.myWallet !== null;
-  const deadline = chain && chain.joinedSlot > 0n ? chain.joinedSlot + duel.TIMEOUT_SLOTS : null;
+  const deadline = chain?.kind === 'room' && chain.joinedSlot > 0n ? chain.joinedSlot + duel.TIMEOUT_SLOTS : null;
   const slotsLeft = deadline !== null && slot !== null ? deadline - slot : null;
   const minutesLeft = slotsLeft !== null ? Math.max(0, Math.ceil((Number(slotsLeft) * 0.4) / 60)) : null;
 

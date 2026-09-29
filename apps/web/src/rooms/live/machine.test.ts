@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitSeed, rooms, type RoomPresetId } from '@beach-bingo/engine';
-import { LiveRoomMachine, type LiveEvent, type Wallet } from './machine.ts';
+import { LiveRoomMachine, type ChainView, type LiveEvent, type Wallet } from './machine.ts';
 import { buildRoom, START_LEAD_MS, type Connect, type LiveMessage, type NetHandlers } from './protocol.ts';
 
 /** An in-memory network: every peer in a code sees every other, messages arrive after `latency`. */
@@ -338,7 +338,7 @@ describe('a live room', () => {
 
   it('plays a staked room from the escrow pair with the chain entropy, leaving coins alone', async () => {
     const { a, b } = await lobby(hub, 'waveRush');
-    const stake = { lamports: '100000000', host: '2'.repeat(32), program: '3'.repeat(32), room: '4'.repeat(32) };
+    const stake = { kind: 'room' as const, lamports: '100000000', host: '2'.repeat(32), program: '3'.repeat(32), room: '4'.repeat(32) };
     a.m.setStake(stake, stake.host);
     await tick(100);
     expect(b.m.stake).toEqual(stake);
@@ -351,7 +351,7 @@ describe('a live room', () => {
 
     const guestWallet = '5'.repeat(32);
     const entropy = 'ab'.repeat(32);
-    const view = { state: 'ready' as const, guest: guestWallet, entropy, commitment: a.m.commitment, joinedSlot: 10n };
+    const view = { kind: 'room' as const, state: 'ready' as const, guest: guestWallet, entropy, commitment: a.m.commitment, joinedSlot: 10n };
     b.m.seatTaken(guestWallet);
     b.m.setChain(view);
     await tick(100);
@@ -379,18 +379,198 @@ describe('a live room', () => {
 
   it('refuses a staked start whose entropy is not the one on chain', async () => {
     const { a, b } = await lobby(hub, 'waveRush');
-    const stake = { lamports: '100000000', host: '2'.repeat(32), program: '3'.repeat(32), room: '4'.repeat(32) };
+    const stake = { kind: 'room' as const, lamports: '100000000', host: '2'.repeat(32), program: '3'.repeat(32), room: '4'.repeat(32) };
     a.m.setStake(stake, stake.host);
     await tick(100);
     const guestWallet = '5'.repeat(32);
     b.m.seatTaken(guestWallet);
-    b.m.setChain({ state: 'ready', guest: guestWallet, entropy: 'cd'.repeat(32), commitment: a.m.commitment, joinedSlot: 10n });
+    b.m.setChain({ kind: 'room', state: 'ready', guest: guestWallet, entropy: 'cd'.repeat(32), commitment: a.m.commitment, joinedSlot: 10n });
     await tick(100);
-    a.m.setChain({ state: 'ready', guest: guestWallet, entropy: 'ab'.repeat(32), commitment: a.m.commitment, joinedSlot: 10n });
+    a.m.setChain({ kind: 'room', state: 'ready', guest: guestWallet, entropy: 'ab'.repeat(32), commitment: a.m.commitment, joinedSlot: 10n });
     a.m.start();
     await tick(100);
     expect(b.m.status).toBe('error');
     expect(b.m.error).toMatch(/entropy/);
+  });
+
+  /* ---------- Staked halls: the roster is the chain's seats (wallets, join order), the client seed its entropy ---------- */
+  const HOST_W = '2'.repeat(32);
+  const BO_W = '5'.repeat(32);
+  const CY_W = '6'.repeat(32);
+  const GHOST_W = '7'.repeat(32);
+  const ENTROPY = 'ab'.repeat(32);
+  const hallStake = { kind: 'hall' as const, lamports: '10000000', stakePerCard: '10000000', maxPlayers: 4, host: HOST_W, program: '3'.repeat(32), room: '4'.repeat(32) };
+  const hallView = (commitment: string, state: 'open' | 'locked', seats: { player: string; cards: number }[], entropy: string | null): ChainView => ({
+    kind: 'hall',
+    state,
+    seats,
+    entropy,
+    commitment,
+    lockedSlot: entropy ? 20n : 0n,
+  });
+  /** The `hallRoster` shape of solana/waveHall.ts: ids are the wallets, in seat order. */
+  const seatsRoster = (seats: { player: string; cards: number }[]) => seats.map((s, i) => ({ id: s.player, name: i === 0 ? 'Host' : `Seat ${i + 1}`, cards: s.cards }));
+  const replay = (m: LiveRoomMachine, seats: { player: string; cards: number }[]) => {
+    const state = buildRoom(m.config!, m.commitment, m.revealedSeed!, seatsRoster(seats), ENTROPY);
+    while (state.phase === 'drawing') rooms.drawNext(state);
+    return state;
+  };
+
+  it('plays a staked hall of three (2/1/3 cards) from the chain seats with the locked entropy, coins untouched', async () => {
+    const { a, b } = await lobby(hub, 'waveRush');
+    const c = machine(hub, { host: false, name: 'Cy' });
+    await c.m.open();
+    await tick(100);
+    a.m.setStake(hallStake, HOST_W, 2);
+    await tick(100);
+    expect(b.m.stake).toEqual(hallStake);
+    expect(c.m.isHall).toBe(true);
+    expect(b.m.peers.get(a.m.selfId)).toMatchObject({ wallet: HOST_W, cards: 2 });
+    b.m.buy(1);
+    expect(b.w.coins).toBe(1000);
+    expect(b.m.myCards).toBe(0);
+
+    // The host's seat is on chain; the guests' deposits follow, each announcing its wallet.
+    const opened = hallView(a.m.commitment, 'open', [{ player: HOST_W, cards: 2 }], null);
+    for (const x of [a, b, c]) x.m.setChain(opened);
+    expect(b.m.seats.map((s) => [s.peer?.name ?? null, s.cards, s.host, s.me])).toEqual([['Ana', 2, true, false]]);
+    b.m.seatTaken(BO_W, 1);
+    c.m.seatTaken(CY_W, 3);
+    await tick(100);
+    const seats = [
+      { player: HOST_W, cards: 2 },
+      { player: BO_W, cards: 1 },
+      { player: CY_W, cards: 3 },
+    ];
+    const selling = hallView(a.m.commitment, 'open', seats, null);
+    for (const x of [a, b, c]) x.m.setChain(selling);
+    expect(a.m.seats.map((s) => [s.peer?.name, s.cards])).toEqual([
+      ['Ana', 2],
+      ['Bo', 1],
+      ['Cy', 3],
+    ]);
+    expect(b.m.seats[1]!.me).toBe(true);
+    expect(a.m.canStart).toBe(false); // selling: not locked yet
+    a.m.start();
+    await tick(100);
+    expect(b.m.status).toBe('lobby');
+
+    // A guest locks; everyone reads the lock, the host last.
+    const locked = hallView(a.m.commitment, 'locked', seats, ENTROPY);
+    b.m.setChain(locked);
+    c.m.setChain(locked);
+    expect(a.m.canStart).toBe(false);
+    a.m.setChain(locked);
+    expect(a.m.canStart).toBe(true);
+    a.m.start();
+    await tick(100);
+    for (const x of [a, b, c]) expect(x.m.status).toBe('countdown');
+    expect(b.m.room!.players.map((p) => [p.id, p.name, p.cards.length])).toEqual([
+      [HOST_W, 'Ana', 2],
+      [BO_W, 'Bo', 1],
+      [CY_W, 'Cy', 3],
+    ]);
+    expect(c.m.playerId).toBe(CY_W);
+    expect(c.m.isParticipant).toBe(true);
+    expect(c.m.peers.get(a.m.selfId)?.cards).toBe(0);
+
+    await tick(START_LEAD_MS);
+    await playUntil(a.m, () => [a, b, c].every((x) => x.m.status === 'finished'), 40);
+    expect(b.m.room!.drawn).toEqual(a.m.room!.drawn);
+    expect(c.m.room!.drawn).toEqual(a.m.room!.drawn);
+    expect(c.m.room!.wins).toEqual(a.m.room!.wins);
+    const winningCards = a.m.room!.wins[0]!.winners.length;
+    expect(winningCards).toBeGreaterThan(0);
+    expect(a.m.myWinningCards + b.m.myWinningCards + c.m.myWinningCards).toBe(winningCards);
+    expect([a, b, c].filter((x) => x.m.iWon).length).toBeGreaterThan(0);
+    for (const x of [a, b, c]) {
+      expect(x.m.myPayout).toBe(0);
+      expect(x.w.coins).toBe(1000);
+    }
+    // The engine, given the table's seats and entropy, rebuilds the very round the program will replay.
+    const again = replay(a.m, seats);
+    expect(again.drum).toEqual(a.m.room!.drum);
+    expect(again.players.map((p) => p.cards.map((card) => card.cells))).toEqual(a.m.room!.players.map((p) => p.cards.map((card) => card.cells)));
+    expect(again.wins).toEqual(a.m.room!.wins);
+  });
+
+  it('refuses a hall start whose roster is not the seats on chain, even when the lock is read after the start', async () => {
+    const { a, b } = await lobby(hub, 'waveRush');
+    const c = machine(hub, { host: false, name: 'Cy' });
+    await c.m.open();
+    await tick(100);
+    a.m.setStake(hallStake, HOST_W, 2);
+    await tick(100);
+    b.m.seatTaken(BO_W, 1);
+    c.m.seatTaken(CY_W, 3);
+    await tick(100);
+    const seats = [
+      { player: HOST_W, cards: 2 },
+      { player: BO_W, cards: 1 },
+      { player: CY_W, cards: 3 },
+    ];
+    b.m.setChain(hallView(a.m.commitment, 'locked', seats, ENTROPY));
+    // Cy's poll has not seen the lock yet.
+    c.m.setChain(hallView(a.m.commitment, 'open', seats, null));
+    // The host starts from a table with one card too many for Bo (a tampered host, or another hall).
+    a.m.setChain(hallView(a.m.commitment, 'locked', [seats[0]!, { player: BO_W, cards: 2 }, seats[2]!], ENTROPY));
+    a.m.start();
+    await tick(100);
+    expect(b.m.status).toBe('error');
+    expect(b.m.error).toMatch(/seats on chain/);
+    // Cy accepted the shape for now and checks again the moment the lock is read.
+    expect(c.m.status).toBe('countdown');
+    c.m.setChain(hallView(a.m.commitment, 'locked', seats, ENTROPY));
+    expect(c.m.status).toBe('error');
+    expect(c.m.error).toMatch(/seats on chain/);
+  });
+
+  it('seats a wallet no peer announced: its cards are on chain and it plays under its address', async () => {
+    const { a, b } = await lobby(hub, 'waveRush');
+    a.m.setStake(hallStake, HOST_W, 1);
+    await tick(100);
+    b.m.seatTaken(BO_W, 2);
+    await tick(100);
+    const seats = [
+      { player: HOST_W, cards: 1 },
+      { player: BO_W, cards: 2 },
+      { player: GHOST_W, cards: 4 },
+    ];
+    const locked = hallView(a.m.commitment, 'locked', seats, ENTROPY);
+    a.m.setChain(locked);
+    b.m.setChain(locked);
+    expect(a.m.seats[2]).toMatchObject({ wallet: GHOST_W, cards: 4, peer: null, me: false, host: false });
+    a.m.start();
+    await tick(100);
+    expect(b.m.status).toBe('countdown');
+    expect(b.m.room!.players.map((p) => [p.id, p.name, p.cards.length])).toEqual([
+      [HOST_W, 'Ana', 1],
+      [BO_W, 'Bo', 2],
+      [GHOST_W, '7777…7777', 4],
+    ]);
+    await tick(START_LEAD_MS);
+    await playUntil(a.m, () => a.m.status === 'finished' && b.m.status === 'finished', 40);
+    const again = replay(b.m, seats);
+    expect(again.drum).toEqual(b.m.room!.drum);
+    expect(again.wins).toEqual(b.m.room!.wins);
+    expect(again.players[2]!.cards.map((card) => card.cells)).toEqual(b.m.room!.players[2]!.cards.map((card) => card.cells));
+  });
+
+  it('drops the stake in a guest lobby when the host calls the table off', async () => {
+    const { a, b } = await lobby(hub, 'waveRush');
+    a.m.setStake(hallStake, HOST_W, 1);
+    await tick(100);
+    b.m.seatTaken(BO_W, 2);
+    expect(b.m.myWallet).toBe(BO_W);
+    a.m.clearStake();
+    await tick(100);
+    expect(a.m.stake).toBeNull();
+    expect(b.m.stake).toBeNull();
+    expect(b.m.myWallet).toBeNull();
+    expect(b.m.myCards).toBe(0);
+    expect(a.m.peers.get(b.m.selfId)).toMatchObject({ cards: 0, wallet: null });
+    b.m.buy(1);
+    expect(b.w.coins).toBe(990);
   });
 
   it('leaves if the host reveals a seed that does not match its commitment', async () => {

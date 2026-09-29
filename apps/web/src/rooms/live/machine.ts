@@ -16,6 +16,8 @@ import {
   claimValid,
   CLAIM_LEAD_BALLS,
   CLAIM_WINDOW_BALLS,
+  HALL_CARDS,
+  HALL_PLAYERS,
   maxCardsFor,
   parseMessage,
   resolveClaims,
@@ -55,14 +57,41 @@ export interface Peer {
   wallet: string | null;
 }
 
-/** What the escrow program's room account says right now (read by the screen, not the machine). */
-export interface ChainView {
-  state: 'open' | 'ready' | 'closed';
-  guest: string | null;
-  /** The round's client seed, fixed when the guest joined (hex). */
-  entropy: string | null;
-  commitment: string;
-  joinedSlot: bigint;
+/** One seat of a hall as the chain holds it: a wallet and the cards it bought. */
+export interface ChainSeat {
+  player: string;
+  cards: number;
+}
+
+/** What the escrow program's account says right now (read by the screen, not the machine). */
+export type ChainView =
+  /** A 1v1 room: the guest and the entropy once the guest joined. */
+  | {
+      kind: 'room';
+      state: 'open' | 'ready' | 'closed';
+      guest: string | null;
+      /** The round's client seed, fixed when the guest joined (hex). */
+      entropy: string | null;
+      commitment: string;
+      joinedSlot: bigint;
+    }
+  /** A hall: the seats in join order, the host first, and the entropy once a guest locked it. */
+  | {
+      kind: 'hall';
+      state: 'open' | 'locked' | 'closed';
+      seats: ChainSeat[];
+      entropy: string | null;
+      commitment: string;
+      lockedSlot: bigint;
+    };
+
+/** A hall's seat as the lobby lists it: the chain's wallet and cards, and the peer who owns it when one announced that wallet. */
+export interface SeatView {
+  wallet: string;
+  cards: number;
+  peer: Peer | null;
+  me: boolean;
+  host: boolean;
 }
 
 export interface RoundRecord {
@@ -111,6 +140,8 @@ export interface MachineOptions {
 const TICK_MS = 100;
 const JOIN_TIMEOUT_MS = 25_000;
 const FEED_LENGTH = 6;
+/** A seat whose wallet no peer announced is named by its address. */
+const shortWallet = (wallet: string) => `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
 
 export class LiveRoomMachine {
   readonly code: string;
@@ -232,9 +263,33 @@ export class LiveRoomMachine {
     return this.stake !== null;
   }
 
+  get isHall(): boolean {
+    return this.stake?.kind === 'hall';
+  }
+
+  /** My id in a round: the peer id, or my wallet in a hall, whose roster is the chain's seats. */
+  get playerId(): string {
+    return this.isHall ? (this.myWallet ?? '') : this.selfId;
+  }
+
   /** Did one of my cards take a stage? (Staked rooms settle in SOL, not coins.) */
   get iWon(): boolean {
-    return this.room?.wins.some((w) => w.winners.some((x) => x.playerId === this.selfId)) ?? false;
+    return this.myWinningCards > 0;
+  }
+
+  /** How many of my cards were full on the winning ball (a hall pays each of them a share). */
+  get myWinningCards(): number {
+    const id = this.playerId;
+    if (!id || !this.room) return 0;
+    let n = 0;
+    for (const w of this.room.wins) for (const x of w.winners) if (x.playerId === id) n++;
+    return n;
+  }
+
+  /** A hall's seats as the chain holds them, each matched to the peer who announced its wallet. */
+  get seats(): SeatView[] {
+    if (this.chain?.kind !== 'hall') return [];
+    return this.chain.seats.map((s, i) => ({ wallet: s.player, cards: s.cards, peer: this.peerByWallet(s.player), me: s.player === this.myWallet, host: i === 0 }));
   }
 
   get hostName(): string {
@@ -249,7 +304,8 @@ export class LiveRoomMachine {
 
   /** Am I seated in the running round (as opposed to watching it)? */
   get isParticipant(): boolean {
-    return this.room?.players.some((p) => p.id === this.selfId) ?? false;
+    const id = this.playerId;
+    return !!id && (this.room?.players.some((p) => p.id === id) ?? false);
   }
 
   /** The pool the lobby's cards would make. */
@@ -267,7 +323,8 @@ export class LiveRoomMachine {
 
   get canStart(): boolean {
     if (!this.host || this.status !== 'lobby') return false;
-    if (this.stake) return this.chain?.state === 'ready' && !!this.chain.entropy && this.buildRoster().length === 2;
+    if (this.stake?.kind === 'hall') return this.chain?.kind === 'hall' && this.chain.state === 'locked' && !!this.chain.entropy && this.buildRoster().length >= HALL_PLAYERS.min;
+    if (this.stake) return this.chain?.kind === 'room' && this.chain.state === 'ready' && !!this.chain.entropy && this.buildRoster().length === 2;
     return this.buildRoster().length >= this.minPlayers;
   }
 
@@ -302,7 +359,7 @@ export class LiveRoomMachine {
     if (!this.host || this.status !== 'lobby' || !this.config) return;
     const roster = this.buildRoster();
     if (this.stake) {
-      if (!this.canStart) return this.toast('The escrow is not ready: both deposits must be on chain', 'warn');
+      if (!this.canStart) return this.toast(this.isHall ? 'The table is not locked yet: a guest locks it once two players are seated' : 'The escrow is not ready: both deposits must be on chain', 'warn');
     } else if (roster.length < this.minPlayers) {
       return this.toast(`Need ${this.minPlayers} players with cards`, 'warn');
     }
@@ -314,41 +371,41 @@ export class LiveRoomMachine {
 
   /* ---------- Staked rooms (the escrow lives on chain; the screen reads it) ---------- */
 
-  /** Host: the escrow room is open with my deposit in it. */
-  setStake(stake: StakeInfo, wallet: string): void {
+  /** Host: the escrow is open on chain with my deposit in it (`cards` of them in a hall). */
+  setStake(stake: StakeInfo, wallet: string, cards = 1): void {
     if (!this.host || this.status !== 'lobby') return;
     const me = this.me;
     if (!me) return;
     this.stake = stake;
-    this.myWallet = wallet;
-    me.wallet = wallet;
-    me.cards = 1;
-    me.firstCardAt = Date.now();
-    this.myCards = 1;
+    this.takeSeat(me, wallet, cards);
     this.broadcast(this.roomMsg());
     this.broadcast(this.meMsg());
     this.emit();
   }
 
-  /** Guest: my deposit is on chain, so my seat is taken. */
-  seatTaken(wallet: string): void {
+  /** Guest: my deposit is on chain, so my seat is taken (with `cards` cards in a hall). */
+  seatTaken(wallet: string, cards = 1): void {
     const me = this.me;
     if (!me || !this.stake) return;
-    this.myWallet = wallet;
-    me.wallet = wallet;
-    me.cards = 1;
-    me.firstCardAt = Date.now();
-    this.myCards = 1;
+    this.takeSeat(me, wallet, cards);
     this.broadcast(this.meMsg());
     this.emit();
   }
 
-  /** The screen read the room account; both sides keep it to gate the start and check the reveal. */
+  /**
+   * The screen read the escrow account; every side keeps it to gate the start and check the
+   * reveal. A hall's round is checked again against every locked view that arrives, so a
+   * screen whose poll lagged behind the host's start still refuses a round that is not the table's.
+   */
   setChain(view: ChainView | null): void {
     this.chain = view;
     if (view && this.stake && view.commitment !== this.commitment && (this.status === 'lobby' || this.status === 'connecting')) {
       this.fail('The escrow on chain was opened with a different commitment than this room. Leaving.');
       return;
+    }
+    if (view && this.lastStart && (this.status === 'countdown' || this.status === 'drawing')) {
+      const bad = this.hallStartMismatch(this.lastStart, view);
+      if (bad) return this.fail(bad);
     }
     this.emit();
   }
@@ -465,7 +522,8 @@ export class LiveRoomMachine {
         const first = !peer.announced;
         peer.announced = true;
         peer.name = msg.name;
-        if (msg.wallet) peer.wallet = msg.wallet;
+        // A `me` without a wallet is a peer without a seat (never had one, or the escrow was called off).
+        peer.wallet = msg.wallet ?? null;
         const cards = Math.min(msg.cards, this.config?.maxCardsPerPlayer ?? 6);
         if (cards > 0 && peer.cards === 0) peer.firstCardAt = Date.now();
         if (cards === 0) peer.firstCardAt = 0;
@@ -488,6 +546,9 @@ export class LiveRoomMachine {
         }
         this.playing = msg.playing;
         if (msg.stake) this.stake = msg.stake;
+        // The host called the escrow off while we were in the lobby: our seat, if we had one,
+        // was refunded on chain with it. (At the results the panel keeps the old stake to settle.)
+        else if (this.stake && (this.status === 'lobby' || this.status === 'connecting')) this.dropStake();
         if (this.status === 'connecting') this.status = 'lobby';
         this.emit();
         return;
@@ -524,7 +585,12 @@ export class LiveRoomMachine {
 
   private applyStart(msg: Extract<LiveMessage, { t: 'start' }>): void {
     const config = this.config!;
-    if (this.stake) {
+    if (this.stake?.kind === 'hall') {
+      // A staked hall's round is exactly the table on chain: its seats, in order, with the entropy it locked with.
+      if (!msg.entropy) return this.fail('The host started a staked round without the table entropy. Leaving.');
+      const bad = this.hallStartMismatch(msg, this.chain);
+      if (bad) return this.fail(bad);
+    } else if (this.stake) {
       // A staked round is exactly the escrow's: host's card first, one card each, the escrow's entropy.
       if (!msg.entropy) return this.fail('The host started a staked round without the escrow entropy. Leaving.');
       if (this.chain?.entropy && this.chain.entropy !== msg.entropy) return this.fail('The host started with an entropy that is not the one on chain. Leaving.');
@@ -547,14 +613,15 @@ export class LiveRoomMachine {
     this.revealedSeed = msg.serverSeed;
     this.rosterHash = rosterHash(msg.roster);
     // The cards I bought are consumed by this round; whatever the host did not seat comes back.
-    const seated = msg.roster.find((e) => e.id === this.selfId)?.cards ?? 0;
+    const seated = msg.roster.find((e) => e.id === this.playerId)?.cards ?? 0;
     if (!this.stake && this.myCards > seated) {
       this.opts.wallet.refund((this.myCards - seated) * config.cardPrice);
       if (seated === 0) this.toast('The round started without your cards — coins refunded. Watch this one.', 'warn');
     }
     this.myCards = 0;
     for (const e of msg.roster) {
-      const p = this.peers.get(e.id);
+      // A hall's roster names wallets; the peer holding one is the one who announced it.
+      const p = this.isHall ? this.peerByWallet(e.id) : this.peers.get(e.id);
       if (p) {
         p.cards = 0;
         p.firstCardAt = 0;
@@ -657,8 +724,8 @@ export class LiveRoomMachine {
     const room = this.room!;
     const settlement = rooms.settleRoom(room);
     this.settlement = settlement;
-    const me = room.players.find((p) => p.id === this.selfId);
-    const payout = settlement.payouts[this.selfId] ?? 0;
+    const me = this.playerId ? room.players.find((p) => p.id === this.playerId) : undefined;
+    const payout = settlement.payouts[this.playerId] ?? 0;
     // Prize money nobody won (an unclaimed duel, rounding) goes back to the players, by cards.
     const refund = me && settlement.unawarded > 0 && room.cardsSold > 0 ? Math.floor((settlement.unawarded * me.cards.length) / room.cardsSold) : 0;
     // Staked rooms settle on chain: the coins ledger is not touched.
@@ -680,7 +747,17 @@ export class LiveRoomMachine {
         serverSeed: this.revealedSeed!,
         rosterHash: this.rosterHash!,
         roster: this.roster!,
-        summary: this.stake ? (me ? (this.iWon ? 'won the staked round' : 'lost the staked round') : 'watched a staked round') : me ? `won ${payout} of pool ${settlement.pool}` : 'watched',
+        summary: this.stake
+          ? me
+            ? this.isHall
+              ? `${this.myWinningCards} of ${me.cards.length} cards won at the staked table`
+              : this.iWon
+                ? 'won the staked round'
+                : 'lost the staked round'
+            : 'watched a staked round'
+          : me
+            ? `won ${payout} of pool ${settlement.pool}`
+            : 'watched',
         ...(this.stake ? { stake: this.stake, entropy: this.chain?.entropy ?? undefined } : {}),
       },
     });
@@ -691,10 +768,16 @@ export class LiveRoomMachine {
   private buildRoster(): RosterEntry[] {
     const config = this.config;
     if (!config) return [];
+    if (this.stake?.kind === 'hall') {
+      // The table as the chain holds it: seats in join order, ids are the wallets, so that the
+      // engine numbers the cards as the program does (hallRoster in solana/waveHall.ts).
+      if (this.chain?.kind !== 'hall') return [];
+      return this.chain.seats.map((s, i) => ({ id: s.player, name: this.peerByWallet(s.player)?.name || (i === 0 ? 'Host' : shortWallet(s.player)), cards: s.cards }));
+    }
     if (this.stake) {
       // The escrow pair, host first: the program builds card 0 for the host and card 1 for the guest.
       const host = this.hostId ? this.peers.get(this.hostId) : undefined;
-      const guestWallet = this.chain?.guest;
+      const guestWallet = this.chain?.kind === 'room' ? this.chain.guest : null;
       const guest = guestWallet ? [...this.peers.values()].find((p) => p.wallet === guestWallet && p.id !== this.hostId) : undefined;
       if (!host || !guest || host.cards < 1 || guest.cards < 1) return [];
       return [
@@ -710,6 +793,59 @@ export class LiveRoomMachine {
       entries.map((p) => ({ id: p.id, name: p.name || 'Player', cards: p.cards })),
       config,
     );
+  }
+
+  /**
+   * Why a hall's `start` is not the table on chain, or null when it is. Until this screen has
+   * read the table as locked only the shape is checked (the host's seat first, a hall's size and
+   * card counts); `setChain` asks again with every locked view.
+   */
+  private hallStartMismatch(msg: Extract<LiveMessage, { t: 'start' }>, view: ChainView | null): string | null {
+    const stake = this.stake;
+    if (stake?.kind !== 'hall') return null;
+    const roster = msg.roster;
+    if (roster[0]?.id !== stake.host) return 'The host started a staked round whose first seat is not the host. Leaving.';
+    if (roster.length < HALL_PLAYERS.min || roster.length > stake.maxPlayers || roster.some((e) => e.cards < HALL_CARDS.min || e.cards > HALL_CARDS.max)) {
+      return 'The host started a staked round that is not a table of this shape. Leaving.';
+    }
+    if (view?.kind !== 'hall' || view.state !== 'locked') return null;
+    if (view.entropy !== msg.entropy) return 'The host started with an entropy that is not the one on chain. Leaving.';
+    if (roster.length !== view.seats.length || roster.some((e, i) => e.id !== view.seats[i]!.player || e.cards !== view.seats[i]!.cards)) {
+      return 'The host started a staked round with a roster that is not the seats on chain. Leaving.';
+    }
+    return null;
+  }
+
+  private peerByWallet(wallet: string): Peer | null {
+    for (const p of this.peers.values()) if (p.wallet === wallet) return p;
+    return null;
+  }
+
+  private takeSeat(me: Peer, wallet: string, cards: number): void {
+    this.myWallet = wallet;
+    me.wallet = wallet;
+    me.cards = cards;
+    me.firstCardAt = Date.now();
+    this.myCards = cards;
+  }
+
+  /** Guest: the host called the escrow off, so there is no stake in this lobby any more. */
+  private dropStake(): void {
+    const seated = this.myWallet !== null;
+    this.stake = null;
+    this.chain = null;
+    this.myWallet = null;
+    this.myCards = 0;
+    const me = this.me;
+    if (me) {
+      me.cards = 0;
+      me.firstCardAt = 0;
+      me.wallet = null;
+    }
+    if (seated) {
+      this.broadcast(this.meMsg());
+      this.toast('The host called the table off; your stake went back to your wallet');
+    }
   }
 
   private newSeed(): void {

@@ -99,10 +99,18 @@ export type RosterEntry = {
 };
 
 /**
- * A staked room: the escrow program's room for this code (programs/wave_duel), as the host
- * announces it. Lamports travel as a decimal string; addresses as base58.
+ * A staked room: the escrow program's account for this code (programs/wave_duel), as the host
+ * announces it. Lamports travel as a decimal string; addresses as base58. `room` is the escrow's
+ * address: the `Room` PDA of a 1v1 room, the `Hall` PDA of a hall (2 to 8 players, 1 to 4 cards
+ * each). `lamports` is the stake of a room and the stake per card of a hall, so the screen reads
+ * one field either way.
  */
-export type StakeInfo = { lamports: string; host: string; program: string; room: string };
+export type StakeInfo =
+  | { kind: 'room'; lamports: string; host: string; program: string; room: string }
+  | { kind: 'hall'; lamports: string; host: string; program: string; room: string; stakePerCard: string; maxPlayers: number };
+/** A hall's shape (lib.rs MIN_HALL_PLAYERS..MAX_HALL_PLAYERS, MAX_HALL_CARDS). */
+export const HALL_PLAYERS = { min: 2, max: 8 } as const;
+export const HALL_CARDS = { min: 1, max: 4 } as const;
 
 export type LiveMessage =
   /** Any peer: my name, how many cards I hold for the next round, and my wallet in a staked room. */
@@ -120,11 +128,19 @@ const isId = (x: unknown): x is string => typeof x === 'string' && x.length > 0 
 const isAddress = (x: unknown): x is string => typeof x === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(x);
 const isHex64 = (x: unknown): x is string => typeof x === 'string' && HEX_64.test(x);
 
+const isLamports = (x: unknown): x is string => typeof x === 'string' && /^\d{1,20}$/.test(x);
+
 function parseStake(raw: unknown): StakeInfo | null {
   if (!isObject(raw)) return null;
-  if (typeof raw.lamports !== 'string' || !/^\d{1,20}$/.test(raw.lamports)) return null;
+  if (!isLamports(raw.lamports)) return null;
   if (!isAddress(raw.host) || !isAddress(raw.program) || !isAddress(raw.room)) return null;
-  return { lamports: raw.lamports, host: raw.host, program: raw.program, room: raw.room };
+  const base = { lamports: raw.lamports, host: raw.host, program: raw.program, room: raw.room };
+  // A stake without a kind is a 1v1 room: the shape the first staked builds announced.
+  const kind = raw.kind ?? 'room';
+  if (kind === 'room') return { kind, ...base };
+  if (kind !== 'hall') return null;
+  if (!isLamports(raw.stakePerCard) || !isInt(raw.maxPlayers, HALL_PLAYERS.min, HALL_PLAYERS.max)) return null;
+  return { kind, ...base, stakePerCard: raw.stakePerCard, maxPlayers: raw.maxPlayers };
 }
 
 /** Anything a peer sends is untrusted: keep only well-formed messages, with clean values. */

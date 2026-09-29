@@ -58,6 +58,25 @@ describe('messages', () => {
     expect(parseMessage({ t: 'claim', round: 3, card: 0, ball: 12 })).toEqual({ t: 'claim', round: 3, card: 0, ball: 12 });
   });
 
+  it('reads a stake of either kind and rejects a malformed one', () => {
+    const base = { t: 'room', preset: 'waveRush', round: 1, commitment: commitSeed(createServerSeed()), playing: false };
+    const stakeOf = (stake: unknown) => {
+      const msg = parseMessage({ ...base, stake });
+      return msg?.t === 'room' ? msg.stake : null;
+    };
+    const room = { lamports: '10000000', host: '2'.repeat(32), program: '3'.repeat(32), room: '4'.repeat(32) };
+    expect(stakeOf(room)).toEqual({ kind: 'room', ...room }); // the first staked builds sent no kind
+    expect(stakeOf({ kind: 'room', ...room })).toEqual({ kind: 'room', ...room });
+    const hall = { kind: 'hall', ...room, stakePerCard: '10000000', maxPlayers: 6 };
+    expect(stakeOf(hall)).toEqual(hall);
+    expect(stakeOf({ kind: 'hall', ...room })).toBeNull();
+    expect(stakeOf({ ...hall, maxPlayers: 9 })).toBeNull();
+    expect(stakeOf({ ...hall, maxPlayers: 1 })).toBeNull();
+    expect(stakeOf({ ...hall, stakePerCard: 12 })).toBeNull();
+    expect(stakeOf({ ...room, kind: 'pool' })).toBeNull();
+    expect(stakeOf({ ...room, lamports: '1e9' })).toBeNull();
+  });
+
   it('rejects junk', () => {
     expect(parseMessage(null)).toBeNull();
     expect(parseMessage('me')).toBeNull();
