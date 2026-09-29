@@ -68,7 +68,8 @@ interface FairnessState {
   commitment: string;
   clientSeed: string;
   nonce: number;
-  previous: { serverSeed: string; clientSeed: string; lastNonce: number } | null;
+  /** The retired seed, revealed, with the commitment that was shown while it was in use (absent in states saved before it was recorded). */
+  previous: { serverSeed: string; clientSeed: string; lastNonce: number; commitment?: string } | null;
 }
 
 export interface GameState {
@@ -322,6 +323,7 @@ export const useGame = create<GameState>()(
                 serverSeed: s.fairness.serverSeed,
                 clientSeed: s.fairness.clientSeed,
                 lastNonce: s.fairness.nonce - 1,
+                commitment: s.fairness.commitment,
               },
             },
           };

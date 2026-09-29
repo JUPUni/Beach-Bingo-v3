@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FairRng, commitSeed, range, shuffle, verifyCommitment } from '@beach-bingo/engine';
+import { FairRng, range, shuffle, verifyCommitment } from '@beach-bingo/engine';
 import { roundHistory } from '../lib/fair.ts';
 import { sfx } from '../lib/audio.ts';
 import { useGame } from '../state/store.ts';
@@ -23,7 +23,8 @@ export default function FairnessPopup() {
     if (!previous) return null;
     const seed = { serverSeed: previous.serverSeed, clientSeed: previous.clientSeed, nonce };
     return {
-      commitmentOk: verifyCommitment(previous.serverSeed, commitSeed(previous.serverSeed)),
+      // Against the commitment that was shown while the seed was in use; older saves did not keep it.
+      commitmentOk: previous.commitment ? verifyCommitment(previous.serverSeed, previous.commitment) : null,
       balls: shuffle(range(1, 75), new FairRng(seed, domain)).slice(0, 15),
     };
   }, [previous, nonce, domain]);
@@ -67,8 +68,9 @@ export default function FairnessPopup() {
           <div className="divider" />
           <h3>Verify previous seed</h3>
           <p className="mono">server seed: {previous.serverSeed}</p>
+          {previous.commitment && <p className="mono">its commitment: {previous.commitment}</p>}
           <p className="small-note">
-            SHA-256 matches its commitment: <b>{verified.commitmentOk ? 'yes ✓' : 'NO ✗'}</b> ·{' '}
+            SHA-256 matches its commitment: <b>{verified.commitmentOk === null ? 'not recorded' : verified.commitmentOk ? 'yes ✓' : 'NO ✗'}</b> ·{' '}
             {previous.lastNonce < 0 ? 'no rounds were played with it' : `rounds 0–${previous.lastNonce}`}
           </p>
           <div className="seed-row">
