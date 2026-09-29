@@ -3,6 +3,10 @@ import { RIPTIDE_LEVELS } from './cashout.ts';
 import { EXTRA_BALL_RTP } from './videoBingo.ts';
 import { EXTRA_SPIN_RTP } from './spin.ts';
 import { ROOM_PRESETS } from './room.ts';
+import { tideRtp } from './tidePool.ts';
+import { DIG_RTP } from './crabDig.ts';
+import { BLITZ_RTP } from './blitz.ts';
+import { ROYALE_PAYOUT_RATE } from './royale.ts';
 
 /**
  * Player-facing catalogue of every mode. `wager` modes take a stake; they run on free
@@ -13,6 +17,10 @@ export type ModeKind = 'adventure' | 'house' | 'pvp';
 
 export type ModeId =
   | 'adventure'
+  | 'tidePool'
+  | 'crabDig'
+  | 'blitz'
+  | 'lastCastle'
   | 'shellSpin'
   | 'riptide'
   | 'videoBingo'
@@ -48,6 +56,39 @@ export const MODES: readonly ModeInfo[] = [
     returnToPlayer: 'Free to play',
     wager: false,
     volatility: 'none',
+  },
+  {
+    id: 'tidePool',
+    name: 'Tide Pool',
+    tagline: 'Instant pattern bingo: pick your sea, balls splash down, lines pay up to 10,000×.',
+    kind: 'house',
+    players: 'Solo',
+    roundTime: '5 s',
+    returnToPlayer: `≈${pct(Math.min(tideRtp('calm'), tideRtp('choppy'), tideRtp('storm')))}`,
+    wager: true,
+    volatility: 'high',
+  },
+  {
+    id: 'crabDig',
+    name: 'Crab Dig',
+    tagline: 'Dig the card square by square — dodge the crabs and cash out.',
+    kind: 'house',
+    players: 'Solo',
+    roundTime: '10–40 s',
+    returnToPlayer: pct(DIG_RTP),
+    wager: true,
+    volatility: 'high',
+  },
+  {
+    id: 'blitz',
+    name: 'Beach Ball Blitz',
+    tagline: '30-ball speed limbo: call how fast your card fills, from 2× to 6,000×.',
+    kind: 'house',
+    players: 'Solo',
+    roundTime: '5 s',
+    returnToPlayer: pct(BLITZ_RTP),
+    wager: true,
+    volatility: 'extreme',
   },
   {
     id: 'shellSpin',
@@ -125,6 +166,17 @@ export const MODES: readonly ModeInfo[] = [
     returnToPlayer: `${pct(ROOM_PRESETS.waveRush.payoutRate)} of ticket sales`,
     wager: true,
     volatility: 'low',
+  },
+  {
+    id: 'lastCastle',
+    name: 'Last Castle Standing',
+    tagline: 'Battle-royale bingo: 5-ball waves wash away the bottom half until one castle stands.',
+    kind: 'pvp',
+    players: '8–64',
+    roundTime: '1 min',
+    returnToPlayer: `${pct(ROYALE_PAYOUT_RATE)} of buy-ins`,
+    wager: true,
+    volatility: 'medium',
   },
   {
     id: 'riptideDuel',

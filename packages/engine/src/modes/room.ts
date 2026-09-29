@@ -437,3 +437,11 @@ export function roomAudit(state: RoomState) {
     wins: state.wins,
   };
 }
+
+/**
+ * Sunset Jackpot rule: the progressive pays for a full house within N calls, where N starts at
+ * `base` and rises by one for every day the jackpot is not won — so it is guaranteed to drop.
+ */
+export function sunsetJackpotCalls(daysSinceWin: number, base = 40, cap = 70): number {
+  return Math.min(cap, base + Math.max(0, Math.floor(daysSinceWin)));
+}
