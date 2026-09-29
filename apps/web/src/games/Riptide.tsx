@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { riptide, type RiptideLevel, type RiptideRound } from '@beach-bingo/engine';
+import { applyMultiplier, riptide, type RiptideLevel, type RiptideRound } from '@beach-bingo/engine';
 import { callBall, sfx } from '../lib/audio.ts';
 import { newRound } from '../lib/fair.ts';
 import { useModel } from '../lib/hooks.ts';
@@ -101,7 +101,7 @@ export default function Riptide() {
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={running} />
           {running ? (
             <GreenButton tone="gold" onClick={cashOut} className="casino__go" disabled={hits === 0}>
-              Bank {formatCoins(Math.floor(stake * current))}
+              Bank {formatCoins(applyMultiplier(stake, current))}
             </GreenButton>
           ) : (
             <GreenButton onClick={start} className="casino__go">

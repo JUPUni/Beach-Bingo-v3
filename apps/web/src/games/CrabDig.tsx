@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { crabDig, type DigRound } from '@beach-bingo/engine';
+import { applyMultiplier, crabDig, type DigRound } from '@beach-bingo/engine';
 import { sfx } from '../lib/audio.ts';
 import { newRound } from '../lib/fair.ts';
 import { useModel } from '../lib/hooks.ts';
@@ -79,7 +79,7 @@ export default function CrabDig() {
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={digging} />
           {digging ? (
             <GreenButton tone="gold" onClick={cashOut} className="casino__go" disabled={dugSafe === 0}>
-              Bank {formatCoins(Math.floor(stake * current))}
+              Bank {formatCoins(applyMultiplier(stake, current))}
             </GreenButton>
           ) : (
             <GreenButton onClick={start} className="casino__go">
