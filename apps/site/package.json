@@ -1,0 +1,13 @@
+{
+  "name": "@beach-bingo/site",
+  "private": true,
+  "version": "1.0.0",
+  "description": "beachbingo.xyz: the landing page, the /play browser rooms and the beta download gate. Static, deployed to Vercel.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "@beach-bingo/brand": "workspace:*"
+  }
+}

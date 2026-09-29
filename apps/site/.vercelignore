@@ -1,0 +1,7 @@
+# Vercel gets the site only: public/, api/ and vercel.json.
+# Without this, package.json's build script would run on Vercel, where the brand kit is not uploaded.
+package.json
+scripts
+README.md
+node_modules
+.gitignore

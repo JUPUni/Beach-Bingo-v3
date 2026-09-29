@@ -44,6 +44,9 @@ It rewrites, and all of it is committed:
 Every word in every file is outlined from the TTFs, so no file needs a font installed. The zip is
 byte-for-byte reproducible (fixed entry times, sorted names, UTC).
 
+beachbingo.xyz takes its icons, link card and screenshots from the kit. After a rebuild, refresh
+its copies with `pnpm site` (see [`apps/site`](../../apps/site/README.md)).
+
 ## Store screenshots
 
 `kit/store/screenshots/` holds six 1080 x 1920 screenshots for the Solana dApp Store (it wants at least

@@ -8,6 +8,12 @@ importers:
 
   .: {}
 
+  apps/site:
+    devDependencies:
+      '@beach-bingo/brand':
+        specifier: workspace:*
+        version: link:../../packages/brand
+
   apps/web:
     dependencies:
       '@beach-bingo/engine':

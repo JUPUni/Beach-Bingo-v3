@@ -27,7 +27,7 @@ export const SCREENS = [
   { file: '01-splash', tag: 'Free to play', lines: ['Bingo on', 'the beach.'], bar: 'dark' },
   { file: '02-map', tag: 'Adventure', lines: ['40 levels.', '4 islands.'], bar: 'light' },
   { file: '03-game', tag: 'Boosters', lines: ['Daub fast.', 'Call bingo.'], bar: 'light' },
-  { file: '04-room', tag: '75-ball rooms', lines: ['Up to 6 cards', 'a game.'], bar: 'light' },
+  { file: '04-room', tag: '75-ball rooms', lines: ['Up to 4 cards', 'a game.'], bar: 'light' },
   { file: '05-pier', tag: '90-ball rooms', lines: ['Line, two lines,', 'full house.'], bar: 'light' },
   { file: '06-fair', tag: 'Provably fair', lines: ['Check every', 'round yourself.'], bar: 'light' },
 ];

@@ -16,6 +16,7 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "rtp": "pnpm --filter @beach-bingo/engine rtp",
-    "brand": "pnpm --filter @beach-bingo/brand brand"
+    "brand": "pnpm --filter @beach-bingo/brand brand",
+    "site": "pnpm --filter @beach-bingo/site build"
   }
 }
