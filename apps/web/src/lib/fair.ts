@@ -27,7 +27,12 @@ export interface FairRound {
 }
 
 export function newRound(mode: ModeId): FairRound {
-  const { commitment, ...seed } = useGame.getState().nextFairSeed();
+  const { commitment, ...seed } = useGame.getState().peekFairSeed();
+  // Mark the nonce used once the current render is over. Some rounds start in a
+  // component's first render (useModel), and a store write during render makes
+  // React re-render other subscribers mid-render. Every event handler runs in
+  // its own task, so two rounds never read the same nonce.
+  queueMicrotask(() => useGame.getState().commitFairNonce(seed.nonce));
   const entry: RoundLog = { mode, nonce: seed.nonce, commitment, clientSeed: seed.clientSeed, at: Date.now(), summary: '' };
   history.unshift(entry);
   history.length = Math.min(history.length, 30);

@@ -114,7 +114,10 @@ export interface GameState {
   track(task: TaskId, amount?: number): void;
   playedMode(mode: ModeId): void;
   claimTask(task: TaskId): boolean;
-  nextFairSeed(): FairSeed & { commitment: string };
+  /** The next round's seed. Reading it changes nothing; commitFairNonce marks it used. */
+  peekFairSeed(): FairSeed & { commitment: string };
+  /** Mark `nonce` as used, so the next round gets nonce + 1. Never moves the counter back. */
+  commitFairNonce(nonce: number): void;
   setClientSeed(seed: string): void;
   rotateSeeds(): void;
   wagerBlockedReason(): string | null;
@@ -282,11 +285,13 @@ export const useGame = create<GameState>()(
         return true;
       },
 
-      nextFairSeed: () => {
+      peekFairSeed: () => {
         const f = get().fairness;
-        set({ fairness: { ...f, nonce: f.nonce + 1 } });
         return { serverSeed: f.serverSeed, clientSeed: f.clientSeed, nonce: f.nonce, commitment: f.commitment };
       },
+
+      commitFairNonce: (nonce) =>
+        set((s) => (s.fairness.nonce > nonce ? s : { fairness: { ...s.fairness, nonce: nonce + 1 } })),
 
       setClientSeed: (clientSeed) => set((s) => ({ fairness: { ...s.fairness, clientSeed } })),
 
