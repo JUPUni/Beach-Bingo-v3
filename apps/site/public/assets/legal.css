@@ -1,0 +1,70 @@
+@font-face{font-family:"Bungee";font-display:swap;src:url(/assets/fonts/bungee.woff2?v=7af9ca3761) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-weight:500;font-display:swap;src:url(/assets/fonts/barlow-condensed-500.woff2?v=a72f357b87) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-weight:600;font-display:swap;src:url(/assets/fonts/barlow-condensed-600.woff2?v=b8cbe32637) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-weight:700;font-display:swap;src:url(/assets/fonts/barlow-condensed-700.woff2?v=08c7cc7841) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-weight:800;font-display:swap;src:url(/assets/fonts/barlow-condensed-800.woff2?v=68bb7b14df) format("woff2")}
+
+/* The notices (/privacy, /terms) in the landing page's grammar: the Teal poster head with the
+   sea at its foot, Bungee heads, Barlow body, Ink text on every colour. */
+:root{
+  color-scheme:dark;
+  --ink:#0E0818;--cream:#FFF6E6;--teal:#1FB5A8;--pink:#FF2E88;--gold:#F4B400;
+  --lime:#9BE22D;--surf:#22E0F2;--deep:#0F9BD6;--coconut:#FF8A1F;--sand:#E8DCC8;
+  --sign:"Bungee","Arial Black",sans-serif;
+  --body:"Barlow Condensed","Arial Narrow",sans-serif;
+  --gut:clamp(16px,4vw,48px);
+  --l:calc(var(--gut) + env(safe-area-inset-left));
+  --r:calc(var(--gut) + env(safe-area-inset-right));
+  --band:clamp(48px,7vw,96px);
+  --sea:clamp(78px,9vw,132px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--ink);color:var(--cream);font-family:var(--body);font-weight:500;font-size:18px;line-height:1.45;letter-spacing:.01em;-webkit-tap-highlight-color:rgba(34,224,242,.24)}
+a{color:var(--surf);text-underline-offset:3px}
+a:hover{color:var(--lime)}
+:focus-visible{outline:3px solid var(--surf);outline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;z-index:9;background:var(--surf);color:var(--ink);padding:10px 16px;font-family:var(--sign);font-size:14px;text-transform:uppercase;text-decoration:none}
+.skip:focus{left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top))}
+
+.hero{position:relative;overflow:hidden;background:var(--teal);color:var(--ink);
+  padding:calc(clamp(12px,2.2vw,26px) + env(safe-area-inset-top)) var(--r) calc(var(--sea) + 8px) var(--l)}
+.top{position:relative;z-index:3;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 18px;font-weight:700;font-size:clamp(11px,1.15vw,13px);letter-spacing:.28em;text-transform:uppercase}
+.top b{font-family:var(--sign);font-weight:400;font-size:1.3em;letter-spacing:.04em}
+.top a{color:var(--ink);text-decoration-thickness:2px}
+.top a:hover{background:var(--lime);color:var(--ink)}
+.top .rt b{font-family:var(--body);font-weight:800;font-size:1em;letter-spacing:.2em;background:var(--ink);color:var(--cream);padding:2px 8px}
+.core{position:relative;z-index:3;max-width:1180px;margin:0 auto;padding:clamp(28px,5vh,64px) 0 clamp(18px,3vh,36px)}
+.kicker{margin:0 0 16px;font-weight:700;font-size:13px;letter-spacing:.3em;text-transform:uppercase}
+.kicker b{display:inline-block;margin-right:12px;background:var(--ink);color:var(--cream);padding:2px 8px;letter-spacing:.14em}
+.h{margin:0 0 16px;max-width:22ch;font-family:var(--sign);font-weight:400;font-size:clamp(28px,5vw,58px);line-height:1.02;text-transform:uppercase;text-wrap:balance}
+.h em{font-style:normal;color:var(--cream)}
+.lede{margin:0;max-width:60ch;font-weight:600;font-size:clamp(17px,1.9vw,22px);line-height:1.4;text-wrap:pretty}
+.sea{position:absolute;z-index:1;left:0;right:0;bottom:0;height:var(--sea);background:url(/assets/brand/sea.svg?v=743fcfd250) repeat-x 0 0/auto 100%}
+
+.band{padding-block:var(--band)}
+.wrap{max-width:calc(1180px + var(--l) + var(--r));margin:0 auto;padding-inline:var(--l) var(--r)}
+.doc{max-width:calc(72ch + var(--l) + var(--r))}
+.doc h2{margin:clamp(34px,5vw,52px) 0 12px;font-family:var(--sign);font-weight:400;font-size:clamp(20px,2.6vw,28px);line-height:1.1;text-transform:uppercase;color:var(--gold)}
+.doc h2:first-child{margin-top:0}
+.doc p,.doc li,.doc dd{font-size:18px;line-height:1.5}
+.doc p{margin:0 0 14px}
+.doc ul,.doc ol{margin:0 0 14px;padding-left:1.3em}
+.doc li{margin:0 0 8px}
+.doc dl{margin:0 0 14px;display:grid;gap:10px}
+.doc dt{font-weight:800;font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:var(--surf)}
+.doc dd{margin:0 0 6px}
+.doc .note{margin:20px 0;padding:14px 18px;background:var(--cream);color:var(--ink);border-left:8px solid var(--lime);font-weight:600}
+.doc .note a{color:var(--ink)}
+.doc code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;background:rgba(255,246,230,.12);padding:1px 6px}
+.nw{white-space:nowrap}
+.also{margin-top:clamp(34px,5vw,52px);padding-top:24px;border-top:3px solid var(--teal);display:flex;flex-wrap:wrap;gap:10px 28px;font-weight:800;font-size:14px;letter-spacing:.24em;text-transform:uppercase}
+
+.foot{position:relative;background:var(--teal);color:var(--ink);padding:calc(var(--sea) + 28px) 0 calc(34px + env(safe-area-inset-bottom))}
+.foot .sea{top:0;bottom:auto;transform:scaleY(-1)}
+.foot .wrap{display:grid;gap:14px}
+.foot__row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 28px;margin:0;font-weight:800;font-size:14px;letter-spacing:.24em;text-transform:uppercase}
+.foot a{color:var(--ink);text-decoration-thickness:2px}
+.foot a:hover{color:var(--ink);background:var(--lime)}
+.foot a:focus-visible{outline-color:var(--ink)}
+.fine{margin:0;max-width:70ch;font-weight:600;font-size:15px;letter-spacing:.02em}

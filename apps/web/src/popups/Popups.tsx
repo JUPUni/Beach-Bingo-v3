@@ -353,8 +353,22 @@ export function CreditsPopup() {
       </p>
       <h3>Play money</h3>
       <p className="small-note">
-        Coins are free, have no cash value and can't be exchanged for money or crypto. Beach Bingo does not offer real-money
-        gambling. 18+ recommended for casino-style modes.
+        Coins are free, have no cash value and can't be bought, sold or exchanged for anything. Nothing of value is staked or won.
+        18+ recommended for casino-style modes.
+      </p>
+      <h3>Live rooms</h3>
+      <p className="small-note">
+        Rooms are played browser to browser; public Nostr relays only help players find each other. The other players see the
+        name in your profile.
+      </p>
+      <p className="small-note">
+        <a href="https://beachbingo.xyz/privacy/" target="_blank" rel="noopener noreferrer">
+          Privacy notice
+        </a>{' '}
+        ·{' '}
+        <a href="https://beachbingo.xyz/terms/" target="_blank" rel="noopener noreferrer">
+          Terms of play
+        </a>
       </p>
     </Popup>
   );

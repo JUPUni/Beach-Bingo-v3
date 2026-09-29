@@ -8,7 +8,7 @@
   ],
   "rewrites": [
     {
-      "source": "/:path((?!api/|assets/|app/|play|BeachBingo-).*)",
+      "source": "/:path((?!api/|assets/|app/|play|privacy|terms|BeachBingo-).*)",
       "destination": "/"
     }
   ],

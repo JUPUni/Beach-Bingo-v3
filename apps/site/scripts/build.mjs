@@ -16,8 +16,9 @@
 //   public/assets/brand/sea.svg, shell.svg                  one wavelength of the sea, the shell
 //   public/assets/screens/screen-0N-{480,720}.webp          the dApp Store screenshots
 //   public/assets/fonts/*.woff2                             Latin subsets (only if pyftsubset is installed)
-// and rewrites, in public/index.html and public/play/index.html:
-//   the icon tags between <!-- BUILD:icons --> and <!-- /BUILD:icons --> (one list, both pages)
+// and rewrites, in public/index.html, public/play/index.html, public/privacy/index.html,
+// public/terms/index.html and public/assets/legal.css:
+//   the icon tags between <!-- BUILD:icons --> and <!-- /BUILD:icons --> (one list, every page)
 //   the screenshot strip between <!-- BUILD:screens --> and <!-- /BUILD:screens --> (index.html)
 //   every ?v= on a local asset URL: 10 hex of the file's SHA-256, so a changed
 //   file gets a new URL and link-preview caches pick it up.
@@ -189,10 +190,17 @@ const block = (html, name, lines, indent) => {
 };
 const STAMP = /(https:\/\/beachbingo\.xyz)?\/((?:assets\/|favicon|apple-touch-icon|site\.webmanifest|browserconfig\.xml)[^"'?\s)]*)\?v=[0-9a-f]*/g;
 const sizes = [];
-for (const [page, screens] of [['index.html', true], ['play/index.html', false]]) {
+// The notices' stylesheet first: the pages link it by its hash, so it must be final before they are.
+for (const [page, kind] of [
+  ['assets/legal.css', 'css'],
+  ['index.html', 'landing'],
+  ['play/index.html', 'page'],
+  ['privacy/index.html', 'page'],
+  ['terms/index.html', 'page'],
+]) {
   let html = readFileSync(`${PUB}${page}`, 'utf8');
-  html = block(html, 'icons', ICONS, '');
-  if (screens) html = block(html, 'screens', figures, '      ');
+  if (kind !== 'css') html = block(html, 'icons', ICONS, '');
+  if (kind === 'landing') html = block(html, 'screens', figures, '      ');
   html = html.replace(STAMP, (_, abs = '', path) => `${abs}/${path}?v=${hashOf(path)}`);
   writeFileSync(`${PUB}${page}`, html);
   sizes.push(`${page} ${kb(html.length)}`);

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy · Beach Bingo</title>
+<meta name="description" content="What Beach Bingo keeps and where: no accounts, no analytics, no cookies. Progress and coins live in your browser; live rooms talk browser to browser.">
+<meta name="theme-color" content="#1FB5A8">
+<link rel="canonical" href="https://beachbingo.xyz/privacy/">
+<!-- BUILD:icons -->
+<link rel="icon" href="/favicon.ico?v=29947a6221" sizes="32x32">
+<link rel="icon" href="/favicon.svg?v=c0db643629" type="image/svg+xml">
+<link rel="icon" href="/assets/icons/favicon-16x16.png?v=be5f15704d" type="image/png" sizes="16x16">
+<link rel="icon" href="/assets/icons/favicon-32x32.png?v=048d1e478d" type="image/png" sizes="32x32">
+<link rel="icon" href="/assets/icons/favicon-48x48.png?v=ff5db3fe3c" type="image/png" sizes="48x48">
+<link rel="icon" href="/assets/icons/icon-192.png?v=e1d85244fb" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=9e98b3a72e" sizes="180x180">
+<link rel="mask-icon" href="/assets/icons/safari-pinned-tab.svg?v=0983b7ca13" color="#1FB5A8">
+<link rel="manifest" href="/site.webmanifest?v=f01dfa1176">
+<meta name="apple-mobile-web-app-title" content="Beach Bingo">
+<meta name="application-name" content="Beach Bingo">
+<meta name="msapplication-TileColor" content="#1FB5A8">
+<meta name="msapplication-config" content="/browserconfig.xml?v=16b40a2057">
+<!-- /BUILD:icons -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Beach Bingo">
+<meta property="og:url" content="https://beachbingo.xyz/privacy/">
+<meta property="og:title" content="Privacy · Beach Bingo">
+<meta property="og:description" content="No accounts, no analytics, no cookies. What the game keeps lives in your browser.">
+<meta property="og:image" content="https://beachbingo.xyz/assets/og.png?v=2a395a7261">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/assets/legal.css?v=a2eeb7ae09">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="hero">
+  <div class="top">
+    <span><b><a href="/">Beach Bingo</a></b> // A Fete Labs game</span>
+    <span class="rt">Updated: <b>29 Sep 2026</b></span>
+  </div>
+  <div class="core">
+    <p class="kicker"><b>Privacy</b>What the game knows about you</p>
+    <h1 class="h">Not much, <em>and it stays on your device.</em></h1>
+    <p class="lede">Beach Bingo has no accounts, sets no cookies and runs no analytics. Your progress and coins live in your browser. When you play a live room, your browser talks to your friends' browsers, not to us.</p>
+  </div>
+  <div class="sea" aria-hidden="true"></div>
+</header>
+
+<main id="main" class="band">
+  <div class="wrap doc">
+    <h2>Who this covers</h2>
+    <p>This notice covers the game at <a href="https://beachbingo.xyz/app/">beachbingo.xyz/app/</a>, the landing page around it, the older browser rooms at <a href="/play/">/play</a>, and the Beach Bingo app for Android, which is the same game in an app wrapper. Beach Bingo is a Fete Labs game, managed under Saltwater Brands.</p>
+
+    <h2>What the game keeps, and where</h2>
+    <dl>
+      <dt>Your progress</dt>
+      <dd>Stars, coins, boosters, daily tasks, settings, the name and avatar you pick, and the seeds behind the fairness check. All of it lives in your browser's storage on your device (<code>localStorage</code>). It is never sent to us; there is no server to send it to. Clearing this site's data in your browser removes all of it, and there is no copy anywhere else.</dd>
+      <dt>A linked wallet</dt>
+      <dd>If you link a Solana wallet, the game asks the wallet for your public address and keeps that address in the same browser storage, to show it and to look up a Seeker Genesis Token for the welcome perk. It never sees a private key and never asks you to sign a transaction. Unlinking removes the address.</dd>
+      <dt>Nothing else</dt>
+      <dd>No cookies, no analytics, no advertising identifiers, no crash reporting, no fingerprinting. The pages load their fonts, images and scripts from this domain.</dd>
+    </dl>
+
+    <h2>Live rooms</h2>
+    <p>A live room is played browser to browser. To find each other, the players' browsers publish and read short messages on public Nostr relays run by third parties: a room code, a random peer id that changes every time you open the game, and the connection details browsers exchange to open a direct link (which include your IP address). Once connected, everything else, your player name, how many cards you hold, the seed, the claims, travels directly between the players over an encrypted WebRTC connection. Like any direct connection, it shows the other players your IP address.</p>
+    <p>We run none of this and keep none of it. The relays are the public ones the <code>trystero</code> library lists, unless you point the game at a relay of your own. The people in a room see the name you typed in your profile; pick one you are happy to show them.</p>
+
+    <h2>Server logs</h2>
+    <p>The site is served by Vercel. As with any website, requests for its pages and files pass through its servers, which keep standard access logs (the address the request came from, the page asked for, the browser's user-agent string, the time) for a short period to run and protect the service. We do not add anything to those logs and do not use them to identify players.</p>
+
+    <h2>The Android app</h2>
+    <p>The app for Solana Seeker phones opens <code>beachbingo.xyz/app/</code> inside an app shell, so everything above applies to it unchanged. The shell asks for no permissions beyond the network. Installs and updates go through the Solana dApp Store under its own policies.</p>
+
+    <h2>Children</h2>
+    <p>Beach Bingo is free to play with play money, and asks for no personal details from anyone. Casino Cove's casino-style games are recommended for players aged 18 and over.</p>
+
+    <h2>Your choices</h2>
+    <ul>
+      <li><strong>See what is kept:</strong> Settings → Profile, Settings → Provably fair and Settings → Solana wallet show everything the game stores about you.</li>
+      <li><strong>Delete it:</strong> clear this site's data in your browser, or uninstall the app. There is no account to close, because none was opened.</li>
+      <li><strong>Play without live rooms:</strong> the adventure, Casino Cove and the practice halls never connect to anything.</li>
+    </ul>
+
+    <div class="note">Questions about this notice reach the Fete Labs team through <a href="https://fetelabs.ai">fetelabs.ai</a>. When this notice changes, the date at the top changes with it.</div>
+
+    <p class="also"><a href="/terms/">Terms of play</a><a href="/app/">Play now</a><a href="/">beachbingo.xyz</a></p>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="sea" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="foot__row"><span>Beach Bingo · A <a href="https://fetelabs.ai">Fete Labs</a> game</span><span><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></span><span>© 2026 Fete Labs</span></p>
+    <p class="fine">Free to play. Coins are play money: they are free and have no cash value.</p>
+  </div>
+</footer>
+</body>
+</html>

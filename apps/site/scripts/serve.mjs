@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A static server that answers like the Vercel project: files first, then the
-// rewrite in vercel.json (everything but api/, assets/, app/, play and BeachBingo-* to /),
+// rewrite in vercel.json (everything but api/, assets/, app/, play, privacy, terms and BeachBingo-* to /),
 // after its one redirect (/app to /app/).
 import { createServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { extname, join, normalize } from 'node:path';
 const ROOT = process.argv[2] || new URL('../public/', import.meta.url).pathname;
 const PORT = Number(process.argv[3] || 8787);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
-const EXCLUDE = /^\/(?:api\/|assets\/|app\/|play|BeachBingo-)/;
+const EXCLUDE = /^\/(?:api\/|assets\/|app\/|play|privacy|terms|BeachBingo-)/;
 
 createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
