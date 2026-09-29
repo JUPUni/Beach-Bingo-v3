@@ -36,7 +36,7 @@ FOLDERS
 
 COLOUR
   Ink        #0E0818   Outlines, block shadows and the dark ground.
-  Cream      #FFF6E6   BINGO, and the light ground.
+  Cream      #FFF6E6   BINGO, and the light ground. As text, only on Ink.
   Teal       #1FB5A8   The app tile. The lagoon everything sits in.
   Soca Pink  #FF2E88   BEACH. The loudest thing on the page.
   Gold       #F4B400   The ball. One per layout.

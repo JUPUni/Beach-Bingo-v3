@@ -307,7 +307,7 @@ async function main() {
   const sw = PALETTE.map(([n, h], i) => {
     const x = 40 + (i % 5) * 300;
     const y = 40 + Math.floor(i / 5) * 320;
-    const dark = [C.ink, C.pink, C.deep].includes(h);
+    const dark = h === C.ink;
     const fg = dark ? C.cream : C.ink;
     return `<rect x="${x + 10}" y="${y + 10}" width="260" height="280" fill="${C.ink}"/><rect x="${x}" y="${y}" width="260" height="280" fill="${h}" stroke="${C.ink}" stroke-width="4"/>`
       + `<path d="${textPath(n.toUpperCase(), { font: FONTS.sign, size: 30, x: x + 20, y: y + 210 }).d}" fill="${fg}"/>`
