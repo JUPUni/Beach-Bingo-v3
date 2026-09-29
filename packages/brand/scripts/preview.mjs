@@ -1,0 +1,21 @@
+// Quick renders for design review: node scripts/preview.mjs <outdir>
+import { createRequire } from 'node:module';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { COLOR, MASK, halo, logo, appIcon, symbol, wordLine, stack } from '../src/draw.mjs';
+import { C } from '../src/palette.mjs';
+const require = createRequire(import.meta.url);
+const sharp = require('sharp');
+const out = process.argv[2] || '/tmp/bb-preview';
+mkdirSync(out, { recursive: true });
+const doc = (vb, w, h, body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${w}" height="${h}">${body}</svg>`;
+const png = (svg, file) => sharp(Buffer.from(svg)).png().toFile(`${out}/${file}`);
+const L = (K, o) => logo(K, o);
+await png(doc('-420 -330 840 720', 840, 720, `<rect x="-420" y="-330" width="840" height="720" fill="${C.cream}"/>${L(COLOR)}`), 'logo-cream.png');
+await png(doc('-420 -330 840 720', 840, 720, `<rect x="-420" y="-330" width="840" height="720" fill="${C.ink}"/>${L(halo(14))}${L(COLOR)}`), 'logo-ink-sticker.png');
+await png(doc('-420 -330 840 720', 840, 720, `<rect x="-420" y="-330" width="840" height="720" fill="${C.ink}"/>${L(COLOR)}`), 'logo-ink.png');
+await png(doc('-420 -330 840 720', 840, 720, `<rect x="-420" y="-330" width="840" height="720" fill="${C.cream}"/><defs><mask id="m" maskUnits="userSpaceOnUse" x="-420" y="-330" width="840" height="720">${L(MASK)}</mask></defs><rect x="-420" y="-330" width="840" height="720" fill="${C.ink}" mask="url(#m)"/>`), 'logo-mono.png');
+await png(doc('0 0 1024 1024', 512, 512, appIcon()), 'app.png');
+await png(doc('0 0 1024 1024', 512, 512, symbol()), 'symbol.png');
+const wl = wordLine(COLOR, { S: 100 });
+await png(doc(`-40 -110 ${wl.width + 80} 160`, (wl.width + 80) * 2, 320, `<rect x="-40" y="-110" width="${wl.width + 80}" height="160" fill="${C.teal}"/>${wl.svg}`), 'wordline.png');
+console.log('done', out);

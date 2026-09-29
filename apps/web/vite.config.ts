@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
         id: '/',
         name: 'Beach Bingo',
@@ -18,7 +18,7 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#1fb6e8',
+        background_color: '#1fb5a8',
         theme_color: '#1fb6e8',
         categories: ['games', 'entertainment'],
         icons: [

@@ -35,3 +35,11 @@ Export the password environment variables before running the CLI release build.
 - This project is a WebView-based Android shell, not a Trusted Web Activity.
 - External links outside the configured host open in the system browser.
 - Solana wallet intents are handled natively by the app shell.
+
+## Icons
+
+The launcher icon is drawn by `packages/brand` (the Beach Bingo brand kit), not by hand and not by the
+webshell CLI. `pnpm brand` from the repo root rewrites the adaptive icon layers
+(`drawable-nodpi/ic_launcher_background_sea.png`, `ic_launcher_foreground_inner.png`,
+`ic_launcher_monochrome_inner.png`), the legacy `mipmap-*/ic_launcher*.webp` files and the Teal in
+`values/colors.xml`. Don't re-run `webshell init --icon` over them.

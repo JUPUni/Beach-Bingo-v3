@@ -1,64 +1,14 @@
-/* ---------- Logo (styled after the kit's ISLAND lettering) ---------- */
+/* ---------- Logo (drawn by packages/brand; the sticker version, for the photo-like sky) ---------- */
 .logo {
-  position: relative;
+  display: block;
   width: 30rem;
-  height: 18.5rem;
-  display: grid;
-  place-items: center;
+  max-width: 88vw;
+  height: auto;
+  filter: drop-shadow(0 0.5rem 0 rgb(14 8 24 / 0.35));
 }
 
 .logo--small {
-  transform: scale(0.62);
-  transform-origin: top center;
-  height: 11.5rem;
-}
-
-.logo__leaves {
-  position: absolute;
-  inset: -1rem -2rem;
-  width: calc(100% + 4rem);
-  height: calc(100% + 2rem);
-  object-fit: contain;
-  filter: drop-shadow(0 0.4rem 0.4rem rgb(0 0 0 / 0.25));
-}
-
-.logo__words {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  transform: rotate(-4deg);
-  margin-top: 1rem;
-}
-
-.logo__word {
-  position: relative;
-  display: block;
-  font-family: var(--font-logo);
-  font-size: 6.4rem;
-  line-height: 0.92;
-  letter-spacing: 0.02em;
-}
-
-.logo__word:nth-child(2) {
-  font-size: 7.4rem;
-  margin-top: -0.6rem;
-}
-
-.logo__stroke {
-  position: absolute;
-  inset: 0;
-  color: #7a1d8f;
-  -webkit-text-stroke: 1.4rem #7a1d8f;
-  text-shadow: 0 0.9rem 0 #3d0850;
-}
-
-.logo__fill {
-  position: relative;
-  background: linear-gradient(180deg, #fff58a 0%, #ffd21a 42%, #ff8a00 78%, #ff5e00 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 -0.1rem 0 rgb(255 255 255 / 0.6));
+  width: 18.6rem;
 }
 
 /* ---------- Wooden sign button ---------- */

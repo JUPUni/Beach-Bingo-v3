@@ -1,0 +1,18 @@
+{
+  "name": "@beach-bingo/brand",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Beach Bingo brand: the logo drawn in code, and the generator for the brand kit, app icons and store art.",
+  "type": "module",
+  "exports": {
+    "./colours.css": "./kit/colour/beachbingo-colours.css",
+    "./colours.json": "./kit/colour/beachbingo-colours.json"
+  },
+  "scripts": {
+    "brand": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "opentype.js": "^2.0.0",
+    "sharp": "^0.35.5"
+  }
+}

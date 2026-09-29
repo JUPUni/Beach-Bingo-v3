@@ -1,0 +1,13 @@
+/* Beach Bingo colours. Six are Fete Labs' own; Surf, Deep, Coconut and Sand come from the Fete Labs site palette and kit. */
+:root{
+  --bb-ink:#0E0818;
+  --bb-cream:#FFF6E6;
+  --bb-teal:#1FB5A8;
+  --bb-soca-pink:#FF2E88;
+  --bb-gold:#F4B400;
+  --bb-lime:#9BE22D;
+  --bb-surf:#22E0F2;
+  --bb-deep:#0F9BD6;
+  --bb-coconut:#FF8A1F;
+  --bb-sand:#E8DCC8;
+}

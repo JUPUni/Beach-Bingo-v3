@@ -1,3 +1,4 @@
+import logoUrl from '../assets/brand/beachbingo-logo-sticker.svg';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { useGame } from '../state/store.ts';
@@ -5,21 +6,7 @@ import { Stage } from '../ui/Stage.tsx';
 import './screens.css';
 
 export function Logo({ small = false }: { small?: boolean }) {
-  return (
-    <div className={`logo ${small ? 'logo--small' : ''}`} role="img" aria-label="Beach Bingo">
-      <img src={art.logoLeaves} alt="" className="logo__leaves" />
-      <div className="logo__words">
-        {['BEACH', 'BINGO'].map((word) => (
-          <span key={word} className="logo__word">
-            <span className="logo__stroke" aria-hidden>
-              {word}
-            </span>
-            <span className="logo__fill">{word}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
+  return <img src={logoUrl} alt="Beach Bingo" className={`logo ${small ? 'logo--small' : ''}`} width={600} height={514} />;
 }
 
 export function Splash() {
