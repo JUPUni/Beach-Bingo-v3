@@ -5,7 +5,7 @@ import { EXTRA_SPIN_RTP } from './spin.ts';
 import { ROOM_PRESETS } from './room.ts';
 import { tideRtp } from './tidePool.ts';
 import { DIG_RTP } from './crabDig.ts';
-import { BLITZ_RTP } from './blitz.ts';
+import { BLITZ_MAX_TARGET, BLITZ_MIN_TARGET, BLITZ_RTP, blitzMultiplier } from './blitz.ts';
 import { ROYALE_PAYOUT_RATE } from './royale.ts';
 
 /**
@@ -44,6 +44,7 @@ export interface ModeInfo {
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(x * 100 % 1 === 0 ? 0 : 1)}%`;
+const times = (x: number) => `${x.toLocaleString('en-US', { maximumFractionDigits: 2 })}×`;
 
 export const MODES: readonly ModeInfo[] = [
   {
@@ -82,7 +83,8 @@ export const MODES: readonly ModeInfo[] = [
   {
     id: 'blitz',
     name: 'Beach Ball Blitz',
-    tagline: '30-ball speed limbo: call how fast your card fills, from 2× to 6,000×.',
+    // The range the slider really pays: the slowest target and the fastest, from the engine's table.
+    tagline: `30-ball speed limbo: call how fast your card fills, from ${times(blitzMultiplier(BLITZ_MAX_TARGET))} to ${times(Math.floor(blitzMultiplier(BLITZ_MIN_TARGET)))}.`,
     kind: 'house',
     players: 'Solo',
     roundTime: '5 s',

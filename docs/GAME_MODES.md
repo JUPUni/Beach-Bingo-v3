@@ -20,7 +20,7 @@ Sun doubles the level's coins. Free to play; nothing is staked.
 |---|---|
 | **Tide Pool** (`tidePool`) | Pick a sea (calm, choppy, storm) and a stake; a fixed number of balls splash onto one card; completed lines pay from the sea's paytable, up to 10,000×. |
 | **Crab Dig** (`crabDig`) | A card with hidden crabs. Dig squares one at a time; each safe square raises the multiplier; bank at any time, or lose the stake to a crab. |
-| **Beach Ball Blitz** (`blitz`) | 30-ball speed limbo: call how many balls it takes to fill your card; the fewer you call, the higher the multiplier, from 2× to 6,000×. |
+| **Beach Ball Blitz** (`blitz`) | 30-ball speed limbo: call how many balls it takes to fill your card (12–29); the fewer you call, the higher the multiplier, from 1.38× at 29 to 63,081× at 12 (97% ÷ the exact chance, no cap). |
 | **Shell Spin** (`shellSpin`) | Slots meet bingo: spin the reels, daub the matching numbers on the card, chase twelve slingos; extra spins can be bought at a fair price. |
 | **Riptide** (`riptide`) | A stream of hits, each pumping the multiplier; bank before the shark bites. Three levels of risk; auto-bank after a chosen number of hits. |
 | **Tiki Video Bingo** (`videoBingo`) | Four cards, thirty balls, thirteen patterns; then extra balls for the big one, priced at their fair value. |
