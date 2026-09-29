@@ -1,0 +1,35 @@
+[package]
+name = "wave_duel"
+version = "0.1.0"
+edition = "2021"
+description = "Beach Bingo: a trustless 1v1 Wave Rush escrow. The host commits to a seed, both stake SOL, and anyone can settle by revealing the seed: the program replays the 30-ball round itself."
+license = "UNLICENSED"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "wave_duel"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = "1.2.0"
+solana-sha256-hasher = "3"
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+opt-level = 3
+incremental = false
+
+[workspace]

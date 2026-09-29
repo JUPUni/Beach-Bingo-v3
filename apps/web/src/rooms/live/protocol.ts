@@ -169,8 +169,15 @@ export function rosterHash(roster: readonly RosterEntry[]): string {
  * order from the committed seed, the drum shuffled and sales closed. Throws on a roster the hall
  * cannot seat (too few players, a duel with more than two, over the card limit).
  */
-export function buildRoom(config: RoomConfig, commitment: string, serverSeed: string, roster: readonly RosterEntry[]): RoomState {
-  const seed = { serverSeed, clientSeed: rosterHash(roster), nonce: 0 };
+export function buildRoom(
+  config: RoomConfig,
+  commitment: string,
+  serverSeed: string,
+  roster: readonly RosterEntry[],
+  /** Friends rooms hash the roster; staked rooms use the entropy the escrow program fixed at join. */
+  clientSeed: string = rosterHash(roster),
+): RoomState {
+  const seed = { serverSeed, clientSeed, nonce: 0 };
   const state = rooms.createRoom(config, commitment, 0);
   for (const e of roster) rooms.joinRoom(state, { id: e.id, name: e.name });
   for (const e of roster) rooms.buyCards(state, e.id, e.cards, (i) => new FairRng(seed, `live:card:${i}`));
