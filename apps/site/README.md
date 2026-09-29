@@ -1,6 +1,7 @@
 # beachbingo.xyz
 
-The public site: the Season 3 landing page, the `/play` browser rooms and the beta download gate.
+The public site: the Season 3 landing page, the game itself at `/app/`, the `/play` browser rooms and
+the beta download gate.
 Static files and one serverless function, served by the Vercel project **website**, which also
 holds the `beachbingo.xyz` and `www.beachbingo.xyz` domains.
 
@@ -9,10 +10,11 @@ holds the `beachbingo.xyz` and `www.beachbingo.xyz` domains.
 | `public/index.html` | The landing page. Hand-written, in the Fete Labs site's grammar with the Beach Bingo palette. |
 | `public/assets/` | What the page loads: fonts, the logo, the sea and shell, the screenshots, the link card. Made by the build. |
 | `public/favicon.*`, `apple-touch-icon.png` | The brand kit's web icons. Made by the build. |
+| `public/app/` | The Season 3 game (`apps/web`), built for `/app/`. Both Play now buttons open it. Made by `pnpm site:app`. |
 | `public/play/index.html` | The browser multiplayer rooms (peer to peer over Nostr relays). Not linked from the landing page. |
 | `public/assets/icon-512.png` | The old site's icon address. It holds the new icon now. |
 | `api/download.js` | The beta APK gate: `/api/download?code=…` checks the code, `&dl=1` redirects to the APK. Reads `DOWNLOAD_CODE` and `APK_SECRET_NAME` from the project's environment. |
-| `vercel.json` | Every unknown path serves the landing page (except `api/`, `assets/`, `play` and `BeachBingo-*`), APKs download with no caching, and no page can be framed. |
+| `vercel.json` | Every unknown path serves the landing page (except `api/`, `assets/`, `app/`, `play` and `BeachBingo-*`), `/app` redirects to `/app/`, the game's hashed files cache for a year, APKs download with no caching, and no page can be framed. |
 
 ## Rebuild
 
@@ -28,6 +30,20 @@ fonts to Latin WOFF2 (only if `pyftsubset` from fonttools is installed; otherwis
 committed ones), rewrites the screenshot strip between the `BUILD:screens` markers, and stamps every
 asset URL in both pages with a hash of the file (`?v=`), so a changed icon or card gets a new URL.
 Commit what it writes.
+
+## The game at /app/
+
+After a change to the game or the engine, rebuild it into the site:
+
+```bash
+pnpm site:app
+```
+
+It builds `apps/web` (Vite's `base` is `/app/`), checks that the page, the manifest and the service
+worker all stay inside `/app/`, and replaces `public/app/` with the result. Commit it. The game's
+service worker can only control `/app/`, so it never caches or takes over the landing page or
+`/play`. The game keeps its progress and coins in the browser's local storage; there is no account
+and no server.
 
 ## Icons and link previews
 

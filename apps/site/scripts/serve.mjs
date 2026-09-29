@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 // A static server that answers like the Vercel project: files first, then the
-// rewrite in vercel.json (everything but api/, assets/, play and BeachBingo-* to /).
+// rewrite in vercel.json (everything but api/, assets/, app/, play and BeachBingo-* to /),
+// after its one redirect (/app to /app/).
 import { createServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 
 const ROOT = process.argv[2] || new URL('../public/', import.meta.url).pathname;
 const PORT = Number(process.argv[3] || 8787);
-const TYPES = { '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
-const EXCLUDE = /^\/(?:api\/|assets\/|play|BeachBingo-)/;
+const TYPES = { '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
+const EXCLUDE = /^\/(?:api\/|assets\/|app\/|play|BeachBingo-)/;
 
 createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
   let p = decodeURIComponent(url.pathname);
+  if (p === '/app') { res.writeHead(307, { location: `/app/${url.search}` }).end(); return; }
   let file = normalize(join(ROOT, p));
   if (!file.startsWith(ROOT)) { res.writeHead(400).end(); return; }
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');

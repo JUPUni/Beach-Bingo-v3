@@ -5,7 +5,8 @@
   "description": "beachbingo.xyz: the landing page, the /play browser rooms and the beta download gate. Static, deployed to Vercel.",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "app": "node scripts/app.mjs"
   },
   "devDependencies": {
     "@beach-bingo/brand": "workspace:*"

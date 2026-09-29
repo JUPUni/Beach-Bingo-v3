@@ -1,7 +1,14 @@
 {
+  "redirects": [
+    {
+      "source": "/app",
+      "destination": "/app/",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
-      "source": "/:path((?!api/|assets/|play|BeachBingo-).*)",
+      "source": "/:path((?!api/|assets/|app/|play|BeachBingo-).*)",
       "destination": "/"
     }
   ],
@@ -16,6 +23,15 @@
         {
           "key": "Content-Disposition",
           "value": "attachment"
+        }
+      ]
+    },
+    {
+      "source": "/app/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
