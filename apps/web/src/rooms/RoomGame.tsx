@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { markedMask, mathRng, rooms, type RoomPresetId, type RoomSettlement, type RoomState, type StageWin } from '@beach-bingo/engine';
+import { markedMask, mathRng, modeInfo, rooms, type RoomPresetId, type RoomSettlement, type RoomState, type StageWin } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { callBall, say, sfx } from '../lib/audio.ts';
 import { newRound } from '../lib/fair.ts';
@@ -189,7 +189,7 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
   return (
     <Stage
       bg={preset === 'pierHall' ? art.bgLevelMap : preset === 'waveRush' ? art.bgSplash : art.bgGame}
-      top={<GameHeader title={config.name} onBack={() => go({ name: 'rooms' })} />}
+      top={<GameHeader title={modeInfo(preset).name} onBack={() => go({ name: 'rooms' })} />}
       bottom="none"
       className="room"
     >

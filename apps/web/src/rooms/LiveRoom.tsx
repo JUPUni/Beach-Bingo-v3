@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
-import { rooms, type RoomPresetId } from '@beach-bingo/engine';
+import { modeInfo, rooms, type RoomPresetId } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { useNow } from '../lib/hooks.ts';
@@ -42,7 +42,9 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
   const daubs = m && daubState.round === m.round ? daubState.masks : [];
   const playing = status === 'countdown' || status === 'drawing' || status === 'finished';
   const bg = livePreset === 'pierHall' ? art.bgLevelMap : livePreset === 'waveRush' ? art.bgSplash : art.bgGame;
-  const title = config?.name ?? 'Live room';
+  // The hall's short name: the header has no room for "Sunset Hall · 75-ball" next to the coins.
+  const hall = livePreset ?? preset ?? null;
+  const title = hall ? modeInfo(hall).name : 'Live room';
 
   const onCell = (cardIndex: number, cell: number) => {
     if (!m || !room || !isDuel || room.phase !== 'drawing') return;
