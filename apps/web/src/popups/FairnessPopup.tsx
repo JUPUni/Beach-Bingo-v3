@@ -68,7 +68,8 @@ export default function FairnessPopup() {
           <h3>Verify previous seed</h3>
           <p className="mono">server seed: {previous.serverSeed}</p>
           <p className="small-note">
-            SHA-256 matches its commitment: <b>{verified.commitmentOk ? 'yes ✓' : 'NO ✗'}</b> · rounds 0–{previous.lastNonce}
+            SHA-256 matches its commitment: <b>{verified.commitmentOk ? 'yes ✓' : 'NO ✗'}</b> ·{' '}
+            {previous.lastNonce < 0 ? 'no rounds were played with it' : `rounds 0–${previous.lastNonce}`}
           </p>
           <div className="seed-row">
             <select className="field" value={domain} onChange={(e) => setDomain(e.target.value)} aria-label="Stream">

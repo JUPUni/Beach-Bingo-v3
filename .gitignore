@@ -21,3 +21,6 @@ target
 .anchor
 test-ledger
 dev-dist
+
+# Signing keys and other secrets
+.secrets/

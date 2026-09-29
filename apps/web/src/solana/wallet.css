@@ -1,0 +1,84 @@
+.wallet-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.wallet-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 1.2rem;
+  background: linear-gradient(#fff6e2, #ecd3a2);
+  border: 0.2rem solid #b87936;
+  box-shadow: 0 0.25rem 0 #8a5a2b;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--c-ink);
+  text-align: left;
+}
+
+.wallet-btn img,
+.wallet-btn__dot {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 0.8rem;
+  background: #1fb6e8;
+}
+
+.wallet-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 1.2rem;
+  background: rgb(255 255 255 / 0.6);
+  border: 0.2rem solid rgb(184 121 54 / 0.5);
+}
+
+.wallet-card img {
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 0.8rem;
+}
+
+.wallet-card b {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.8rem;
+}
+
+.wallet-card small {
+  font-weight: 600;
+  color: var(--c-ink-soft);
+}
+
+.wallet-card__ok {
+  margin-left: auto;
+  padding: 0.2rem 0.8rem;
+  border-radius: 99rem;
+  background: var(--c-green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.wallet-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.8rem 0 0.4rem;
+}
+
+.wallet-actions .btn-green {
+  flex: 1;
+  font-size: 1.6rem;
+}
+
+.wallet-disconnect {
+  display: block;
+  margin: 0.4rem auto 0;
+  font-weight: 700;
+  color: #b01520;
+  text-decoration: underline;
+}

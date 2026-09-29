@@ -41,6 +41,7 @@ export const FAUCET_COINS = 500;
 export const FAUCET_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 export const CHEST_KEYS = 3;
 export const JACKPOT_SEED = 5000;
+export const SEEKER_PERK_COINS = 2500;
 
 interface Settings {
   sound: boolean;
@@ -84,6 +85,10 @@ export interface GameState {
   jackpot: { pool: number; lastWonDay: string };
   fairness: FairnessState;
   onboarded: boolean;
+  /** Wallet linked via SIWS (display only in play-money mode). */
+  linkedWallet: string | null;
+  /** Seeker Genesis Token mints that already claimed the Seeker perk on this device. */
+  seekerPerkMints: string[];
 
   // Session (not persisted)
   screen: Screen;
@@ -115,6 +120,8 @@ export interface GameState {
   wagerBlockedReason(): string | null;
   contributeJackpot(amount: number): void;
   resetJackpot(): void;
+  setLinkedWallet(address: string | null): void;
+  claimSeekerPerk(mint: string): boolean;
 }
 
 const safeStorage: StateStorage = {
@@ -172,6 +179,8 @@ export const useGame = create<GameState>()(
       jackpot: { pool: JACKPOT_SEED, lastWonDay: localDay() },
       fairness: freshFairness(),
       onboarded: false,
+      linkedWallet: null,
+      seekerPerkMints: [],
 
       screen: { name: 'splash' },
       popup: null,
@@ -298,6 +307,17 @@ export const useGame = create<GameState>()(
 
       contributeJackpot: (amount) => set((s) => ({ jackpot: { ...s.jackpot, pool: s.jackpot.pool + Math.max(0, amount) } })),
       resetJackpot: () => set({ jackpot: { pool: JACKPOT_SEED, lastWonDay: localDay() } }),
+      setLinkedWallet: (linkedWallet) => set({ linkedWallet }),
+      claimSeekerPerk: (mint) => {
+        const s = get();
+        if (s.seekerPerkMints.includes(mint)) return false;
+        set({
+          seekerPerkMints: [...s.seekerPerkMints, mint],
+          coins: s.coins + SEEKER_PERK_COINS,
+          boosters: { ...s.boosters, seagull: s.boosters.seagull + 2, crab: s.boosters.crab + 2, wave: s.boosters.wave + 2, sun: s.boosters.sun + 2 },
+        });
+        return true;
+      },
 
       wagerBlockedReason: () => {
         const s = get();
@@ -330,6 +350,8 @@ export const useGame = create<GameState>()(
         jackpot: s.jackpot,
         fairness: s.fairness,
         onboarded: s.onboarded,
+        linkedWallet: s.linkedWallet,
+        seekerPerkMints: s.seekerPerkMints,
       }),
     },
   ),

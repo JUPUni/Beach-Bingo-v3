@@ -1,0 +1,13 @@
+{
+  "fallbackType": "webview",
+  "generatorApp": "solana-mobile",
+  "host": "beachbingo.xyz",
+  "launcherName": "Beach Bingo",
+  "name": "Beach Bingo",
+  "packageId": "xyz.beachbingo.app",
+  "startUrl": "/",
+  "signingKey": {
+    "alias": "beachbingo",
+    "path": "../.secrets/dappstore.keystore"
+  }
+}
