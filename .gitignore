@@ -24,3 +24,6 @@ dev-dist
 
 # Signing keys and other secrets
 .secrets/
+
+# The devnet-flagged build the staked-room e2e makes (apps/web/scripts/stake-e2e.mjs)
+dist-devnet
