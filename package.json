@@ -1,0 +1,20 @@
+{
+  "name": "beach-bingo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Beach Bingo — provably-fair bingo for the web (beachbingo.xyz) and the Solana dApp Store (Seeker).",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @beach-bingo/web dev",
+    "dev:server": "pnpm --filter @beach-bingo/server dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "rtp": "pnpm --filter @beach-bingo/engine rtp"
+  }
+}

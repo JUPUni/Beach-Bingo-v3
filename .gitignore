@@ -1,0 +1,22 @@
+node_modules
+dist
+dist-ssr
+coverage
+*.local
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+# Android / TWA build outputs
+android/app/build
+android/.gradle
+*.keystore
+*.jks
+# Solana / Anchor
+target
+.anchor
+test-ledger
