@@ -336,6 +336,10 @@ async function main() {
     input: `${kitFiles.map((p) => relative(PKG, p)).join('\n')}\n`,
     env: { ...process.env, TZ: 'UTC' },
   });
+  // Give the files their real mtime back. With the fixed stamp, git's stat cache
+  // misses an edit that keeps a file's size (a colour swap in an SVG, say).
+  const now = new Date();
+  for (const p of kitFiles) utimesSync(p, now, now);
   written.push(relative(ROOT, zip));
   put(join(PKG, 'index.html'), brandPage({ REG, zipBytes: readFileSync(zip).length, kitBytes: (rel) => readFileSync(join(KIT, rel)).length }));
 
