@@ -44,6 +44,25 @@ It rewrites, and all of it is committed:
 Every word in every file is outlined from the TTFs, so no file needs a font installed. The zip is
 byte-for-byte reproducible (fixed entry times, sorted names, UTC).
 
+## Store screenshots
+
+`kit/store/screenshots/` holds six 1080 x 1920 screenshots for the Solana dApp Store (it wants at least
+four, each at least 1080 px on both sides, all one orientation). Each is the app captured at the Pixel 10
+Pro's own resolution, in the Pixel 10 Pro (Obsidian) frame from BRIX Templates' free Pixel mockups on
+Figma Community, on Teal with a caption.
+
+To re-shoot them after the UI changes:
+
+```bash
+pnpm dev                                    # the web app, in another shell
+pnpm --filter @beach-bingo/brand screens    # captures into screens/captures/ (needs Chrome, or CHROME_PATH)
+pnpm brand                                  # composes them into the kit
+```
+
+The captions, order and status-bar colour are in [`src/screens.mjs`](src/screens.mjs); the capture steps
+and the saved game they start from are in [`scripts/capture-screens.mjs`](scripts/capture-screens.mjs).
+The frame is in [`devices/pixel-10-pro/`](devices/pixel-10-pro/) with its screen and camera geometry.
+
 ## Where things live
 
 - [`src/palette.mjs`](src/palette.mjs): the ten colours, with their roles.
@@ -54,6 +73,7 @@ byte-for-byte reproducible (fixed entry times, sorted names, UTC).
   `symbol`, `appIcon`. Every shape goes through one paint function with three modes: `color`, `mask`
   (the one-colour versions) and `halo` (the Cream sticker outline).
 - [`src/compose.mjs`](src/compose.mjs): social, store and avatar layouts.
+- [`src/screens.mjs`](src/screens.mjs): the store screenshots.
 - [`src/page.mjs`](src/page.mjs): the guidelines page.
 - [`scripts/build.mjs`](scripts/build.mjs): writes every file.
 
@@ -63,3 +83,9 @@ byte-for-byte reproducible (fixed entry times, sorted names, UTC).
 - On Ink or a photograph, use the sticker logo.
 - Below 64 px use the symbol; below 32 px the symbol drops the palm and the number.
 - Free to play: coins are play money. Never "win cash", "payout" or "real money" next to the logo.
+
+## Credits
+
+- Fonts: Bungee (The Bungee Project Authors), Rubik Wet Paint (The Rubik Filtered Project Authors) and
+  Barlow Condensed (The Barlow Project Authors), SIL Open Font License 1.1.
+- Phone frame: "Google Pixel 10 Pro Free Mockups" by BRIX Templates, Figma Community.

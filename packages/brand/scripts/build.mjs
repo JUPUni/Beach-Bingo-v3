@@ -20,6 +20,7 @@ import { FONTS, textPath } from '../src/type.mjs';
 import { COLOR, MASK, halo, logo, stack, wordLine, symbol, appIcon, sea, TILE, CORNER, f, nid } from '../src/draw.mjs';
 import { BOX, svgDoc, place, heightAt, card, poster, banner, storeBanner, storeFeature, pfp, highlight, sticker, og, foot } from '../src/compose.mjs';
 import { brandPage } from '../src/page.mjs';
+import { SCREENS, storeScreenshot, capturesReady } from '../src/screens.mjs';
 
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');
@@ -46,12 +47,13 @@ function sizeOf(svg) {
 }
 
 /** Rasterise an SVG string at w x h. `bg` flattens alpha (JPEG has none). */
-async function raster(svg, w, h, fmt, { bg } = {}) {
+async function raster(svg, w, h, fmt, { bg, photo = false } = {}) {
   const { w: sw } = sizeOf(svg);
   let img = sharp(Buffer.from(svg), { density: Math.min(2400, 72 * Math.max(1, w / sw)) }).resize(w, h, { fit: 'fill' });
   if (bg || fmt === 'jpg') img = img.flatten({ background: bg || '#ffffff' });
   // Flat colour art: a 256-colour palette is indistinguishable at 1:1 and a third of the size.
-  if (fmt === 'png') return img.png({ palette: true, quality: 100, effort: 10, compressionLevel: 9 }).toBuffer();
+  // Pictures with photographs or app screens in them keep every colour.
+  if (fmt === 'png') return img.png(photo ? { compressionLevel: 9 } : { palette: true, quality: 100, effort: 10, compressionLevel: 9 }).toBuffer();
   if (fmt === 'jpg') return img.jpeg({ quality: 88, mozjpeg: true, chromaSubsampling: '4:4:4' }).toBuffer();
   if (fmt === 'webp') return img.webp({ quality: 90, alphaQuality: 100, effort: 6 }).toBuffer();
   throw new Error(fmt);
@@ -59,7 +61,7 @@ async function raster(svg, w, h, fmt, { bg } = {}) {
 
 /** Every kit file goes through here, so the brand page can list exactly what was written. */
 export const REG = [];
-async function asset(dir, name, svg, { px, formats = ['svg', 'png', 'webp', 'jpg'], jpgBg, ground } = {}) {
+async function asset(dir, name, svg, { px, formats = ['svg', 'png', 'webp', 'jpg'], jpgBg, ground, photo = false } = {}) {
   const { w, h } = sizeOf(svg);
   const W = Math.round(px || w);
   const H = Math.round(px ? (px * h) / w : h);
@@ -67,7 +69,7 @@ async function asset(dir, name, svg, { px, formats = ['svg', 'png', 'webp', 'jpg
   for (const fmt of formats) {
     const file = join(KIT, dir, `${name}.${fmt}`);
     if (fmt === 'svg') put(file, svg);
-    else put(file, await raster(svg, W, H, fmt, { bg: fmt === 'jpg' ? jpgBg : undefined }));
+    else put(file, await raster(svg, W, H, fmt, { bg: fmt === 'jpg' ? jpgBg : undefined, photo }));
   }
 }
 
@@ -184,6 +186,15 @@ async function main() {
   await asset(ST, 'dapp-store-icon-512', svgDoc(1024, 1024, appIcon(COLOR, { square: true })), { px: 512, formats: ['png'], ground: C.teal });
   await asset(ST, 'dapp-store-banner-1200x600', storeBanner(), { formats: ['png', 'jpg'], jpgBg: C.teal });
   await asset(ST, 'dapp-store-feature-1200x1200', storeFeature(), { formats: ['png', 'jpg'], jpgBg: C.teal });
+  // Screenshots: the app in a Pixel 10 Pro frame. The captures come from
+  // scripts/capture-screens.mjs; without them this step is skipped.
+  if (capturesReady()) {
+    for (const [i, s] of SCREENS.entries()) {
+      await asset(`${ST}/screenshots`, `dapp-store-screenshot-${String(i + 1).padStart(2, '0')}-1080x1920`, await storeScreenshot(s), { formats: ['png'], photo: true, ground: C.teal });
+    }
+  } else {
+    console.warn('brand: no captures in screens/captures, store screenshots skipped (run scripts/capture-screens.mjs)');
+  }
 
   /* 3 · profile pictures -------------------------------------------------- */
   const PF = 'pfp';
@@ -366,7 +377,8 @@ FOLDERS
               wordmark, the horizontal lockup, the symbol (the ball coming up
               out of the sea), the app icon rounded and full-bleed.
   store/      Solana dApp Store listing art: icon 512, banner 1200x600,
-              feature graphic 1200x1200.
+              feature graphic 1200x1200, and screenshots/ (six 1080x1920
+              screens of the app in a Pixel 10 Pro frame).
   android/    launcher layers (adaptive background, foreground, monochrome)
               and the 512 store icon, for the WebView shell.
   pfp/        square profile pictures: the symbol on Teal (default), Ink and
@@ -403,6 +415,13 @@ RULES
     or dot the i with anything but the ball.
   Beach Bingo is free to play. Never write "win money", "cash" or "jackpot
     payout" next to the logo. Coins are play money.
+
+CREDITS
+  Fonts: Bungee (The Bungee Project Authors), Rubik Wet Paint (The Rubik
+    Filtered Project Authors), Barlow Condensed (The Barlow Project
+    Authors), all SIL Open Font License 1.1.
+  Phone frame in the store screenshots: "Google Pixel 10 Pro Free Mockups"
+    by BRIX Templates, Figma Community.
 `;
 
 main().catch((err) => {

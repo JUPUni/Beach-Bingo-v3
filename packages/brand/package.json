@@ -9,10 +9,12 @@
     "./colours.json": "./kit/colour/beachbingo-colours.json"
   },
   "scripts": {
-    "brand": "node scripts/build.mjs"
+    "brand": "node scripts/build.mjs",
+    "screens": "node scripts/capture-screens.mjs"
   },
   "devDependencies": {
     "opentype.js": "^2.0.0",
+    "playwright-core": "^1.56.1",
     "sharp": "^0.35.5"
   }
 }

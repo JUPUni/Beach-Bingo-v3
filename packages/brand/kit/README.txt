@@ -18,7 +18,8 @@ FOLDERS
               wordmark, the horizontal lockup, the symbol (the ball coming up
               out of the sea), the app icon rounded and full-bleed.
   store/      Solana dApp Store listing art: icon 512, banner 1200x600,
-              feature graphic 1200x1200.
+              feature graphic 1200x1200, and screenshots/ (six 1080x1920
+              screens of the app in a Pixel 10 Pro frame).
   android/    launcher layers (adaptive background, foreground, monochrome)
               and the 512 store icon, for the WebView shell.
   pfp/        square profile pictures: the symbol on Teal (default), Ink and
@@ -64,3 +65,10 @@ RULES
     or dot the i with anything but the ball.
   Beach Bingo is free to play. Never write "win money", "cash" or "jackpot
     payout" next to the logo. Coins are play money.
+
+CREDITS
+  Fonts: Bungee (The Bungee Project Authors), Rubik Wet Paint (The Rubik
+    Filtered Project Authors), Barlow Condensed (The Barlow Project
+    Authors), all SIL Open Font License 1.1.
+  Phone frame in the store screenshots: "Google Pixel 10 Pro Free Mockups"
+    by BRIX Templates, Figma Community.

@@ -1,0 +1,12 @@
+{
+  "name": "Google Pixel 10 Pro, Obsidian",
+  "source": "Google Pixel 10 Pro Free Mockups | BRIX Templates (Figma Community), file CEV664JZCeo8EaFRufqhLS, component 'Pixel 10 Pro/Obsidian' (896:10460)",
+  "license": "Figma Community file by BRIX Templates; credit BRIX Templates when redistributing",
+  "frame": "frame.png",
+  "camera": "camera.png",
+  "width": 971,
+  "height": 2048,
+  "display": { "x": 43, "y": 44, "width": 879, "height": 1962, "radius": 72 },
+  "cameraAt": { "x": 450.5, "y": 81.5, "size": 64 },
+  "nativeScreen": { "width": 1280, "height": 2856, "cssWidth": 412, "cssHeight": 919 }
+}
