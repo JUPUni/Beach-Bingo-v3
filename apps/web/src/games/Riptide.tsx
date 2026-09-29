@@ -32,13 +32,13 @@ export default function Riptide() {
   const finish = useCallback(
     (r: RiptideRound) => {
       settle(r.payout);
-      logRef.current?.(`${r.status} at ${r.hits} hits → ${r.payout}`);
+      logRef.current?.(`${r.status === 'cashed' ? 'banked' : r.status} at ${r.hits} hits → ${r.payout}`);
       if (r.payout > 0) setWin({ amount: r.payout, mult: riptide.cashoutMultiplier(r.hits, r.config) });
     },
     [settle],
   );
 
-  // The tide draws automatically; the player only decides when to cash out.
+  // The tide draws automatically; the player only decides when to bank.
   useEffect(() => {
     if (!running) return;
     const id = window.setInterval(() => {
@@ -101,7 +101,7 @@ export default function Riptide() {
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={running} />
           {running ? (
             <GreenButton tone="gold" onClick={cashOut} className="casino__go" disabled={hits === 0}>
-              Cash out {formatCoins(Math.floor(stake * current))}
+              Bank {formatCoins(Math.floor(stake * current))}
             </GreenButton>
           ) : (
             <GreenButton onClick={start} className="casino__go">
@@ -116,7 +116,7 @@ export default function Riptide() {
         <FairChip nonce={nonce} commitment={commitment} />
       </div>
       <div className="casino__row">
-        <span className="pill">Auto cash-out</span>
+        <span className="pill">Auto bank</span>
         <Segmented options={AUTO} value={auto} onChange={setAuto} disabled={running} render={(a) => (a ? `${a} hits` : 'Off')} />
       </div>
 
@@ -145,10 +145,10 @@ export default function Riptide() {
           <div className="casino__hint panel">
             <p>
               Balls splash in every second. Each number on your card pumps the multiplier — but <b>{config.sharks} sharks</b> hide
-              in the drum. Cash out before one bites!
+              in the drum. Bank before one bites!
             </p>
             <p className="small-note">
-              Every cash-out point returns {(config.rtp * 100).toFixed(0)}% on average (max {config.maxMultiplier.toLocaleString()}×).
+              Banking at any point returns {(config.rtp * 100).toFixed(0)}% on average (max {config.maxMultiplier.toLocaleString()}×).
             </p>
           </div>
         )}

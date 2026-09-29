@@ -71,7 +71,7 @@ export const MODES: readonly ModeInfo[] = [
   {
     id: 'crabDig',
     name: 'Crab Dig',
-    tagline: 'Dig the card square by square — dodge the crabs and cash out.',
+    tagline: 'Dig the card square by square — dodge the crabs and bank your coins.',
     kind: 'house',
     players: 'Solo',
     roundTime: '10–40 s',
@@ -103,8 +103,8 @@ export const MODES: readonly ModeInfo[] = [
   },
   {
     id: 'riptide',
-    name: 'Riptide Cash-Out',
-    tagline: 'Every hit pumps the multiplier. Cash out before the shark bites.',
+    name: 'Riptide',
+    tagline: 'Every hit pumps the multiplier. Bank it before the shark bites.',
     kind: 'house',
     players: 'Solo',
     roundTime: '10–60 s',

@@ -22,7 +22,7 @@ export function Home() {
           <button type="button" className="mode-sign anim-float" onClick={() => (sfx.click(), go({ name: 'casino' }))}>
             <span className="mode-sign__icon">🎰</span>
             <span className="t-outline t-outline--wood">Casino Cove</span>
-            <small>Spin · Cash-out · Keno</small>
+            <small>Spin · Riptide · Keno</small>
           </button>
           <button
             type="button"
@@ -32,7 +32,7 @@ export function Home() {
           >
             <span className="mode-sign__icon">🏝️</span>
             <span className="t-outline t-outline--wood">Beach Rooms</span>
-            <small>Live bingo · Duels</small>
+            <small>Bingo halls · Duels</small>
           </button>
         </div>
 

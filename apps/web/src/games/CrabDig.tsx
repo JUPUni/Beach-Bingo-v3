@@ -34,7 +34,7 @@ export default function CrabDig() {
 
   const finish = (r: DigRound) => {
     settle(r.payout);
-    logRef.current?.(`${r.status} after ${r.dug.length} digs → ${r.payout}`);
+    logRef.current?.(`${r.status === 'cashed' ? 'banked' : r.status} after ${r.dug.length} digs → ${r.payout}`);
     if (r.payout > 0) setWin({ amount: r.payout, mult: crabDig.digMultiplier(r.crabs, r.dug.length) });
   };
 
@@ -79,7 +79,7 @@ export default function CrabDig() {
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={digging} />
           {digging ? (
             <GreenButton tone="gold" onClick={cashOut} className="casino__go" disabled={dugSafe === 0}>
-              Cash out {formatCoins(Math.floor(stake * current))}
+              Bank {formatCoins(Math.floor(stake * current))}
             </GreenButton>
           ) : (
             <GreenButton onClick={start} className="casino__go">

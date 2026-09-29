@@ -16,7 +16,7 @@ import { CHAIN, RPC_URL } from './config.ts';
  *   wallet (Seed Vault on Seeker) — shown as "Use Installed Wallet".
  */
 registerMwa({
-  appIdentity: { name: 'Beach Bingo', uri: 'https://beachbingo.xyz', icon: 'icons/icon-192.png' },
+  appIdentity: { name: 'Beach Bingo', uri: 'https://beachbingo.xyz', icon: 'assets/icons/icon-192.png' },
   authorizationCache: createDefaultAuthorizationCache(),
   chains: ['solana:mainnet', 'solana:devnet'],
   chainSelector: createDefaultChainSelector(),

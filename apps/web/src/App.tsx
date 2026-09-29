@@ -105,6 +105,12 @@ export function App() {
         <PopupHost />
         <Toasts />
       </Suspense>
+      <div className="rotate-hint">
+        <span className="rotate-hint__icon" aria-hidden="true">
+          📱
+        </span>
+        <p>Turn your phone upright to play Beach Bingo.</p>
+      </div>
     </div>
   );
 }

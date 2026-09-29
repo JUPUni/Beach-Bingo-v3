@@ -5,7 +5,7 @@
   "launcherName": "Beach Bingo",
   "name": "Beach Bingo",
   "packageId": "xyz.beachbingo.app",
-  "startUrl": "/",
+  "startUrl": "/app/",
   "signingKey": {
     "alias": "beachbingo",
     "path": "../.secrets/dappstore.keystore"
