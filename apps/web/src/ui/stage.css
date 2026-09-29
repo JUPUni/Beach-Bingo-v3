@@ -102,6 +102,11 @@
   text-overflow: ellipsis;
 }
 
+/* Long names ("Last Castle Standing") have 17rem between the arrow and the coins: smaller, not cut. */
+.gamehead__title--long {
+  font-size: 1.65rem;
+}
+
 .gamehead__coins {
   min-width: 10rem;
   height: 3.2rem;

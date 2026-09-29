@@ -81,7 +81,7 @@ export function GameHeader({ title, onBack, right }: { title: string; onBack: ()
       <button type="button" className="gamehead__back" aria-label="Back" onClick={onBack}>
         <img src={art.btnArrowLeft} alt="" />
       </button>
-      <h1 className="gamehead__title t-outline t-outline--wood">{title}</h1>
+      <h1 className={`gamehead__title t-outline t-outline--wood ${title.length > 15 ? 'gamehead__title--long' : ''}`}>{title}</h1>
       {right ?? (
         <div className="chip gamehead__coins">
           <img src={art.iconCoin} alt="" className="chip__icon" />
