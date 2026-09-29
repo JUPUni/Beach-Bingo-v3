@@ -4,26 +4,37 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc -b && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "test": "vitest run --passWithNoTests",
+    "assets": "python3 scripts/import-island-assets.py"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@beach-bingo/engine": "workspace:*",
+    "@fontsource-variable/fredoka": "^5.3.0",
+    "@fontsource/lilita-one": "^5.3.0",
+    "@fontsource/luckiest-guy": "^5.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@eslint/js": "^9.29.0",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.5.2",
-    "eslint": "^9.29.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "globals": "^16.2.0",
-    "typescript": "~5.8.3",
-    "typescript-eslint": "^8.34.1",
-    "vite": "^7.0.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.12.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.1",
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^5.0.2"
   }
 }

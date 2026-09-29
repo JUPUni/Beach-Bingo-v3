@@ -1,0 +1,244 @@
+/* ---------- Top HUD (wood bar) ---------- */
+.topbar {
+  position: relative;
+  z-index: 5;
+  flex: none;
+  height: calc(7.6rem + var(--safe-top));
+  padding: calc(var(--safe-top) + 1.4rem) 1.6rem 1.6rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2.4rem;
+}
+
+.topbar__avatar {
+  width: 6rem;
+  height: 4.4rem;
+  border-radius: 1.2rem;
+  border: 0.4rem solid var(--c-orange);
+  background: linear-gradient(160deg, #6fd6ff, #1a86c9);
+  box-shadow: var(--shadow-ui);
+  display: grid;
+  place-items: center;
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.topbar__coins {
+  justify-self: center;
+  min-width: 12.5rem;
+}
+
+.topbar__keys {
+  min-width: 8.8rem;
+}
+
+/* ---------- Bottom nav ---------- */
+.bottomnav {
+  position: relative;
+  z-index: 5;
+  flex: none;
+  height: calc(8.8rem + var(--safe-bottom));
+  padding: 1.4rem 3.6rem calc(var(--safe-bottom) + 1rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bottomnav__wood {
+  position: absolute;
+  inset: -1.2rem 0 0;
+  background: url('../assets/island/wood-bar-bottom.webp') center / 100% 100% no-repeat;
+  filter: none;
+}
+
+.bottomnav .round-btn {
+  position: relative;
+}
+
+.bottomnav__dot {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: #ff2a3d;
+  border: 0.2rem solid #fff;
+}
+
+/* ---------- Game header ---------- */
+.gamehead {
+  position: relative;
+  z-index: 5;
+  flex: none;
+  height: calc(6.6rem + var(--safe-top));
+  padding: calc(var(--safe-top) + 1rem) 1.2rem 1.4rem;
+  display: grid;
+  grid-template-columns: 4.6rem 1fr auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gamehead__back {
+  width: 4.4rem;
+  height: 4rem;
+}
+
+.gamehead__back img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(var(--shadow-ui));
+}
+
+.gamehead__title {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gamehead__coins {
+  min-width: 10rem;
+  height: 3.2rem;
+}
+
+/* ---------- Popups ---------- */
+.popup-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background: rgb(4 20 38 / 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.popup {
+  position: relative;
+  width: 33.3rem;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.popup--wide {
+  width: 35rem;
+}
+
+.popup__frame {
+  width: 88%;
+  min-height: 0;
+  padding: 2.4rem 1.2rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(0 0.6rem 0.6rem rgb(0 0 0 / 0.45));
+}
+
+.popup__paper {
+  min-height: 12rem;
+  max-height: calc(100dvh - 22rem);
+  padding: 0.4rem 0.4rem 0.8rem;
+  font-size: 1.45rem;
+}
+
+.popup__footer {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-top: -2.4rem;
+  z-index: 3;
+}
+
+.popup h3 {
+  margin: 0.6rem 0 0.4rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.6rem;
+  color: var(--c-ink);
+}
+
+.popup p {
+  margin: 0.4rem 0;
+}
+
+.popup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+}
+
+.popup-row + .popup-row {
+  border-top: 0.15rem dashed rgb(138 90 43 / 0.35);
+}
+
+.popup-center {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.6rem;
+}
+
+.divider {
+  height: 1rem;
+  margin: 0.8rem 0;
+  background: url('../assets/island/divider.webp') center / contain no-repeat;
+}
+
+.toggle {
+  position: relative;
+  width: 5.4rem;
+  height: 3rem;
+  border-radius: 99rem;
+  background: #b9a37a;
+  box-shadow: inset 0 0.2rem 0.3rem rgb(0 0 0 / 0.35);
+  transition: background 0.2s ease;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 0.3rem;
+  left: 0.3rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0.2rem 0.3rem rgb(0 0 0 / 0.35);
+  transition: transform 0.2s ease;
+}
+
+.toggle[aria-checked='true'] {
+  background: var(--c-green);
+}
+
+.toggle[aria-checked='true']::after {
+  transform: translateX(2.4rem);
+}
+
+.field {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 1rem;
+  border: 0.2rem solid #b87936;
+  background: #fffaf0;
+  color: var(--c-ink);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  user-select: text;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.1rem;
+  word-break: break-all;
+  user-select: text;
+}

@@ -1,0 +1,603 @@
+/* ---------- Casino shell ---------- */
+.casino__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem 1rem 0.6rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.casino__body > *,
+.room__body > * {
+  flex-shrink: 0;
+}
+
+.casino__controls {
+  position: relative;
+  z-index: 5;
+  flex: none;
+  min-height: calc(8.2rem + var(--safe-bottom));
+  padding: 1.4rem 1.2rem calc(var(--safe-bottom) + 1rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.casino__go {
+  flex: 1;
+  min-width: 11rem;
+  font-size: 1.8rem;
+}
+
+.casino__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.casino__cards {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.casino__hint {
+  max-width: 30rem;
+  padding: 1.2rem 1.6rem;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.casino__hint p {
+  margin: 0.3rem 0;
+}
+
+.casino__foot {
+  margin: 0;
+  text-align: center;
+  color: #fff !important;
+  text-shadow: 0 0.1rem 0.2rem rgb(0 0 0 / 0.7);
+}
+
+.fair-chip {
+  padding: 0.35rem 0.9rem;
+  border-radius: 99rem;
+  background: rgb(18 27 67 / 0.8);
+  border: 0.2rem solid rgb(255 255 255 / 0.3);
+  font-size: 1.1rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 0.3rem;
+  gap: 0.2rem;
+  border-radius: 1.2rem;
+  background: rgb(18 27 67 / 0.8);
+  border: 0.2rem solid rgb(255 255 255 / 0.25);
+}
+
+.segmented button {
+  min-width: 3.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.9rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: #cfd8ff;
+}
+
+.segmented button.is-on {
+  background: linear-gradient(#ffd54a, #f39b00);
+  color: #5b2d0e;
+  box-shadow: 0 0.2rem 0 #8a3d00;
+}
+
+.segmented button:disabled:not(.is-on) {
+  opacity: 0.5;
+}
+
+/* ---------- Paytable & ball tray ---------- */
+.paytable {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 1.2rem;
+  background: rgb(91 45 14 / 0.88);
+  border: 0.2rem solid var(--c-orange);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.paytable span {
+  padding: 0.1rem 0.6rem;
+  border-radius: 0.8rem;
+  background: rgb(0 0 0 / 0.25);
+  white-space: nowrap;
+}
+
+.paytable b {
+  color: var(--c-gold-light);
+}
+
+.paytable__rtp {
+  background: rgb(38 96 5 / 0.8) !important;
+}
+
+.ball-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+  min-height: 2.6rem;
+}
+
+.tide-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.tide-card__result {
+  margin-top: -1rem;
+  padding: 0.2rem 1rem;
+  border-radius: 99rem;
+  background: #16214d;
+  border: 0.2rem solid rgb(255 255 255 / 0.35);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  z-index: 2;
+}
+
+.tide-card__result.is-win {
+  background: linear-gradient(#a6ec4a, #3f8f0a);
+  border-color: #fff;
+}
+
+/* ---------- Multiplier meter ---------- */
+.riptide-meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 1.8rem;
+  background: rgb(18 27 67 / 0.78);
+  border: 0.25rem solid rgb(255 255 255 / 0.3);
+}
+
+.riptide-meter.is-bitten {
+  background: rgb(110 13 19 / 0.9);
+}
+
+.riptide-meter__ball {
+  width: 5.6rem;
+  height: 5.6rem;
+  display: grid;
+  place-items: center;
+  font-size: 4.2rem;
+}
+
+.riptide-meter__mult {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+.riptide-meter__mult b {
+  font-weight: 400;
+  font-size: 4.4rem;
+  line-height: 1;
+}
+
+.riptide-meter__mult small {
+  font-size: 1.15rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.riptide-meter__shark {
+  animation: pop-in 0.3s ease both;
+}
+
+.ladder {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0.2rem;
+}
+
+.ladder span {
+  flex: none;
+  min-width: 4.4rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.8rem;
+  background: rgb(18 27 67 / 0.75);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.ladder span.is-hit {
+  background: linear-gradient(#a6ec4a, #3f8f0a);
+}
+
+.ladder span.is-next {
+  background: linear-gradient(#ffd54a, #f39b00);
+  color: #5b2d0e;
+}
+
+/* ---------- Crab Dig ---------- */
+.dig-board {
+  display: grid;
+  grid-template-columns: repeat(5, 6rem);
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border-radius: 1.8rem;
+  background: linear-gradient(#f6d48b, #d9a54d);
+  border: 0.35rem solid #8a5a2b;
+  box-shadow:
+    inset 0 0.3rem 0 rgb(255 255 255 / 0.4),
+    0 0.5rem 0 #5b2d0e,
+    0 0.8rem 1.4rem rgb(0 0 0 / 0.4);
+}
+
+.dig-cell {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 1.4rem;
+  background: radial-gradient(circle at 50% 35%, #ffe7ad, #e2b563 75%);
+  box-shadow:
+    inset 0 -0.35rem 0 rgb(138 90 43 / 0.45),
+    inset 0 0.2rem 0 rgb(255 255 255 / 0.6);
+  font-size: 3rem;
+  line-height: 1;
+  transition: transform 0.1s ease;
+}
+
+.dig-cell:not(:disabled):active {
+  transform: scale(0.9);
+}
+
+.dig-cell:nth-child(13) {
+  background: radial-gradient(circle at 50% 35%, #ffe27a, #f39b00 80%);
+}
+
+.dig-cell.is-dug {
+  background: radial-gradient(circle at 50% 40%, #34509f, #1f3170 75%);
+  box-shadow: inset 0 0.3rem 0.5rem rgb(0 0 0 / 0.45);
+  animation: pop-in 0.3s ease both;
+}
+
+.dig-cell.is-crab {
+  background: radial-gradient(circle at 50% 40%, #ff8a8a, #b01520 80%);
+}
+
+.dig-cell.is-reveal {
+  opacity: 0.75;
+}
+
+.dig-cell__num {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  color: #fff;
+  text-shadow: 0 0.12rem 0 rgb(0 0 0 / 0.5);
+}
+
+/* ---------- Win banner ---------- */
+.win-banner {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  z-index: 45;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  padding: 1.6rem 3.2rem;
+  border-radius: 2.4rem;
+  background: radial-gradient(circle at 50% 30%, rgb(255 226 122 / 0.95), rgb(243 155 0 / 0.95));
+  border: 0.4rem solid #fff;
+  box-shadow: 0 0 3rem rgb(255 226 122 / 0.8);
+  cursor: pointer;
+}
+
+.win-banner span {
+  font-size: 2.6rem;
+}
+
+.win-banner b {
+  font-weight: 400;
+  font-size: 4.6rem;
+  line-height: 1;
+}
+
+.win-banner small {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: #5b2d0e;
+}
+
+/* ---------- Keno ---------- */
+.keno-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.45rem;
+  padding: 0.8rem;
+  border-radius: 1.8rem;
+  background: linear-gradient(180deg, #2a3f86 0%, #121b43 100%);
+  border: 0.35rem solid #0b1233;
+  box-shadow: 0 0.5rem 0 #060a1e;
+}
+
+.keno-cell {
+  aspect-ratio: 1;
+  border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(circle at 50% 30%, #fff4dc, #e8c893 80%);
+  box-shadow: inset 0 -0.3rem 0 rgb(138 90 43 / 0.4);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: #5b2d0e;
+  position: relative;
+}
+
+.keno-cell.is-picked {
+  background: radial-gradient(circle at 50% 30%, #ffe27a, #f39b00 80%);
+  box-shadow: 0 0 0 0.25rem #fff, inset 0 -0.3rem 0 rgb(138 61 0 / 0.5);
+}
+
+.keno-cell.is-drawn {
+  background: radial-gradient(circle at 50% 30%, #7cc4ff, #1f5fb0 80%);
+  color: #fff;
+}
+
+.keno-cell.is-hit {
+  background: radial-gradient(circle at 50% 30%, #b6ff7a, #3f8f0a 80%);
+  color: #fff;
+  box-shadow: 0 0 0 0.25rem #fff, 0 0 1rem rgb(166 236 74 / 0.9);
+  animation: pop-in 0.3s ease both;
+}
+
+.keno-pays {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.keno-pays span {
+  flex: 1;
+  min-width: 3.8rem;
+  padding: 0.3rem 0.2rem;
+  border-radius: 0.8rem;
+  background: rgb(18 27 67 / 0.8);
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.keno-pays span b {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.3rem;
+  color: var(--c-gold-light);
+}
+
+.keno-pays span.is-hit {
+  background: linear-gradient(#a6ec4a, #3f8f0a);
+}
+
+/* ---------- Shell Spin ---------- */
+.reels {
+  display: grid;
+  grid-template-columns: repeat(5, 6rem);
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.reel {
+  height: 6.4rem;
+  border-radius: 1.2rem;
+  background: linear-gradient(#fffaf0, #e8d3a8);
+  border: 0.3rem solid #8a5a2b;
+  box-shadow: inset 0 0.4rem 0.6rem rgb(0 0 0 / 0.25);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  color: #16214d;
+}
+
+.reel.is-spinning > span {
+  animation: reel-spin 0.12s linear infinite;
+}
+
+@keyframes reel-spin {
+  from {
+    transform: translateY(-60%);
+    filter: blur(1px);
+  }
+  to {
+    transform: translateY(60%);
+    filter: blur(1px);
+  }
+}
+
+.reel.is-special {
+  background: linear-gradient(#ffe27a, #f39b00);
+}
+
+.slingo-ladder {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.slingo-ladder span {
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.8rem;
+  background: rgb(18 27 67 / 0.8);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.slingo-ladder span.is-on {
+  background: linear-gradient(#a6ec4a, #3f8f0a);
+}
+
+.slingo-ladder b {
+  color: var(--c-gold-light);
+}
+
+.spin-status {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ---------- Video bingo ---------- */
+.video-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  justify-items: center;
+}
+
+.video-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.video-card__win {
+  margin-top: -0.9rem;
+  padding: 0.15rem 0.9rem;
+  border-radius: 99rem;
+  background: linear-gradient(#a6ec4a, #3f8f0a);
+  border: 0.2rem solid #fff;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.video-card__near {
+  margin-top: -0.9rem;
+  padding: 0.15rem 0.9rem;
+  border-radius: 99rem;
+  background: linear-gradient(#ffd54a, #f39b00);
+  color: #5b2d0e;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.video-paytable {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.video-paytable div {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.9rem;
+  background: rgb(18 27 67 / 0.8);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.video-paytable span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.video-paytable div.is-hit {
+  background: linear-gradient(#a6ec4a, #3f8f0a);
+}
+
+.video-paytable b {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  color: var(--c-gold-light);
+}
+
+.mini-pattern {
+  display: inline-grid;
+  grid-template-columns: repeat(5, 0.55rem);
+  grid-auto-rows: 0.55rem;
+  gap: 0.1rem;
+  padding: 0.15rem;
+  border-radius: 0.3rem;
+  background: #0b1233;
+  flex: none;
+}
+
+.mini-pattern i {
+  border-radius: 0.1rem;
+  background: #34509f;
+}
+
+.mini-pattern i.on {
+  background: #ff5fa2;
+}
+
+.extra-offer {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 0.8rem 1rem;
+  border-radius: 1.4rem;
+  background: rgb(91 45 14 / 0.92);
+  border: 0.25rem solid var(--c-gold);
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+/* ---------- Blitz ---------- */
+.blitz-target {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 1.4rem;
+  background: rgb(18 27 67 / 0.8);
+}
+
+.blitz-target input[type='range'] {
+  width: 100%;
+  accent-color: #ffc21a;
+}
+
+.blitz-target__row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.blitz-target__row b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2.2rem;
+  color: var(--c-gold-light);
+}

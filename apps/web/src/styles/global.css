@@ -1,0 +1,457 @@
+/*
+ * Beach Bingo design system — adapted from the "Island | mobile game" Figma UI kit.
+ * The kit is drawn on a 360×800 canvas; 1rem = 10px at 360px wide, so kit sizes map 1:10.
+ */
+:root {
+  --font-display: 'Lilita One', 'Fredoka Variable', system-ui, sans-serif;
+  --font-logo: 'Luckiest Guy', 'Lilita One', system-ui, sans-serif;
+  --font-body: 'Fredoka Variable', 'Fredoka', system-ui, sans-serif;
+
+  --c-ink: #5b2d0e;
+  --c-ink-soft: #8a5a2b;
+  --c-wood-dark: #3f1c06;
+  --c-wood: #7a3b12;
+  --c-orange: #d77701;
+  --c-gold: #ffc21a;
+  --c-gold-light: #ffe27a;
+  --c-green: #5dbb12;
+  --c-green-dark: #266005;
+  --c-red: #d7262f;
+  --c-red-dark: #6e0d13;
+  --c-navy: #121b43;
+  --c-cell: #1f3170;
+  --c-cell-edge: #3b58b4;
+  --c-sea: #1fb6e8;
+  --c-sand: #f6d48b;
+  --c-parchment: #f1e0bd;
+  --c-daub: #ff3d8b;
+
+  --shadow-ui: 0 0 0.6rem rgb(0 0 0 / 0.7);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --stage-w: min(100vw, 480px);
+}
+
+html {
+  font-size: clamp(9px, calc(var(--stage-w) / 36), 13.34px);
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: #06374f;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 1.4rem;
+  line-height: 1.3;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 0.3rem solid var(--c-gold-light);
+  outline-offset: 0.2rem;
+}
+
+input {
+  font: inherit;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* ---------- App frame ---------- */
+.app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  background: #06374f;
+}
+
+.app__backdrop {
+  position: absolute;
+  inset: -4%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) brightness(0.55) saturate(1.2);
+  transform: scale(1.05);
+}
+
+.stage {
+  position: relative;
+  width: var(--stage-w);
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--c-sea);
+  background-size: cover;
+  background-position: center bottom;
+  box-shadow: 0 0 4rem rgb(0 0 0 / 0.5);
+}
+
+.stage__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- Typography ---------- */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.t-outline {
+  --o: #2a1204;
+  font-family: var(--font-display);
+  color: #fff;
+  text-shadow:
+    0 0.22rem 0 var(--o),
+    0.16rem 0.16rem 0 var(--o),
+    -0.16rem 0.16rem 0 var(--o),
+    0.16rem -0.16rem 0 var(--o),
+    -0.16rem -0.16rem 0 var(--o),
+    0.22rem 0 0 var(--o),
+    -0.22rem 0 0 var(--o),
+    0 -0.22rem 0 var(--o),
+    0 0.45rem 0.3rem rgb(0 0 0 / 0.35);
+}
+
+.t-outline--green {
+  --o: #1f5104;
+}
+
+.t-outline--red {
+  --o: #5a0a0f;
+}
+
+.t-outline--navy {
+  --o: #0b1233;
+}
+
+.t-outline--wood {
+  --o: #4a1f05;
+}
+
+.ink {
+  color: var(--c-ink);
+}
+
+/* ---------- Kit surfaces ---------- */
+.wood-bar {
+  background: url('../assets/island/wood-bar.webp') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0.4rem 0.4rem rgb(0 0 0 / 0.4));
+}
+
+.wood-plank {
+  background: url('../assets/island/popup-wood.webp') center / 100% 100% no-repeat;
+}
+
+.parchment {
+  border-style: solid;
+  border-width: 3rem 3rem 3.6rem 3rem;
+  border-image: url('../assets/island/popup-parchment.webp') 90 90 110 90 fill / 3rem 3rem 3.6rem 3rem stretch;
+  color: var(--c-ink);
+}
+
+.btn-green {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 4.9rem;
+  padding: 0 1.2rem 0.2rem;
+  line-height: 1;
+  border-style: solid;
+  border-width: 1.2rem 1.4rem 1.6rem;
+  border-image: url('../assets/island/btn-green.webp') 36 42 48 fill / 1.2rem 1.4rem 1.6rem stretch;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: #fff;
+  filter: drop-shadow(0 0 0.3rem rgb(0 0 0 / 0.45));
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+
+.btn-label {
+  /* Kit spec: embossed dark-green label with a white highlight. */
+  color: #3d6a00;
+  text-shadow: -0.1rem 0.1rem 0 rgb(255 255 255 / 0.81);
+  white-space: nowrap;
+}
+
+.btn-green:active:not(:disabled) {
+  transform: translateY(0.2rem) scale(0.98);
+}
+
+.btn-green:disabled {
+  filter: grayscale(0.85) brightness(0.9) drop-shadow(0 0 0.3rem rgb(0 0 0 / 0.45));
+}
+
+.btn-green--red {
+  filter: hue-rotate(-105deg) saturate(1.5) drop-shadow(0 0 0.3rem rgb(0 0 0 / 0.45));
+}
+
+.btn-green--gold {
+  filter: hue-rotate(-50deg) saturate(1.3) brightness(1.08) drop-shadow(0 0 0.3rem rgb(0 0 0 / 0.45));
+}
+
+.btn-green--blue {
+  filter: hue-rotate(95deg) saturate(1.1) drop-shadow(0 0 0.3rem rgb(0 0 0 / 0.45));
+}
+
+.round-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  background: center / contain no-repeat;
+  filter: drop-shadow(var(--shadow-ui));
+  transition: transform 0.08s ease;
+}
+
+.round-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.round-btn:disabled {
+  filter: grayscale(1) opacity(0.6);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 3.6rem;
+  min-width: 9rem;
+  padding: 0 1.2rem 0 3rem;
+  background: url('../assets/island/chip-brown.webp') center / 100% 100% no-repeat;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+}
+
+.chip--plus {
+  background-image: url('../assets/island/chip-brown-with-plus.webp');
+  padding-right: 3.6rem;
+}
+
+.chip--red {
+  background-image: url('../assets/island/chip-red.webp');
+}
+
+.chip__icon {
+  position: absolute;
+  left: -1.2rem;
+  top: 50%;
+  width: 4rem;
+  height: 4rem;
+  transform: translateY(-50%);
+  object-fit: contain;
+  filter: drop-shadow(0 0.2rem 0.2rem rgb(0 0 0 / 0.35));
+}
+
+.chip__plus {
+  position: absolute;
+  right: 0.2rem;
+  top: 50%;
+  width: 3.2rem;
+  height: 3.2rem;
+  transform: translateY(-50%);
+}
+
+.badge {
+  position: absolute;
+  top: -0.9rem;
+  right: -0.9rem;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  padding: 0 0.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1.2rem;
+  background: #fff;
+  border: 0.3rem solid var(--c-orange);
+  color: var(--c-orange);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.panel {
+  border-radius: 1.6rem;
+  background: linear-gradient(#fff4dc, #f0dcae);
+  border: 0.3rem solid #b87936;
+  box-shadow:
+    inset 0 -0.3rem 0 rgb(0 0 0 / 0.12),
+    0 0.3rem 0 #6b3a12;
+  color: var(--c-ink);
+}
+
+.panel--navy {
+  background: linear-gradient(#27407f, #16214d);
+  border-color: #0b1233;
+  box-shadow:
+    inset 0 0.2rem 0 rgb(255 255 255 / 0.15),
+    0 0.3rem 0 #060a1e;
+  color: #fff;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 1rem;
+  border-radius: 99rem;
+  background: rgb(0 0 0 / 0.35);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Motion ---------- */
+@keyframes pop-in {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.6rem);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0.4rem rgb(255 226 122 / 0.6));
+  }
+  50% {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 1.4rem rgb(255 226 122 / 1));
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-0.8rem);
+  }
+  40%,
+  80% {
+    transform: translateX(0.8rem);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-10%);
+  }
+  to {
+    transform: translateX(10%);
+  }
+}
+
+.anim-pop {
+  animation: pop-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+
+.anim-float {
+  animation: float-y 2.6s ease-in-out infinite;
+}
+
+.anim-pulse {
+  animation: pulse-glow 1.1s ease-in-out infinite;
+}
+
+.anim-shake {
+  animation: shake 0.45s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

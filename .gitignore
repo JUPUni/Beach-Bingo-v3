@@ -20,3 +20,4 @@ android/.gradle
 target
 .anchor
 test-ledger
+dev-dist

@@ -1,0 +1,364 @@
+/* ---------- Logo (styled after the kit's ISLAND lettering) ---------- */
+.logo {
+  position: relative;
+  width: 30rem;
+  height: 18.5rem;
+  display: grid;
+  place-items: center;
+}
+
+.logo--small {
+  transform: scale(0.62);
+  transform-origin: top center;
+  height: 11.5rem;
+}
+
+.logo__leaves {
+  position: absolute;
+  inset: -1rem -2rem;
+  width: calc(100% + 4rem);
+  height: calc(100% + 2rem);
+  object-fit: contain;
+  filter: drop-shadow(0 0.4rem 0.4rem rgb(0 0 0 / 0.25));
+}
+
+.logo__words {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  transform: rotate(-4deg);
+  margin-top: 1rem;
+}
+
+.logo__word {
+  position: relative;
+  display: block;
+  font-family: var(--font-logo);
+  font-size: 6.4rem;
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+}
+
+.logo__word:nth-child(2) {
+  font-size: 7.4rem;
+  margin-top: -0.6rem;
+}
+
+.logo__stroke {
+  position: absolute;
+  inset: 0;
+  color: #7a1d8f;
+  -webkit-text-stroke: 1.4rem #7a1d8f;
+  text-shadow: 0 0.9rem 0 #3d0850;
+}
+
+.logo__fill {
+  position: relative;
+  background: linear-gradient(180deg, #fff58a 0%, #ffd21a 42%, #ff8a00 78%, #ff5e00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 -0.1rem 0 rgb(255 255 255 / 0.6));
+}
+
+/* ---------- Wooden sign button ---------- */
+.sign {
+  display: inline-grid;
+  place-items: center;
+  width: 17rem;
+  height: 7.9rem;
+  padding-bottom: 0.4rem;
+  background: url('../assets/island/sign-wood-blank.webp') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0.5rem 0.4rem rgb(0 0 0 / 0.35));
+  transition: transform 0.1s ease;
+}
+
+.sign__label {
+  /* Kit spec: brown gradient label with a pale-gold highlight. */
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  color: #8a4a1f;
+  text-shadow: 0 0.1rem 0 #fff189;
+}
+
+.sign:active {
+  transform: scale(0.95);
+}
+
+/* ---------- Splash ---------- */
+.splash {
+  align-items: center;
+}
+
+.splash .stage__body {
+  align-items: center;
+  width: 100%;
+}
+
+.splash__cloud {
+  position: absolute;
+  pointer-events: none;
+  animation: drift 14s ease-in-out infinite alternate;
+}
+
+.splash__cloud--a {
+  width: 22rem;
+  top: 11rem;
+  left: -5rem;
+}
+
+.splash__cloud--b {
+  width: 26rem;
+  top: 6rem;
+  right: -8rem;
+  animation-duration: 19s;
+  animation-direction: alternate-reverse;
+}
+
+.splash__logo {
+  margin-top: calc(var(--safe-top) + 14vh);
+  z-index: 1;
+}
+
+.splash__play {
+  margin-top: 1.4rem;
+  z-index: 2;
+}
+
+.splash__chest-shadow {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 0.5rem);
+  right: -1rem;
+  width: 26rem;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.splash__chest {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 3rem);
+  right: 2rem;
+  width: 20rem;
+  filter: drop-shadow(0 0.8rem 0.6rem rgb(0 0 0 / 0.35));
+  pointer-events: none;
+}
+
+.splash__legal {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.4rem 1.2rem;
+  border-radius: 99rem;
+  background: rgb(18 27 67 / 0.7);
+  white-space: nowrap;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  z-index: 2;
+}
+
+/* ---------- Home ---------- */
+.home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.8rem 1.6rem 2rem;
+}
+
+.home__signs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+
+.mode-sign {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  padding: 1.2rem 0.8rem 1.4rem;
+  border-radius: 1.8rem;
+  background:
+    url('../assets/island/popup-wood.webp') center / 130% 170% no-repeat;
+  border: 0.35rem solid #e89a1c;
+  box-shadow:
+    0 0 0 0.25rem #6b2f00,
+    0 0.6rem 0.8rem rgb(0 0 0 / 0.45);
+  font-size: 2rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.mode-sign small {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: #ffe9c2;
+  text-shadow: 0 0.1rem 0 #3f1c06;
+}
+
+.mode-sign__icon {
+  font-size: 3.4rem;
+  line-height: 1;
+  filter: drop-shadow(0 0.25rem 0.2rem rgb(0 0 0 / 0.4));
+}
+
+.home__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.6rem;
+}
+
+.home__level {
+  flex: 1;
+  min-height: 5.4rem;
+  font-size: 2.2rem;
+}
+
+.zone-chip {
+  position: relative;
+  flex: 1;
+  height: 5.4rem;
+  padding: 0.6rem 5rem 1rem 1rem;
+  display: grid;
+  align-content: center;
+  gap: 0.3rem;
+  background: url('../assets/island/btn-green.webp') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 0.3rem rgb(0 0 0 / 0.45));
+  text-align: left;
+}
+
+.zone-chip__name {
+  font-size: 1.5rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.zone-chip__bar {
+  position: relative;
+  height: 1.4rem;
+  border-radius: 0.7rem;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: inset 0 0.15rem 0.2rem rgb(0 0 0 / 0.25);
+}
+
+.zone-chip__bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 0.7rem;
+  background: linear-gradient(#ffd54a, #f39b00);
+}
+
+.zone-chip__bar b {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.4rem;
+  color: #6a3a17;
+}
+
+.zone-chip__chest {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  width: 4.4rem;
+  transform: translateY(-55%);
+  filter: drop-shadow(0 0.2rem 0.2rem rgb(0 0 0 / 0.4));
+}
+
+/* ---------- Mode list (Casino Cove / Beach Rooms) ---------- */
+.modes {
+  flex: 1;
+  padding: 1.2rem 1.4rem 2rem;
+  display: grid;
+  align-content: start;
+  gap: 1.2rem;
+}
+
+.modes__intro {
+  margin: 0 0.4rem;
+  font-weight: 600;
+  font-size: 1.3rem;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 0.15rem 0.2rem rgb(0 0 0 / 0.6);
+}
+
+.mode-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 6.2rem 1fr auto;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1rem 1.2rem;
+  text-align: left;
+}
+
+.mode-card__icon {
+  width: 6.2rem;
+  height: 6.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1.6rem;
+  background: linear-gradient(160deg, #6fd6ff, #1a86c9);
+  border: 0.3rem solid var(--c-orange);
+  font-size: 3.4rem;
+  box-shadow: var(--shadow-ui);
+}
+
+.mode-card h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.9rem;
+  color: var(--c-ink);
+}
+
+.mode-card p {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  color: var(--c-ink-soft);
+  font-weight: 500;
+}
+
+.mode-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mode-card__meta span {
+  padding: 0.15rem 0.7rem;
+  border-radius: 99rem;
+  background: rgb(91 45 14 / 0.12);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--c-ink);
+}
+
+.mode-card__go {
+  font-size: 2.6rem;
+  color: var(--c-orange);
+}
+
+.fair-note {
+  margin: 0.4rem 0.6rem 0;
+  padding: 0.8rem 1rem;
+  border-radius: 1.2rem;
+  background: rgb(18 27 67 / 0.78);
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.fair-note b {
+  color: var(--c-gold-light);
+}

@@ -1,0 +1,220 @@
+.room__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem calc(var(--safe-bottom) + 1rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.room__info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.5rem;
+}
+
+.room-stat {
+  display: grid;
+  justify-items: center;
+  padding: 0.5rem 0.4rem;
+  border-radius: 1.2rem;
+  background: linear-gradient(#5b2d0e, #3f1c06);
+  border: 0.25rem solid var(--c-orange);
+  box-shadow: var(--shadow-ui);
+  line-height: 1.1;
+}
+
+.room-stat small {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffd79a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.room-stat b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.8rem;
+}
+
+.room-stat--jackpot {
+  grid-column: 1 / -1;
+  background: linear-gradient(90deg, #ff8a00, #d7262f);
+  border-color: #fff3c4;
+}
+
+.room__lobby {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 1.4rem 1.4rem 1.6rem;
+  text-align: center;
+}
+
+.room__lobby h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2.2rem;
+}
+
+.room__lobby p {
+  margin: 0;
+}
+
+.room__buy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.room__buy .btn-green {
+  font-size: 1.5rem;
+}
+
+.room__count {
+  font-size: 2rem;
+  margin: 0.2rem 0 0;
+}
+
+.room__caller {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  min-height: 6.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 1.8rem;
+  background: rgb(18 27 67 / 0.75);
+  border: 0.25rem solid rgb(255 255 255 / 0.3);
+}
+
+.room__recent {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.room__stage {
+  margin-left: auto;
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.room__stage small {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.room__stage b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.6rem;
+}
+
+.room__stage span {
+  font-family: var(--font-display);
+  color: var(--c-gold-light);
+  font-size: 1.5rem;
+}
+
+.room__opponent {
+  text-align: center;
+  font-weight: 700;
+  padding: 0.4rem;
+  border-radius: 1rem;
+  background: rgb(110 13 19 / 0.8);
+}
+
+.room__cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.room__card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.room__togo {
+  margin-top: -0.9rem;
+  padding: 0.15rem 0.8rem;
+  border-radius: 99rem;
+  background: linear-gradient(#ffd54a, #f39b00);
+  color: #5b2d0e;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.room__feed {
+  margin: 0;
+  padding: 0.6rem 1rem 0.6rem 2.2rem;
+  border-radius: 1.2rem;
+  background: rgb(18 27 67 / 0.75);
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.room__claim {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 0.8rem 0 calc(var(--safe-bottom) + 1.2rem);
+}
+
+.room__results {
+  margin: 0.4rem 0;
+  padding-left: 1.6rem;
+  text-align: left;
+  font-size: 1.2rem;
+}
+
+.royale-board {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.royale-board li {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 1rem;
+  background: rgb(18 27 67 / 0.78);
+  font-size: 1.25rem;
+}
+
+.royale-board li.is-me {
+  background: linear-gradient(90deg, #3f8f0a, #266005);
+  border: 0.2rem solid #fff;
+}
+
+.royale-board li.is-out {
+  opacity: 0.6;
+}
+
+.royale-board b {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.royale-board em {
+  font-style: normal;
+  font-family: var(--font-display);
+}
