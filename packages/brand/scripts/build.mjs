@@ -186,7 +186,7 @@ async function main() {
   await asset(ST, 'dapp-store-icon-512', svgDoc(1024, 1024, appIcon(COLOR, { square: true })), { px: 512, formats: ['png'], ground: C.teal });
   await asset(ST, 'dapp-store-banner-1200x600', storeBanner(), { formats: ['png', 'jpg'], jpgBg: C.teal });
   await asset(ST, 'dapp-store-feature-1200x1200', storeFeature(), { formats: ['png', 'jpg'], jpgBg: C.teal });
-  // Screenshots: the app in a Pixel 10 Pro frame. The captures come from
+  // Screenshots: the app in the long-shadow phone mockup. The captures come from
   // scripts/capture-screens.mjs; without them this step is skipped.
   if (capturesReady()) {
     for (const [i, s] of SCREENS.entries()) {
@@ -378,7 +378,7 @@ FOLDERS
               out of the sea), the app icon rounded and full-bleed.
   store/      Solana dApp Store listing art: icon 512, banner 1200x600,
               feature graphic 1200x1200, and screenshots/ (six 1080x1920
-              screens of the app in a Pixel 10 Pro frame).
+              screens of the app in a phone mockup with a long shadow).
   android/    launcher layers (adaptive background, foreground, monochrome)
               and the 512 store icon, for the WebView shell.
   pfp/        square profile pictures: the symbol on Teal (default), Ink and
@@ -420,8 +420,8 @@ CREDITS
   Fonts: Bungee (The Bungee Project Authors), Rubik Wet Paint (The Rubik
     Filtered Project Authors), Barlow Condensed (The Barlow Project
     Authors), all SIL Open Font License 1.1.
-  Phone frame in the store screenshots: "Google Pixel 10 Pro Free Mockups"
-    by BRIX Templates, Figma Community.
+  Phone in the store screenshots: the Generic Phone from "Device Mockups
+    With Long Shadows", Figma Community.
 `;
 
 main().catch((err) => {

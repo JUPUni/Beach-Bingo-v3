@@ -1,0 +1,21 @@
+{
+  "name": "Generic Phone, long shadow",
+  "source": "Device Mockups With Long Shadows (Figma Community), file fqbW6b0gj0UwaWHkT3h3dg, component 'Generic Phone' (644:84)",
+  "width": 694,
+  "height": 1128,
+  "frame": { "x": 3, "y": 0, "width": 407, "height": 844, "radius": 50, "fill": "#000000" },
+  "screen": { "x": 19, "y": 16, "width": 375, "height": 812, "radius": 36 },
+  "dropShadows": [
+    { "dx": 20, "dy": 20, "blur": 50, "opacity": 0.35 },
+    { "dx": 80, "dy": 80, "blur": 150, "opacity": 0.25 }
+  ],
+  "cornerShadows": { "file": "shadows.svg", "x": 9, "y": 6, "width": 695, "height": 1132 },
+  "shine": { "angle": 134.90145594250433, "stops": [[0.0067515, 0.25], [0.38684, 0]] },
+  "buttons": [
+    { "name": "Power", "x": 410, "y": 181, "width": 3, "height": 96, "side": "right" },
+    { "name": "Volume up", "x": 0, "y": 162, "width": 3, "height": 58, "side": "left" },
+    { "name": "Volume down", "x": 0, "y": 239, "width": 3, "height": 58, "side": "left" },
+    { "name": "Switch", "x": 0, "y": 101, "width": 3, "height": 29, "side": "left" }
+  ],
+  "capture": { "cssWidth": 412, "cssHeight": 892, "scale": 3, "statusBar": 36, "gestureBar": 22 }
+}

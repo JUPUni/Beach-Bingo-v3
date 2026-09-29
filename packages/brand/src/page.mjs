@@ -15,7 +15,7 @@ const K = 'kit';
 const GROUPS = [
   ['Logo', 'logo', 'The logo, its sticker version for Ink and photographs, one-colour versions, the one-line wordmark, the horizontal lockup, the symbol and the app icon.'],
   ['Solana dApp Store', 'store', 'Listing art for publish.solanamobile.com: the 512 icon, the 1200 × 600 banner and the 1200 × 1200 feature graphic for the Editor’s Choice carousel.'],
-  ['dApp Store screenshots', 'store/screenshots', 'Six 1080 × 1920 screenshots, in store order: the app captured at the Pixel 10 Pro’s own resolution, in a Pixel 10 Pro frame (BRIX Templates, Figma Community).'],
+  ['dApp Store screenshots', 'store/screenshots', 'Six 1080 × 1920 screenshots, in store order: the app captured at 3×, in the Generic Phone with its long shadow from Device Mockups With Long Shadows (Figma Community).'],
   ['Profile pictures', 'pfp', 'Square, with everything that matters inside the centre circle, so a round crop never clips it. The symbol on Teal is the default.'],
   ['X', 'social/x', 'Profile 400 × 400, header 1500 × 500, and posts in Teal and Ink.'],
   ['Instagram', 'social/instagram', 'Profile, square posts in Teal and Ink, portrait and story.'],

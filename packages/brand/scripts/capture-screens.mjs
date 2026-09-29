@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Captures the app screens the dApp Store screenshots are made from, at the
-// Pixel 10 Pro's own resolution (1280 x 2855: 412 x 919 CSS px at 1280/412).
+// Captures the app screens the dApp Store screenshots are made from, in the
+// mockup phone's screen shape (devices/generic-phone/device.json: 412 x 892 CSS
+// px at 3x, 1236 x 2676).
 //
 //   pnpm dev                                   # the web app, in another shell
 //   pnpm --filter @beach-bingo/brand screens   # writes screens/captures/*.jpg
@@ -9,7 +10,7 @@
 // Needs a Chromium: set CHROME_PATH, or have Google Chrome installed.
 // BASE_URL defaults to the Vite dev server.
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
@@ -18,6 +19,7 @@ const { chromium } = require('playwright-core');
 const sharp = require('sharp');
 
 const OUT = fileURLToPath(new URL('../screens/captures/', import.meta.url));
+const { capture: CAP } = JSON.parse(readFileSync(new URL('../devices/generic-phone/device.json', import.meta.url), 'utf8'));
 const BASE = process.env.BASE_URL || 'http://localhost:5173/';
 
 // A player a week in: coins, keys, boosters, and the first seven levels starred.
@@ -90,7 +92,7 @@ const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath
 try {
   for (const [name, steps] of Object.entries(SHOTS)) {
     if (only.length && !only.includes(name)) continue;
-    const page = await browser.newPage({ viewport: { width: 412, height: 919 }, deviceScaleFactor: 1280 / 412, hasTouch: true, isMobile: true, reducedMotion: 'reduce' });
+    const page = await browser.newPage({ viewport: { width: CAP.cssWidth, height: CAP.cssHeight }, deviceScaleFactor: CAP.scale, hasTouch: true, isMobile: true, reducedMotion: 'reduce' });
     await page.addInitScript((save) => {
       try {
         localStorage.setItem('beach-bingo', save);
@@ -99,8 +101,8 @@ try {
       }
     }, JSON.stringify(SAVE));
     await page.goto(BASE, { waitUntil: 'networkidle' });
-    // Room for Android's status bar (and its punch-hole camera) and gesture bar; the app pads for them.
-    await page.addStyleTag({ content: ':root{--safe-top:52px !important;--safe-bottom:22px !important}' });
+    // Room for Android's status bar and gesture bar; the app pads for them.
+    await page.addStyleTag({ content: `:root{--safe-top:${CAP.statusBar}px !important;--safe-bottom:${CAP.gestureBar}px !important}` });
     await steps(page);
     await page.waitForTimeout(700);
     const png = await page.screenshot();
