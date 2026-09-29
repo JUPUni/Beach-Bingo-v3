@@ -207,10 +207,10 @@ export function StakePicker({
 }) {
   const i = Math.max(0, options.indexOf(value));
   return (
-    <div className="stake">
+    <div className="stake-picker">
       <button
         type="button"
-        className="stake__btn"
+        className="stake-picker__btn"
         disabled={disabled || i === 0}
         aria-label="Lower bet"
         onClick={() => {
@@ -220,7 +220,7 @@ export function StakePicker({
       >
         −
       </button>
-      <div className="stake__value">
+      <div className="stake-picker__value">
         <small>{label}</small>
         <span className="display">
           <CoinIcon size={1.8} /> {formatCoins(value)}
@@ -228,7 +228,7 @@ export function StakePicker({
       </div>
       <button
         type="button"
-        className="stake__btn"
+        className="stake-picker__btn"
         disabled={disabled || i === options.length - 1}
         aria-label="Raise bet"
         onClick={() => {

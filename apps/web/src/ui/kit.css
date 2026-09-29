@@ -191,13 +191,13 @@
 }
 
 /* ---------- Stake picker ---------- */
-.stake {
+.stake-picker {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
 }
 
-.stake__btn {
+.stake-picker__btn {
   width: 3.6rem;
   height: 3.6rem;
   border-radius: 1rem;
@@ -211,16 +211,16 @@
   text-shadow: 0 0.15rem 0 #8a3d00;
 }
 
-.stake__btn:active:not(:disabled) {
+.stake-picker__btn:active:not(:disabled) {
   transform: translateY(0.2rem);
   box-shadow: 0 0.1rem 0 #6b2f00;
 }
 
-.stake__btn:disabled {
+.stake-picker__btn:disabled {
   filter: grayscale(1) opacity(0.5);
 }
 
-.stake__value {
+.stake-picker__value {
   min-width: 9.5rem;
   padding: 0.3rem 1rem;
   border-radius: 1rem;
@@ -230,7 +230,7 @@
   line-height: 1.1;
 }
 
-.stake__value small {
+.stake-picker__value small {
   display: block;
   font-size: 1rem;
   text-transform: uppercase;
@@ -238,7 +238,7 @@
   opacity: 0.75;
 }
 
-.stake__value span {
+.stake-picker__value span {
   font-size: 1.7rem;
 }
 

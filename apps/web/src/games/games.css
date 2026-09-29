@@ -507,7 +507,8 @@
 
 .video-paytable {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Two columns: three left each name about six characters ("Surfb…", "Tiki…"). */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.35rem;
 }
 
