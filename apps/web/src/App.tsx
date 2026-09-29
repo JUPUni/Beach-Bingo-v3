@@ -23,7 +23,8 @@ const RoomGame = lazy(() => import('./rooms/RoomGame.tsx'));
 const LiveRoom = lazy(() => import('./rooms/LiveRoom.tsx'));
 const Royale = lazy(() => import('./rooms/Royale.tsx'));
 
-function ScreenView({ screen }: { screen: Screen }) {
+/** `visit` is in the keys of the screens a player can open again from themselves (Replay, Play again), so each visit is a fresh round. */
+function ScreenView({ screen, visit }: { screen: Screen; visit: number }) {
   switch (screen.name) {
     case 'splash':
       return <Splash />;
@@ -32,9 +33,7 @@ function ScreenView({ screen }: { screen: Screen }) {
     case 'map':
       return <AdventureMap page={screen.page} />;
     case 'adventure':
-      return (
-        <AdventureGame key={`${screen.level}-${String(screen.seagull)}-${String(screen.sun)}`} levelId={screen.level} seagull={screen.seagull} sun={screen.sun} />
-      );
+      return <AdventureGame key={`${visit}-${screen.level}`} levelId={screen.level} seagull={screen.seagull} sun={screen.sun} />;
     case 'casino':
       return <ModeList kind="house" />;
     case 'rooms':
@@ -63,7 +62,7 @@ function ScreenView({ screen }: { screen: Screen }) {
         case 'pierHall':
         case 'waveRush':
         case 'riptideDuel':
-          return <RoomGame key={screen.mode} preset={screen.mode} />;
+          return <RoomGame key={`${visit}-${screen.mode}`} preset={screen.mode} />;
         default:
           return <Home />;
       }
@@ -72,6 +71,7 @@ function ScreenView({ screen }: { screen: Screen }) {
 
 export function App() {
   const screen = useGame((s) => s.screen);
+  const visit = useGame((s) => s.visit);
   const music = useGame((s) => s.settings.music);
   const reduceMotion = useGame((s) => s.settings.reduceMotion);
   const reminder = useGame((s) => s.limits.reminderMinutes);
@@ -120,7 +120,7 @@ export function App() {
     <div className={`app ${reduceMotion ? 'reduce-motion' : ''}`}>
       <div className="app__backdrop" style={{ backgroundImage: `url(${backdrop})` }} />
       <Suspense fallback={<div className="stage" style={{ backgroundImage: `url(${backdrop})` }} />}>
-        <ScreenView screen={screen} />
+        <ScreenView screen={screen} visit={visit} />
         <PopupHost />
         <Toasts />
       </Suspense>

@@ -96,6 +96,8 @@ export interface GameState {
 
   // Session (not persisted)
   screen: Screen;
+  /** Counts navigations, so going again to the screen already shown (Replay, Play again) mounts it afresh. */
+  visit: number;
   popup: PopupName | null;
   sessionStart: number;
   /** A room code from an invite link, honoured once the player leaves the splash. */
@@ -195,11 +197,12 @@ export const useGame = create<GameState>()(
       seekerPerkMints: [],
 
       screen: { name: 'splash' },
+      visit: 0,
       popup: null,
       sessionStart: Date.now(),
       pendingJoin: null,
 
-      go: (screen) => set({ screen, popup: null }),
+      go: (screen) => set((s) => ({ screen, popup: null, visit: s.visit + 1 })),
       openPopup: (popup) => set({ popup }),
       closePopup: () => set({ popup: null }),
       setSetting: (key, value) => set((s) => ({ settings: { ...s.settings, [key]: value } })),
