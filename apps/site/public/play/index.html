@@ -781,7 +781,7 @@ function resolveGame() {
   const iWon = g.winner === S.me.id;
   renderRail();
   endScreen(iWon, iWon
-    ? 'You hit ' + PATTERN_LABEL[g.pattern] + ' on ball ' + g.claims.get(g.winner) + '. The pot is yours.'
+    ? 'You hit ' + PATTERN_LABEL[g.pattern] + ' on ball ' + g.claims.get(g.winner) + '. The round is yours.'
     : nameOf(g.winner) + ' took ' + PATTERN_LABEL[g.pattern] + ' on ball ' + g.claims.get(g.winner) + '.');
 }
 

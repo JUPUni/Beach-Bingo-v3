@@ -55,8 +55,9 @@ replaced by peers and the timer replaced by a shared clock:
 5. **Duel claims.** In Riptide Duel a claim is a message `{ card, ball }`. Each client checks
    it against the deterministic state (the card completes the line by that ball, and the ball
    is not further ahead than the client's own count plus a small allowance), then opens a
-   short window; when it closes, the lowest verified ball wins, ties by lowest peer id. Late or
-   false claims are ignored and never change anyone's state.
+   short window; when it closes, the lowest verified ball wins and shouts on the same ball share
+   the stage (as built: a coin-flip on latency would be the alternative). Late or false claims
+   are ignored and never change anyone's state.
 6. **Settle.** `settleRoom` runs on every client; each credits its own winnings. Nobody is
    trusted with anyone else's coins, and a modified client cannot manufacture a win that
    other clients accept.
