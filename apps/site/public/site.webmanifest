@@ -1,0 +1,31 @@
+{
+  "id": "/",
+  "name": "Beach Bingo",
+  "short_name": "Beach Bingo",
+  "description": "Free-to-play island bingo from Fete Labs.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "background_color": "#1FB5A8",
+  "theme_color": "#1FB5A8",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png?v=e1d85244fb",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png?v=4dc3d89e56",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable-512.png?v=deed25af7a",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

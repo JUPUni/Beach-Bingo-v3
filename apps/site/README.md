@@ -10,7 +10,7 @@ holds the `beachbingo.xyz` and `www.beachbingo.xyz` domains.
 | `public/assets/` | What the page loads: fonts, the logo, the sea and shell, the screenshots, the link card. Made by the build. |
 | `public/favicon.*`, `apple-touch-icon.png` | The brand kit's web icons. Made by the build. |
 | `public/play/index.html` | The browser multiplayer rooms (peer to peer over Nostr relays). Not linked from the landing page. |
-| `public/assets/icon-512.png` | The icon `/play` uses. Left as it was. |
+| `public/assets/icon-512.png` | The old site's icon address. It holds the new icon now. |
 | `api/download.js` | The beta APK gate: `/api/download?code=…` checks the code, `&dl=1` redirects to the APK. Reads `DOWNLOAD_CODE` and `APK_SECRET_NAME` from the project's environment. |
 | `vercel.json` | Every unknown path serves the landing page (except `api/`, `assets/`, `play` and `BeachBingo-*`), APKs download with no caching, and no page can be framed. |
 
@@ -26,8 +26,33 @@ It copies the kit's icons and link card, draws the hero logo, the sea and the sh
 own drawing code, makes 480 and 720 px WebP copies of the six dApp Store screenshots, subsets the
 fonts to Latin WOFF2 (only if `pyftsubset` from fonttools is installed; otherwise it keeps the
 committed ones), rewrites the screenshot strip between the `BUILD:screens` markers, and stamps every
-asset URL in `index.html` with a hash of the file (`?v=`), so a changed icon or card gets a new URL.
+asset URL in both pages with a hash of the file (`?v=`), so a changed icon or card gets a new URL.
 Commit what it writes.
+
+## Icons and link previews
+
+One list of icon tags, written by the build between `<!-- BUILD:icons -->` markers into both
+pages, so the landing page and `/play` cannot drift: `favicon.ico` (16/32/48) and `favicon.svg`,
+PNG favicons at 16/32/48 and 192, the 180 px home-screen icon (also at
+`apple-touch-icon-precomposed.png`, for clients that ask for that name blind), the Safari pinned
+tab, `site.webmanifest` (192, 512, maskable 512) and `browserconfig.xml` with a 150 px Windows
+tile. Link previews use `assets/og.png` (1200 x 630) through `og:image` and `twitter:image`, and
+the JSON-LD names `assets/icons/icon-512.png` as the logo. `assets/icon-512.png`, the address the
+old site used for its icon and link card, now holds the new icon, so an old preview shows it when
+it is read again.
+
+## Safe areas
+
+Every page sets `viewport-fit=cover`, so padding against a screen edge adds that edge's
+`env(safe-area-inset-*)`. `scripts/safe-areas.mjs` checks it against the iPhone sizes and their
+UIKit insets (the iOS Safe Area Guide) and the Android compact, medium and expanded frames,
+upright and sideways: no text line and no control may sit in an inset band. `--control` switches
+the insets off in the stylesheet and must fail, or the sweep is measuring nothing.
+
+```bash
+node scripts/serve.mjs &
+CHROME_PATH=<chromium> node scripts/safe-areas.mjs
+```
 
 ## Deploy
 

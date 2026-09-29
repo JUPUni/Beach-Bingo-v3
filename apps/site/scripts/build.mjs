@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 // Refreshes everything in public/ that is made from the brand kit, then stamps
-// public/index.html with the result. Run it after `pnpm brand`:
+// both pages with the result. Run it after `pnpm brand`:
 //
 //   pnpm --filter @beach-bingo/site build
 //
 // It writes, and all of it is committed:
-//   public/favicon.ico, favicon.svg, apple-touch-icon.png   the kit's web icons
+//   public/favicon.ico, favicon.svg, apple-touch-icon.png   the names browsers ask for blindly
+//   public/apple-touch-icon-precomposed.png                 the same, for clients that ask for it
+//   public/site.webmanifest, browserconfig.xml              home screens and Windows tiles
+//   public/assets/icons/*                                   16/32/48 favicons, 192/512/maskable,
+//                                                           the Safari pinned tab, the Windows tile
+//   public/assets/icon-512.png                              the old site's icon address, now the new icon
 //   public/assets/og.png                                    the kit's link card
 //   public/assets/brand/beachbingo-stack.svg                the hero logo (stacked, no sea band)
 //   public/assets/brand/sea.svg, shell.svg                  one wavelength of the sea, the shell
 //   public/assets/screens/screen-0N-{480,720}.webp          the dApp Store screenshots
 //   public/assets/fonts/*.woff2                             Latin subsets (only if pyftsubset is installed)
-// and rewrites two things in public/index.html:
-//   the screenshot strip between <!-- BUILD:screens --> and <!-- /BUILD:screens -->
+// and rewrites, in public/index.html and public/play/index.html:
+//   the icon tags between <!-- BUILD:icons --> and <!-- /BUILD:icons --> (one list, both pages)
+//   the screenshot strip between <!-- BUILD:screens --> and <!-- /BUILD:screens --> (index.html)
 //   every ?v= on a local asset URL: 10 hex of the file's SHA-256, so a changed
 //   file gets a new URL and link-preview caches pick it up.
 
@@ -37,16 +43,30 @@ const put = (path, data) => {
   writeFileSync(`${PUB}${path}`, data);
 };
 
-// 1. Straight copies from the kit.
+// 1. Straight copies from the kit. The root four are the names a browser or a
+//    crawler asks for blindly; everything else lives under assets/icons/.
+//    assets/icon-512.png is the address the old site used for its tab icon and
+//    link card, so it carries the new icon too: an old preview, re-read, shows it.
 for (const [from, to] of [
   ['web/favicon.ico', 'favicon.ico'],
   ['web/favicon.svg', 'favicon.svg'],
   ['web/apple-touch-icon.png', 'apple-touch-icon.png'],
+  ['web/apple-touch-icon.png', 'apple-touch-icon-precomposed.png'],
+  ['web/favicon-16x16.png', 'assets/icons/favicon-16x16.png'],
+  ['web/favicon-32x32.png', 'assets/icons/favicon-32x32.png'],
+  ['web/favicon-48x48.png', 'assets/icons/favicon-48x48.png'],
+  ['web/icon-192.png', 'assets/icons/icon-192.png'],
+  ['web/icon-512.png', 'assets/icons/icon-512.png'],
+  ['web/icon-maskable-512.png', 'assets/icons/icon-maskable-512.png'],
+  ['web/safari-pinned-tab.svg', 'assets/icons/safari-pinned-tab.svg'],
+  ['web/icon-512.png', 'assets/icon-512.png'],
   ['web/og.png', 'assets/og.png'],
 ]) {
   mkdirSync(dirname(`${PUB}${to}`), { recursive: true });
   copyFileSync(`${KIT}${from}`, `${PUB}${to}`);
 }
+// The Windows tile: the full-bleed icon, so the tile's own colour never shows a corner.
+put('assets/icons/mstile-150x150.png', await sharp(`${KIT}web/icon-maskable-512.png`).resize(150, 150, { kernel: 'lanczos3' }).png({ palette: true, compressionLevel: 9 }).toBuffer());
 
 // 2. The hero's drawings, by the brand's own functions so they match the link
 //    card and the store art: the stacked logo without its sea band (the hero has
@@ -117,22 +137,66 @@ if (spawnSync('pyftsubset', ['--help'], { stdio: 'ignore' }).status === 0) {
 }
 for (const [, to] of FONTS) if (!existsSync(`${PUB}assets/fonts/${to}.woff2`)) throw new Error(`missing font assets/fonts/${to}.woff2`);
 
-// 5. Stamp index.html: the strip, then a content hash on every local asset URL.
-let html = readFileSync(`${PUB}index.html`, 'utf8');
-const A = '<!-- BUILD:screens -->';
-const B = '<!-- /BUILD:screens -->';
-if (!html.includes(A) || !html.includes(B)) throw new Error('index.html has lost its BUILD:screens markers');
-html = html.replace(new RegExp(`${A}[\\s\\S]*?${B}`), `${A}\n      ${figures.join('\n      ')}\n      ${B}`);
+// 5. Every icon a browser, a home screen, a crawler or a link preview reads,
+//    written once and stamped into both pages. The manifest and the Windows
+//    tile file name the icons with the same content hashes as the pages.
 const hashes = new Map();
 const hashOf = (path) => {
   if (!hashes.has(path)) {
-    if (!existsSync(`${PUB}${path}`)) throw new Error(`index.html links /${path}, which is not in public/`);
+    if (!existsSync(`${PUB}${path}`)) throw new Error(`a page links /${path}, which is not in public/`);
     hashes.set(path, createHash('sha256').update(readFileSync(`${PUB}${path}`)).digest('hex').slice(0, 10));
   }
   return hashes.get(path);
 };
-html = html.replace(/(https:\/\/beachbingo\.xyz)?\/((?:assets\/|favicon|apple-touch-icon)[^"'?\s)]*)\?v=[0-9a-f]*/g, (_, abs = '', path) => `${abs}/${path}?v=${hashOf(path)}`);
-writeFileSync(`${PUB}index.html`, html);
+const v = (path) => `/${path}?v=${hashOf(path)}`;
+put('site.webmanifest', `${JSON.stringify({
+  id: '/',
+  name: 'Beach Bingo',
+  short_name: 'Beach Bingo',
+  description: 'Free-to-play island bingo from Fete Labs.',
+  start_url: '/',
+  scope: '/',
+  display: 'browser',
+  background_color: C.teal,
+  theme_color: C.teal,
+  icons: [
+    { src: v('assets/icons/icon-192.png'), sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: v('assets/icons/icon-512.png'), sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: v('assets/icons/icon-maskable-512.png'), sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ],
+}, null, 2)}\n`);
+put('browserconfig.xml', `<?xml version="1.0" encoding="utf-8"?>\n<browserconfig><msapplication><tile><square150x150logo src="${v('assets/icons/mstile-150x150.png')}"/><TileColor>${C.teal}</TileColor></tile></msapplication></browserconfig>\n`);
+const ICONS = [
+  '<link rel="icon" href="/favicon.ico?v=" sizes="32x32">',
+  '<link rel="icon" href="/favicon.svg?v=" type="image/svg+xml">',
+  '<link rel="icon" href="/assets/icons/favicon-16x16.png?v=" type="image/png" sizes="16x16">',
+  '<link rel="icon" href="/assets/icons/favicon-32x32.png?v=" type="image/png" sizes="32x32">',
+  '<link rel="icon" href="/assets/icons/favicon-48x48.png?v=" type="image/png" sizes="48x48">',
+  '<link rel="icon" href="/assets/icons/icon-192.png?v=" type="image/png" sizes="192x192">',
+  '<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=" sizes="180x180">',
+  `<link rel="mask-icon" href="/assets/icons/safari-pinned-tab.svg?v=" color="${C.teal}">`,
+  '<link rel="manifest" href="/site.webmanifest?v=">',
+  '<meta name="apple-mobile-web-app-title" content="Beach Bingo">',
+  '<meta name="application-name" content="Beach Bingo">',
+  `<meta name="msapplication-TileColor" content="${C.teal}">`,
+  '<meta name="msapplication-config" content="/browserconfig.xml?v=">',
+];
+const block = (html, name, lines, indent) => {
+  const a = `<!-- BUILD:${name} -->`;
+  const b = `<!-- /BUILD:${name} -->`;
+  if (!html.includes(a) || !html.includes(b)) throw new Error(`a page has lost its BUILD:${name} markers`);
+  return html.replace(new RegExp(`${a}[\\s\\S]*?${b}`), `${a}\n${lines.map((l) => indent + l).join('\n')}\n${indent}${b}`);
+};
+const STAMP = /(https:\/\/beachbingo\.xyz)?\/((?:assets\/|favicon|apple-touch-icon|site\.webmanifest|browserconfig\.xml)[^"'?\s)]*)\?v=[0-9a-f]*/g;
+const sizes = [];
+for (const [page, screens] of [['index.html', true], ['play/index.html', false]]) {
+  let html = readFileSync(`${PUB}${page}`, 'utf8');
+  html = block(html, 'icons', ICONS, '');
+  if (screens) html = block(html, 'screens', figures, '      ');
+  html = html.replace(STAMP, (_, abs = '', path) => `${abs}/${path}?v=${hashOf(path)}`);
+  writeFileSync(`${PUB}${page}`, html);
+  sizes.push(`${page} ${kb(html.length)}`);
+}
 
 const total = [...hashes.keys()].reduce((a, p) => a + readFileSync(`${PUB}${p}`).length, 0);
-console.log(`site: stamped ${hashes.size} asset URLs in index.html (${kb(total)} of assets, index.html ${kb(html.length)})`);
+console.log(`site: stamped ${hashes.size} asset URLs (${kb(total)} of assets; ${sizes.join(', ')})`);
