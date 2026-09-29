@@ -11,6 +11,8 @@ export function Logo({ small = false }: { small?: boolean }) {
 
 export function Splash() {
   const go = useGame((s) => s.go);
+  const pendingJoin = useGame((s) => s.pendingJoin);
+  const setPendingJoin = useGame((s) => s.setPendingJoin);
   return (
     <Stage bg={art.bgSplash} top="none" bottom="none" className="splash">
       <img src={art.cloud1} alt="" className="splash__cloud splash__cloud--a" />
@@ -24,11 +26,17 @@ export function Splash() {
         onClick={() => {
           sfx.unlock();
           sfx.win();
-          go({ name: 'home' });
+          if (pendingJoin) {
+            setPendingJoin(null);
+            go({ name: 'live', code: pendingJoin, host: false });
+          } else {
+            go({ name: 'home' });
+          }
         }}
       >
-        <span className="sign__label">Play</span>
+        <span className="sign__label">{pendingJoin ? 'Join' : 'Play'}</span>
       </button>
+      {pendingJoin && <p className="splash__join t-outline t-outline--navy">Room {pendingJoin} is waiting for you</p>}
       <img src={art.chestShadow} alt="" className="splash__chest-shadow" />
       <img src={art.chestSplash} alt="" className="splash__chest" />
       <p className="splash__legal">Provably fair · Free to play · beachbingo.xyz</p>

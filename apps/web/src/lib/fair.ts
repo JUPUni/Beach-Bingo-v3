@@ -15,6 +15,10 @@ export interface RoundLog {
   clientSeed: string;
   at: number;
   summary: string;
+  /** Live rooms reveal the host's seed at the end of the round. */
+  serverSeed?: string;
+  /** Live rooms: the room code, so the line reads "room KRT7W". */
+  room?: string;
 }
 
 const history: RoundLog[] = [];
@@ -44,6 +48,15 @@ export function newRound(mode: ModeId): FairRound {
       entry.summary = summary;
     },
   };
+}
+
+/**
+ * A round whose seed was somebody else's — a live room, where the host committed and revealed.
+ * It joins the session history so Settings → Provably fair shows it next to the house games.
+ */
+export function logExternalRound(entry: Omit<RoundLog, 'at'>): void {
+  history.unshift({ ...entry, at: Date.now() });
+  history.length = Math.min(history.length, 30);
 }
 
 export function roundHistory(): readonly RoundLog[] {

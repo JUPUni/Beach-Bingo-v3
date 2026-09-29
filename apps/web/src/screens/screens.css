@@ -109,6 +109,18 @@
   z-index: 2;
 }
 
+.splash__join {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 4.6rem);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  z-index: 2;
+}
+
 /* ---------- Home ---------- */
 .home {
   flex: 1;

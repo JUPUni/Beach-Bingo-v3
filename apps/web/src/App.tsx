@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { art } from './assets/art.ts';
 import { setMusic, sfx } from './lib/audio.ts';
+import { joinCodeFromHash } from './rooms/live/protocol.ts';
 import { useGame, type Screen } from './state/store.ts';
 import { Toasts } from './ui/kit.tsx';
 import { toast } from './ui/toast.ts';
@@ -19,6 +20,7 @@ const VideoBingo = lazy(() => import('./games/VideoBingo.tsx'));
 const Keno = lazy(() => import('./games/Keno.tsx'));
 const Blitz = lazy(() => import('./games/Blitz.tsx'));
 const RoomGame = lazy(() => import('./rooms/RoomGame.tsx'));
+const LiveRoom = lazy(() => import('./rooms/LiveRoom.tsx'));
 const Royale = lazy(() => import('./rooms/Royale.tsx'));
 
 function ScreenView({ screen }: { screen: Screen }) {
@@ -37,6 +39,8 @@ function ScreenView({ screen }: { screen: Screen }) {
       return <ModeList kind="house" />;
     case 'rooms':
       return <ModeList kind="pvp" />;
+    case 'live':
+      return <LiveRoom key={screen.code} code={screen.code} host={screen.host} preset={screen.preset} />;
     case 'game':
       switch (screen.mode) {
         case 'tidePool':
@@ -85,6 +89,21 @@ export function App() {
   useEffect(() => {
     if (screen.name !== 'splash') setMusic(music);
   }, [music, screen.name]);
+
+  // An invite link (…/app/#join=CODE) opens that room: after the splash on a cold start, at once otherwise.
+  useEffect(() => {
+    const check = () => {
+      const code = joinCodeFromHash(location.hash);
+      if (!code) return;
+      history.replaceState(null, '', location.pathname + location.search);
+      const s = useGame.getState();
+      if (s.screen.name === 'splash') s.setPendingJoin(code);
+      else s.go({ name: 'live', code, host: false });
+    };
+    check();
+    window.addEventListener('hashchange', check);
+    return () => window.removeEventListener('hashchange', check);
+  }, []);
 
   // Responsible-play reality check.
   useEffect(() => {

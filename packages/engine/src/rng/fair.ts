@@ -53,6 +53,11 @@ export function verifyCommitment(serverSeed: string, commitment: string): boolea
   return HEX_64.test(serverSeed) && commitSeed(serverSeed) === commitment.toLowerCase();
 }
 
+/** SHA-256 of a UTF-8 string, lowercase hex — for public inputs such as a live room's roster. */
+export function sha256Hex(text: string): string {
+  return bytesToHex(sha256(utf8ToBytes(text)));
+}
+
 function assertServerSeed(serverSeed: string): void {
   if (!HEX_64.test(serverSeed)) {
     throw new Error('serverSeed must be 32 bytes of lowercase hex');

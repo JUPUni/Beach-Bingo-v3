@@ -1,11 +1,46 @@
+import { useState } from 'react';
 import { MODES, type ModeKind } from '@beach-bingo/engine';
 import { MODE_ICONS } from './modeIcons.ts';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
+import { isCode, normalizeCode } from '../rooms/live/protocol.ts';
 import { useGame } from '../state/store.ts';
+import { GreenButton } from '../ui/kit.tsx';
 import { GameHeader, Stage } from '../ui/Stage.tsx';
 import './screens.css';
+import '../rooms/rooms.css';
 
+/** Type a friend's room code to join their hall. */
+function JoinBox() {
+  const go = useGame((s) => s.go);
+  const [code, setCode] = useState('');
+  return (
+    <form
+      className="panel join-box"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (isCode(code)) go({ name: 'live', code, host: false });
+      }}
+    >
+      <label htmlFor="join-code">Have a room code?</label>
+      <input
+        id="join-code"
+        className="field"
+        value={code}
+        onChange={(e) => setCode(normalizeCode(e.target.value))}
+        placeholder="ABC23"
+        maxLength={5}
+        autoComplete="off"
+        autoCapitalize="characters"
+        spellCheck={false}
+        aria-label="Room code"
+      />
+      <GreenButton type="submit" disabled={!isCode(code)}>
+        Join
+      </GreenButton>
+    </form>
+  );
+}
 
 export default function ModeList({ kind }: { kind: Extract<ModeKind, 'house' | 'pvp'> }) {
   const go = useGame((s) => s.go);
@@ -19,8 +54,9 @@ export default function ModeList({ kind }: { kind: Extract<ModeKind, 'house' | '
         <p className="modes__intro">
           {kind === 'house'
             ? 'Instant games against the island bank. Every result is provably fair.'
-            : 'Play the same balls as everyone else. Prize pools come from ticket sales.'}
+            : 'Play the same balls as your friends. Open a hall, share the code, or practise with bots.'}
         </p>
+        {kind === 'pvp' && <JoinBox />}
         {modes.map((mode, i) => (
           <button
             key={mode.id}
@@ -47,7 +83,10 @@ export default function ModeList({ kind }: { kind: Extract<ModeKind, 'house' | '
         ))}
         <p className="fair-note">
           <b>Play money only.</b> Coins are free and have no cash value. House games use HMAC-SHA256 commit–reveal seeds you can
-          verify in Settings → Provably fair{kind === 'pvp' ? '. Practice rooms are filled with labelled bots until live rooms open.' : '.'}
+          verify in Settings → Provably fair
+          {kind === 'pvp'
+            ? '. Each hall opens as a practice room with labelled bots; "Play with friends" turns it into a live room where every phone checks every ball and every win.'
+            : '.'}
         </p>
       </div>
     </Stage>

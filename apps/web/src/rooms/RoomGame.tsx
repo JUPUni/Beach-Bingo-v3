@@ -1,38 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  CARD_SPECS,
-  cellsToGo,
-  markedMask,
-  mathRng,
-  playableMask,
-  rooms,
-  winningCells,
-  type RoomPresetId,
-  type RoomSettlement,
-  type RoomState,
-  type StageWin,
-} from '@beach-bingo/engine';
+import { markedMask, mathRng, rooms, type RoomPresetId, type RoomSettlement, type RoomState, type StageWin } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { callBall, say, sfx } from '../lib/audio.ts';
 import { newRound } from '../lib/fair.ts';
 import { useModel } from '../lib/hooks.ts';
 import { useGame } from '../state/store.ts';
-import { BingoGrid } from '../ui/BingoGrid.tsx';
-import { Ball, Confetti, GreenButton } from '../ui/kit.tsx';
+import { Confetti, GreenButton } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { Popup } from '../ui/Popup.tsx';
 import { GameHeader, Stage } from '../ui/Stage.tsx';
 import { botReactionMs, botRoster } from './bots.ts';
+import { makeCode, maxCardsFor } from './live/protocol.ts';
+import { Caller, Feed, PlayerCards, Results, RoomStat } from './RoomParts.tsx';
 import './rooms.css';
 
 const ME = 'me';
 const LOBBY_SECONDS = 8;
 const CLAIM_WINDOW_MS = 1200;
-const UI_MAX_CARDS: Record<string, number> = { '75': 4, '90': 3, '30': 4 };
 
 type Phase = 'lobby' | 'countdown' | 'drawing' | 'finished';
 
+/** A bingo hall with practice bots; `LiveRoom` is the same hall with friends. */
 export default function RoomGame({ preset }: { preset: RoomPresetId }) {
   const config = rooms.ROOM_PRESETS[preset];
   const go = useGame((s) => s.go);
@@ -192,10 +181,7 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
     }
   };
 
-  const stage = config.stages[Math.min(room.stage, config.stages.length - 1)]!;
   const pool = room.phase === 'selling' ? Math.floor(rooms.roomSales(room) * config.payoutRate) : room.pool;
-  const recent = room.drawn.slice(-5).reverse();
-  const cardSize = config.variant === '30' ? 'md' : 'sm';
   const myWin = settlement?.payouts[ME] ?? 0;
   const opponent = isDuel ? room.players.find((p) => p.id !== ME) : undefined;
   const opponentToGo = opponent && room.phase !== 'selling' ? rooms.bestToGo(room, opponent.id) : null;
@@ -209,23 +195,14 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
     >
       <div className="room__body">
         <div className="room__info">
-          <div className="room-stat">
-            <small>Prize pool</small>
-            <b>{formatCoins(pool)}</b>
-          </div>
-          <div className="room-stat">
-            <small>{room.phase === 'selling' ? 'Players' : 'Stage'}</small>
-            <b>{room.phase === 'selling' ? room.players.length : `${Math.min(room.stage + 1, config.stages.length)}/${config.stages.length}`}</b>
-          </div>
-          <div className="room-stat">
-            <small>{room.phase === 'selling' ? 'Card' : 'Balls'}</small>
-            <b>{room.phase === 'selling' ? config.cardPrice : room.drawn.length}</b>
-          </div>
+          <RoomStat label="Prize pool" value={formatCoins(pool)} />
+          <RoomStat
+            label={room.phase === 'selling' ? 'Players' : 'Stage'}
+            value={room.phase === 'selling' ? room.players.length : `${Math.min(room.stage + 1, config.stages.length)}/${config.stages.length}`}
+          />
+          <RoomStat label={room.phase === 'selling' ? 'Card' : 'Balls'} value={room.phase === 'selling' ? config.cardPrice : room.drawn.length} />
           {'jackpot' in config && config.jackpot && (
-            <div className="room-stat room-stat--jackpot">
-              <small>Jackpot ≤{config.jackpot.withinBalls} balls</small>
-              <b>{formatCoins(jackpot)}</b>
-            </div>
+            <RoomStat className="room-stat--jackpot" label={`Jackpot ≤${config.jackpot.withinBalls} balls`} value={formatCoins(jackpot)} />
           )}
         </div>
 
@@ -243,7 +220,7 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
               {Math.round(config.payoutRate * 100)}% of card sales.
             </p>
             <div className="room__buy">
-              {Array.from({ length: Math.min(UI_MAX_CARDS[config.variant]!, config.maxCardsPerPlayer) - me.cards.length }, (_, i) => i + 1)
+              {Array.from({ length: maxCardsFor(config) - me.cards.length }, (_, i) => i + 1)
                 .slice(0, 3)
                 .map((n) => (
                   <GreenButton key={n} onClick={() => buy(n)}>
@@ -254,22 +231,15 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
             <p className="room__count t-outline t-outline--navy">
               {phase === 'countdown' ? `Starting in ${countdown}…` : 'Buy a card to join the next game'}
             </p>
+            {phase === 'lobby' && (
+              <button type="button" className="room__link" onClick={() => (sfx.click(), go({ name: 'live', code: makeCode(), host: true, preset }))}>
+                🌐 Play with friends instead — open a room and share the code
+              </button>
+            )}
           </div>
         ) : (
           <>
-            <div className="room__caller">
-              {recent[0] ? <Ball key={room.drawn.length} n={recent[0]} variant={config.variant} size={5.2} className="ball--enter" /> : null}
-              <div className="room__recent">
-                {recent.slice(1).map((b) => (
-                  <Ball key={b} n={b} variant={config.variant} size={3} />
-                ))}
-              </div>
-              <div className="room__stage">
-                <small>Now playing</small>
-                <b>{stage.pattern.name}</b>
-                <span>{formatCoins(room.stagePrizes[room.stage] ?? 0)}</span>
-              </div>
-            </div>
+            <Caller room={room} />
             {opponent && opponentToGo !== null && (
               <div className="room__opponent">
                 {opponent.name} is <b>{opponentToGo}</b> away from a line
@@ -278,35 +248,8 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
           </>
         )}
 
-        <div className={`room__cards room__cards--v${config.variant}`}>
-          {me.cards.map((card, i) => {
-            const auto = markedMask(card, room.drawn);
-            const marked = isDuel ? (daubs[i] ?? 0) : auto;
-            const toGo = room.phase === 'drawing' ? cellsToGo(auto, stage.pattern, playableMask(card)) : null;
-            const won = room.wins.some((w) => w.winners.some((x) => x.playerId === ME && x.card === i));
-            return (
-              <div key={i} className="room__card">
-                <BingoGrid
-                  card={card}
-                  marked={marked}
-                  onCell={isDuel ? (cell) => onCell(i, cell) : undefined}
-                  highlight={won ? winningCells(auto, stage.pattern, playableMask(card)) : undefined}
-                  size={cardSize}
-                  label={`Card ${i + 1}`}
-                />
-                {toGo !== null && toGo > 0 && toGo <= 3 && <span className="room__togo">{toGo} to go</span>}
-              </div>
-            );
-          })}
-        </div>
-
-        {feed.length > 0 && (
-          <ul className="room__feed">
-            {feed.map((f, i) => (
-              <li key={i}>{f}</li>
-            ))}
-          </ul>
-        )}
+        <PlayerCards room={room} playerId={ME} daubs={isDuel ? daubs : undefined} onCell={isDuel ? onCell : undefined} />
+        <Feed items={feed} />
       </div>
 
       {isDuel && phase === 'drawing' && (
@@ -339,19 +282,7 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
               ) : (
                 <p>No prizes for you this time.</p>
               )}
-              <ul className="room__results">
-                {room.wins.map((w) => (
-                  <li key={w.stage}>
-                    <b>{config.stages[w.stage]!.pattern.name}</b> on ball {w.ballCount}:{' '}
-                    {w.winners.map((x) => room.players.find((p) => p.id === x.playerId)!.name).join(', ')} · {formatCoins(w.prizeEach)}
-                  </li>
-                ))}
-                {settlement.jackpotPaid > 0 && <li>🌅 Jackpot paid: {formatCoins(settlement.jackpotPaid)}!</li>}
-              </ul>
-              <p className="small-note">
-                Sales {formatCoins(settlement.sales)} · pool {formatCoins(settlement.pool)} · rake {formatCoins(settlement.rake)}. Seed
-                commitment {room.commitment.slice(0, 12)}… · {CARD_SPECS[config.variant].maxBall}-ball drum.
-              </p>
+              <Results room={room} settlement={settlement} />
             </div>
           </Popup>
         </>

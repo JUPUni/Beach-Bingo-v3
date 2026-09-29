@@ -7,6 +7,7 @@ import {
   fastRng,
   range,
   sample,
+  sha256Hex,
   shuffle,
   verifyCommitment,
   weightedIndex,
@@ -20,6 +21,12 @@ describe('provably fair RNG', () => {
     expect(commitSeed(SEED.serverSeed)).toBe(expected);
     expect(verifyCommitment(SEED.serverSeed, expected)).toBe(true);
     expect(verifyCommitment('b2'.repeat(32), expected)).toBe(false);
+  });
+
+  it('hashes text with SHA-256 for public inputs such as a live room roster', () => {
+    const text = 'peer-a:2\npeer-b:1';
+    expect(sha256Hex(text)).toBe(createHash('sha256').update(text, 'utf8').digest('hex'));
+    expect(sha256Hex('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
   });
 
   it('rejects malformed server seeds', () => {

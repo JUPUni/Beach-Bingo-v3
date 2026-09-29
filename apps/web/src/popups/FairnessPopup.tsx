@@ -101,7 +101,15 @@ export default function FairnessPopup() {
           <ul className="round-log">
             {history.slice(0, 8).map((r) => (
               <li key={`${r.commitment}-${r.nonce}`}>
-                <b>#{r.nonce}</b> {r.mode} — {r.summary || '…'}
+                <b>{r.room ? `room ${r.room}` : `#${r.nonce}`}</b> {r.mode} — {r.summary || '…'}
+                {r.serverSeed && (
+                  <>
+                    <br />
+                    <span className="mono">
+                      seed {r.serverSeed.slice(0, 16)}… · roster {r.clientSeed.slice(0, 16)}…
+                    </span>
+                  </>
+                )}
               </li>
             ))}
           </ul>

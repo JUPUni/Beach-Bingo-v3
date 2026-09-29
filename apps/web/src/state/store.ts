@@ -7,6 +7,7 @@ import {
   type BoosterId,
   type FairSeed,
   type ModeId,
+  type RoomPresetId,
 } from '@beach-bingo/engine';
 
 export type Screen =
@@ -16,7 +17,9 @@ export type Screen =
   | { name: 'adventure'; level: number; seagull?: boolean; sun?: boolean }
   | { name: 'casino' }
   | { name: 'rooms' }
-  | { name: 'game'; mode: ModeId };
+  | { name: 'game'; mode: ModeId }
+  /** A live room: the host picks the hall, guests learn it from the host. */
+  | { name: 'live'; code: string; host: boolean; preset?: RoomPresetId };
 
 export type PopupName = 'settings' | 'profile' | 'tasks' | 'wallet' | 'fairness' | 'limits' | 'credits' | 'chest' | 'faucet';
 
@@ -94,6 +97,8 @@ export interface GameState {
   screen: Screen;
   popup: PopupName | null;
   sessionStart: number;
+  /** A room code from an invite link, honoured once the player leaves the splash. */
+  pendingJoin: string | null;
 
   go(screen: Screen): void;
   openPopup(popup: PopupName): void;
@@ -106,6 +111,9 @@ export interface GameState {
   spend(amount: number, opts?: { wager?: boolean }): boolean;
   /** Record winnings from a wager round. */
   recordWin(amount: number): void;
+  /** Give back a stake that was never played (a live round that started without these cards). */
+  refund(amount: number): void;
+  setPendingJoin(code: string | null): void;
   claimFaucet(): boolean;
   completeLevel(levelId: number, stars: number, coins: number): { newKey: boolean };
   openChest(): { coins: number; booster: BoosterId } | null;
@@ -188,6 +196,7 @@ export const useGame = create<GameState>()(
       screen: { name: 'splash' },
       popup: null,
       sessionStart: Date.now(),
+      pendingJoin: null,
 
       go: (screen) => set({ screen, popup: null }),
       openPopup: (popup) => set({ popup }),
@@ -219,6 +228,14 @@ export const useGame = create<GameState>()(
             stats: { ...s.stats, rounds: s.stats.rounds + 1, biggestWin: Math.max(s.stats.biggestWin, amount) },
           };
         }),
+
+      refund: (amount) =>
+        set((s) => {
+          if (amount <= 0) return s;
+          const today = s.today.day === localDay() ? s.today : { day: localDay(), wagered: 0, won: 0 };
+          return { coins: s.coins + Math.floor(amount), today: { ...today, wagered: Math.max(0, today.wagered - amount) } };
+        }),
+      setPendingJoin: (pendingJoin) => set({ pendingJoin }),
 
       claimFaucet: () => {
         const s = get();

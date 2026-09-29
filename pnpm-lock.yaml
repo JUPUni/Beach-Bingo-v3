@@ -58,6 +58,9 @@ importers:
       react-dom:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
+      trystero:
+        specifier: 0.25.4
+        version: 0.25.4
       zustand:
         specifier: ^5.0.15
         version: 5.0.15(@types/react@19.3.0)(react@19.3.0)
@@ -89,6 +92,9 @@ importers:
       globals:
         specifier: ^17.12.0
         version: 17.12.0
+      playwright-core:
+        specifier: 1.63.0
+        version: 1.63.0
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
@@ -104,6 +110,9 @@ importers:
       vitest:
         specifier: ^5.0.2
         version: 5.0.2(@types/node@24.19.0)(vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.2)(terser@5.51.2)(tsx@4.23.15))
+      ws:
+        specifier: 8.22.0
+        version: 8.22.0
 
   packages/brand:
     devDependencies:
@@ -1106,6 +1115,9 @@ packages:
   '@noble/hashes@2.4.0':
     resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
     engines: {node: '>= 20.19.0'}
+
+  '@noble/secp256k1@3.2.0':
+    resolution: {integrity: sha512-Z3ZAWOTxJ0EuTuZTi7Y69iK7GgrLHh8sgm45lVDhg/b3Nk1TpAiKhick2KkZisHuupeepSkyIydN/J459SdX1w==}
 
   '@oxc-project/types@0.151.0':
     resolution: {integrity: sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW+cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA==}
@@ -2338,6 +2350,12 @@ packages:
   '@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1':
     resolution: {integrity: sha512-/67zpWDBLV+oYAEL682s1ktXL0HgqX76f6gaVGkGnVZlBbm1zd0v4Bz8MFF2GGhoX9rvfq3KSQHubFHwa6w6/Q==}
     engines: {node: '>=12'}
+
+  '@trystero-p2p/core@0.25.4':
+    resolution: {integrity: sha512-ehvSL1FqW962XyEctXngeDF/IOM1bWmfCKBNR4vwmVa0JGfM0+dlY4TEzSEGghYp3qqGCrpFIVTxdvlBUGVO6Q==}
+
+  '@trystero-p2p/nostr@0.25.4':
+    resolution: {integrity: sha512-QDox1VVHl0ro/CLfQVUtMS9EQbtJhQM7CCsO4SGv9KrPBT+x3bmOqQ4Y6iugsLzQ6sW+a2cwUTxjDRz/BywqMg==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -4146,6 +4164,9 @@ packages:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
 
+  trystero@0.25.4:
+    resolution: {integrity: sha512-tFYn/fO1kBeSKLUxRPKHH2n5jIuz9zlPPF9SmCVrGBiPNDGtFZyHuQONMUwftnCclTWlVsLoTus5/6eHhVEg+Q==}
+
   ts-api-utils@2.5.0:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
     engines: {node: '>=18.12'}
@@ -5519,6 +5540,8 @@ snapshots:
   '@noble/hashes@1.8.0': {}
 
   '@noble/hashes@2.4.0': {}
+
+  '@noble/secp256k1@3.2.0': {}
 
   '@oxc-project/types@0.151.0': {}
 
@@ -6897,6 +6920,13 @@ snapshots:
       json5: 2.2.3
       magic-string: 0.30.21
       string.prototype.matchall: 4.1.0
+
+  '@trystero-p2p/core@0.25.4': {}
+
+  '@trystero-p2p/nostr@0.25.4':
+    dependencies:
+      '@noble/secp256k1': 3.2.0
+      '@trystero-p2p/core': 0.25.4
 
   '@types/babel__core@7.20.5':
     dependencies:
@@ -9037,6 +9067,10 @@ snapshots:
       is-number: 7.0.0
 
   toidentifier@1.0.1: {}
+
+  trystero@0.25.4:
+    dependencies:
+      '@trystero-p2p/nostr': 0.25.4
 
   ts-api-utils@2.5.0(typescript@5.9.3):
     dependencies:
