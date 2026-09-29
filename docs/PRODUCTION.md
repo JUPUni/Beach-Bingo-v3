@@ -265,7 +265,8 @@ and, if so, revise the terms and listing first. On devnet, ship the future-slot 
 configurable maximum stake, persist the host's seed, add CI, pin the relays and move the authority
 to a multisig. Decide with counsel which entity would hold a licence.
 
-**Next 90 days.** The N-player and SPL design and the fuzz suite behind the flag on devnet; scope
+**Next 90 days.** The staked-hall lobby, the other halls' Rust port and the SPL design, and the
+fuzz suite behind the flag on devnet; scope
 and book the audit; prototype the compliance gate against a KYC vendor's sandbox; rewarded video
 in the play-money halls if the shop decision is yes; measure MAU and duel participation, and count
 devnet practice duels against the 1,000-a-day threshold.
