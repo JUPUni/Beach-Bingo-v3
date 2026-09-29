@@ -27,6 +27,7 @@ import {
   type LiveMessage,
   type Net,
   type RosterEntry,
+  type StakeInfo,
 } from './protocol.ts';
 
 /**
@@ -50,6 +51,18 @@ export interface Peer {
   firstCardAt: number;
   /** A `me` message arrived, so the name is theirs. */
   announced: boolean;
+  /** Their wallet, in a staked room. */
+  wallet: string | null;
+}
+
+/** What the escrow program's room account says right now (read by the screen, not the machine). */
+export interface ChainView {
+  state: 'open' | 'ready' | 'closed';
+  guest: string | null;
+  /** The round's client seed, fixed when the guest joined (hex). */
+  entropy: string | null;
+  commitment: string;
+  joinedSlot: bigint;
 }
 
 export interface RoundRecord {
@@ -61,6 +74,8 @@ export interface RoundRecord {
   rosterHash: string;
   roster: RosterEntry[];
   summary: string;
+  stake?: StakeInfo;
+  entropy?: string;
 }
 
 export type LiveEvent =
@@ -125,6 +140,12 @@ export class LiveRoomMachine {
   myPayout = 0;
   /** Guest: the host opened the next round while we were still looking at the results. */
   nextRoundReady = false;
+  /** Staked rooms: the escrow the host opened. Seats are deposits, not coins. */
+  stake: StakeInfo | null = null;
+  myWallet: string | null = null;
+  chain: ChainView | null = null;
+  /** Signature of the settlement transaction, once somebody sent it from this screen. */
+  settleTx: string | null = null;
   relays = 0;
   /** Bumped on every change; `subscribe` for notifications. */
   version = 0;
@@ -177,7 +198,7 @@ export class LiveRoomMachine {
     }
     this.net = net;
     this.selfId = net.selfId;
-    this.peers.set(net.selfId, { id: net.selfId, name: this.opts.name, cards: 0, joinedAt: Date.now(), firstCardAt: 0, announced: true });
+    this.peers.set(net.selfId, { id: net.selfId, name: this.opts.name, cards: 0, joinedAt: Date.now(), firstCardAt: 0, announced: true, wallet: null });
     if (this.host) {
       this.hostId = net.selfId;
       this.status = 'lobby';
@@ -205,6 +226,15 @@ export class LiveRoomMachine {
 
   get isDuel(): boolean {
     return this.config?.autoDaub === false;
+  }
+
+  get staked(): boolean {
+    return this.stake !== null;
+  }
+
+  /** Did one of my cards take a stage? (Staked rooms settle in SOL, not coins.) */
+  get iWon(): boolean {
+    return this.room?.wins.some((w) => w.winners.some((x) => x.playerId === this.selfId)) ?? false;
   }
 
   get hostName(): string {
@@ -236,7 +266,9 @@ export class LiveRoomMachine {
   }
 
   get canStart(): boolean {
-    return this.host && this.status === 'lobby' && this.buildRoster().length >= this.minPlayers;
+    if (!this.host || this.status !== 'lobby') return false;
+    if (this.stake) return this.chain?.state === 'ready' && !!this.chain.entropy && this.buildRoster().length === 2;
+    return this.buildRoster().length >= this.minPlayers;
   }
 
   /* ---------- Actions ---------- */
@@ -244,6 +276,7 @@ export class LiveRoomMachine {
   buy(count: number): void {
     const config = this.config;
     if (this.status !== 'lobby' || !config || count < 1) return;
+    if (this.stake) return this.toast('This room is staked: your seat is your deposit', 'warn');
     const me = this.me;
     if (!me) return;
     const max = maxCardsFor(config);
@@ -268,10 +301,79 @@ export class LiveRoomMachine {
   start(): void {
     if (!this.host || this.status !== 'lobby' || !this.config) return;
     const roster = this.buildRoster();
-    if (roster.length < this.minPlayers) return this.toast(`Need ${this.minPlayers} players with cards`, 'warn');
+    if (this.stake) {
+      if (!this.canStart) return this.toast('The escrow is not ready: both deposits must be on chain', 'warn');
+    } else if (roster.length < this.minPlayers) {
+      return this.toast(`Need ${this.minPlayers} players with cards`, 'warn');
+    }
     const msg: LiveMessage = { t: 'start', round: this.round, serverSeed: this.serverSeed, startAt: Date.now() + START_LEAD_MS, roster };
+    if (this.stake && this.chain?.entropy) msg.entropy = this.chain.entropy;
     this.broadcast(msg);
     this.applyStart(msg);
+  }
+
+  /* ---------- Staked rooms (the escrow lives on chain; the screen reads it) ---------- */
+
+  /** Host: the escrow room is open with my deposit in it. */
+  setStake(stake: StakeInfo, wallet: string): void {
+    if (!this.host || this.status !== 'lobby') return;
+    const me = this.me;
+    if (!me) return;
+    this.stake = stake;
+    this.myWallet = wallet;
+    me.wallet = wallet;
+    me.cards = 1;
+    me.firstCardAt = Date.now();
+    this.myCards = 1;
+    this.broadcast(this.roomMsg());
+    this.broadcast(this.meMsg());
+    this.emit();
+  }
+
+  /** Guest: my deposit is on chain, so my seat is taken. */
+  seatTaken(wallet: string): void {
+    const me = this.me;
+    if (!me || !this.stake) return;
+    this.myWallet = wallet;
+    me.wallet = wallet;
+    me.cards = 1;
+    me.firstCardAt = Date.now();
+    this.myCards = 1;
+    this.broadcast(this.meMsg());
+    this.emit();
+  }
+
+  /** The screen read the room account; both sides keep it to gate the start and check the reveal. */
+  setChain(view: ChainView | null): void {
+    this.chain = view;
+    if (view && this.stake && view.commitment !== this.commitment && (this.status === 'lobby' || this.status === 'connecting')) {
+      this.fail('The escrow on chain was opened with a different commitment than this room. Leaving.');
+      return;
+    }
+    this.emit();
+  }
+
+  /** Host: the escrow was cancelled on chain before anyone joined. */
+  clearStake(): void {
+    if (!this.host || !this.stake) return;
+    this.stake = null;
+    this.chain = null;
+    this.myWallet = null;
+    this.myCards = 0;
+    const me = this.me;
+    if (me) {
+      me.cards = 0;
+      me.wallet = null;
+    }
+    this.broadcast(this.roomMsg());
+    this.broadcast(this.meMsg());
+    this.emit();
+  }
+
+  /** The settlement transaction went through (from either screen). */
+  settled(signature: string): void {
+    this.settleTx = signature;
+    this.emit();
   }
 
   /** Duel: shout BINGO on a completed card. A false shout locks this player out for a few balls. */
@@ -321,7 +423,7 @@ export class LiveRoomMachine {
 
   private onPeerJoin(id: string): void {
     if (this.closed || this.status === 'error') return;
-    if (!this.peers.has(id)) this.peers.set(id, { id, name: '', cards: 0, joinedAt: Date.now(), firstCardAt: 0, announced: false });
+    if (!this.peers.has(id)) this.peers.set(id, { id, name: '', cards: 0, joinedAt: Date.now(), firstCardAt: 0, announced: false, wallet: null });
     this.send(this.meMsg(), id);
     if (this.host) {
       this.send(this.roomMsg(), id);
@@ -357,12 +459,13 @@ export class LiveRoomMachine {
       case 'me': {
         let peer = this.peers.get(from);
         if (!peer) {
-          peer = { id: from, name: '', cards: 0, joinedAt: Date.now(), firstCardAt: 0, announced: false };
+          peer = { id: from, name: '', cards: 0, joinedAt: Date.now(), firstCardAt: 0, announced: false, wallet: null };
           this.peers.set(from, peer);
         }
         const first = !peer.announced;
         peer.announced = true;
         peer.name = msg.name;
+        if (msg.wallet) peer.wallet = msg.wallet;
         const cards = Math.min(msg.cards, this.config?.maxCardsPerPlayer ?? 6);
         if (cards > 0 && peer.cards === 0) peer.firstCardAt = Date.now();
         if (cards === 0) peer.firstCardAt = 0;
@@ -384,6 +487,7 @@ export class LiveRoomMachine {
           if (this.status === 'finished') this.nextRoundReady = true;
         }
         this.playing = msg.playing;
+        if (msg.stake) this.stake = msg.stake;
         if (this.status === 'connecting') this.status = 'lobby';
         this.emit();
         return;
@@ -420,9 +524,17 @@ export class LiveRoomMachine {
 
   private applyStart(msg: Extract<LiveMessage, { t: 'start' }>): void {
     const config = this.config!;
+    if (this.stake) {
+      // A staked round is exactly the escrow's: host's card first, one card each, the escrow's entropy.
+      if (!msg.entropy) return this.fail('The host started a staked round without the escrow entropy. Leaving.');
+      if (this.chain?.entropy && this.chain.entropy !== msg.entropy) return this.fail('The host started with an entropy that is not the one on chain. Leaving.');
+      if (msg.roster.length !== 2 || msg.roster[0]!.id !== this.hostId || msg.roster.some((e) => e.cards !== 1)) {
+        return this.fail('The host started a staked round with a roster that is not the escrow pair. Leaving.');
+      }
+    }
     let room: RoomState;
     try {
-      room = buildRoom(config, this.commitment, msg.serverSeed, msg.roster);
+      room = this.stake ? buildRoom(config, this.commitment, msg.serverSeed, msg.roster, msg.entropy) : buildRoom(config, this.commitment, msg.serverSeed, msg.roster);
     } catch (e) {
       this.refundLobbyCards();
       this.fail(`The host sent a round this hall cannot seat (${e instanceof Error ? e.message : String(e)}).`);
@@ -436,7 +548,7 @@ export class LiveRoomMachine {
     this.rosterHash = rosterHash(msg.roster);
     // The cards I bought are consumed by this round; whatever the host did not seat comes back.
     const seated = msg.roster.find((e) => e.id === this.selfId)?.cards ?? 0;
-    if (this.myCards > seated) {
+    if (!this.stake && this.myCards > seated) {
       this.opts.wallet.refund((this.myCards - seated) * config.cardPrice);
       if (seated === 0) this.toast('The round started without your cards — coins refunded. Watch this one.', 'warn');
     }
@@ -549,8 +661,9 @@ export class LiveRoomMachine {
     const payout = settlement.payouts[this.selfId] ?? 0;
     // Prize money nobody won (an unclaimed duel, rounding) goes back to the players, by cards.
     const refund = me && settlement.unawarded > 0 && room.cardsSold > 0 ? Math.floor((settlement.unawarded * me.cards.length) / room.cardsSold) : 0;
-    this.myPayout = payout + refund;
-    if (me) {
+    // Staked rooms settle on chain: the coins ledger is not touched.
+    this.myPayout = this.stake ? 0 : payout + refund;
+    if (me && !this.stake) {
       this.opts.wallet.win(payout);
       if (refund > 0) this.opts.wallet.refund(refund);
     }
@@ -567,7 +680,8 @@ export class LiveRoomMachine {
         serverSeed: this.revealedSeed!,
         rosterHash: this.rosterHash!,
         roster: this.roster!,
-        summary: me ? `won ${payout} of pool ${settlement.pool}` : 'watched',
+        summary: this.stake ? (me ? (this.iWon ? 'won the staked round' : 'lost the staked round') : 'watched a staked round') : me ? `won ${payout} of pool ${settlement.pool}` : 'watched',
+        ...(this.stake ? { stake: this.stake, entropy: this.chain?.entropy ?? undefined } : {}),
       },
     });
   }
@@ -577,6 +691,17 @@ export class LiveRoomMachine {
   private buildRoster(): RosterEntry[] {
     const config = this.config;
     if (!config) return [];
+    if (this.stake) {
+      // The escrow pair, host first: the program builds card 0 for the host and card 1 for the guest.
+      const host = this.hostId ? this.peers.get(this.hostId) : undefined;
+      const guestWallet = this.chain?.guest;
+      const guest = guestWallet ? [...this.peers.values()].find((p) => p.wallet === guestWallet && p.id !== this.hostId) : undefined;
+      if (!host || !guest || host.cards < 1 || guest.cards < 1) return [];
+      return [
+        { id: host.id, name: host.name || 'Host', cards: 1 },
+        { id: guest.id, name: guest.name || 'Guest', cards: 1 },
+      ];
+    }
     let entries = [...this.peers.values()].filter((p) => p.cards > 0);
     if (config.startRule.kind === 'sitAndGo') {
       entries = entries.sort((a, b) => a.firstCardAt - b.firstCardAt).slice(0, config.startRule.players);
@@ -593,6 +718,12 @@ export class LiveRoomMachine {
   }
 
   private resetRound(): void {
+    // One escrow, one round: the next round starts unstaked until the host opens a new escrow.
+    this.stake = null;
+    this.chain = null;
+    this.settleTx = null;
+    this.myWallet = null;
+    for (const p of this.peers.values()) p.wallet = null;
     this.room = null;
     this.roster = null;
     this.revealedSeed = null;
@@ -606,6 +737,7 @@ export class LiveRoomMachine {
   }
 
   private refundLobbyCards(): void {
+    if (this.stake) return; // a deposit is not coins; it is cancelled or settled on chain
     if (this.myCards > 0 && this.config) {
       this.opts.wallet.refund(this.myCards * this.config.cardPrice);
       this.myCards = 0;
@@ -623,11 +755,11 @@ export class LiveRoomMachine {
   }
 
   private meMsg(): LiveMessage {
-    return { t: 'me', name: this.opts.name, cards: this.myCards };
+    return { t: 'me', name: this.opts.name, cards: this.myCards, ...(this.myWallet ? { wallet: this.myWallet } : {}) };
   }
 
   private roomMsg(): LiveMessage {
-    return { t: 'room', preset: this.preset!, round: this.round, commitment: this.commitment, playing: this.playing };
+    return { t: 'room', preset: this.preset!, round: this.round, commitment: this.commitment, playing: this.playing, ...(this.stake ? { stake: this.stake } : {}) };
   }
 
   private send(msg: LiveMessage, to: string): void {

@@ -109,6 +109,22 @@
   z-index: 2;
 }
 
+.splash__build {
+  position: absolute;
+  top: calc(var(--safe-top) + 1rem);
+  right: 1rem;
+  margin: 0;
+  padding: 0.3rem 0.9rem;
+  border-radius: 99rem;
+  background: #ff2e88;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  z-index: 3;
+}
+
 .splash__join {
   position: absolute;
   bottom: calc(var(--safe-bottom) + 4.6rem);

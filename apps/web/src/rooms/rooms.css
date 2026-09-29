@@ -308,3 +308,32 @@
 .join-box .btn-green {
   font-size: 1.6rem;
 }
+
+/* ---------- Staked rooms (the escrow) ---------- */
+.stake {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1.2rem;
+  background: linear-gradient(#27407f, #16214d);
+  border: 0.25rem solid #7bd3ff;
+  color: #fff;
+  text-align: center;
+}
+
+.stake .small-note {
+  color: #dbe6ff;
+}
+
+.stake a {
+  color: #ffe27a;
+}
+
+.stake__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: #ffe27a;
+}

@@ -98,38 +98,66 @@ export type RosterEntry = {
   cards: number;
 };
 
+/**
+ * A staked room: the escrow program's room for this code (programs/wave_duel), as the host
+ * announces it. Lamports travel as a decimal string; addresses as base58.
+ */
+export type StakeInfo = { lamports: string; host: string; program: string; room: string };
+
 export type LiveMessage =
-  /** Any peer: my name and how many cards I hold for the next round. */
-  | { t: 'me'; name: string; cards: number }
-  /** Host: which hall this is and the commitment for the coming round. */
-  | { t: 'room'; preset: RoomPresetId; round: number; commitment: string; playing: boolean }
-  /** Host: the reveal that starts a round. */
-  | { t: 'start'; round: number; serverSeed: string; startAt: number; roster: RosterEntry[] }
+  /** Any peer: my name, how many cards I hold for the next round, and my wallet in a staked room. */
+  | { t: 'me'; name: string; cards: number; wallet?: string }
+  /** Host: which hall this is, the commitment for the coming round, and the stake if there is one. */
+  | { t: 'room'; preset: RoomPresetId; round: number; commitment: string; playing: boolean; stake?: StakeInfo }
+  /** Host: the reveal that starts a round. Staked rooms carry the escrow's entropy as the client seed. */
+  | { t: 'start'; round: number; serverSeed: string; startAt: number; roster: RosterEntry[]; entropy?: string }
   /** Any player in a duel: BINGO on my card `card` with `ball` balls on the table. */
   | { t: 'claim'; round: number; card: number; ball: number };
 
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
 const isInt = (x: unknown, min: number, max: number): x is number => Number.isInteger(x) && (x as number) >= min && (x as number) <= max;
 const isId = (x: unknown): x is string => typeof x === 'string' && x.length > 0 && x.length <= 64;
+const isAddress = (x: unknown): x is string => typeof x === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(x);
+const isHex64 = (x: unknown): x is string => typeof x === 'string' && HEX_64.test(x);
+
+function parseStake(raw: unknown): StakeInfo | null {
+  if (!isObject(raw)) return null;
+  if (typeof raw.lamports !== 'string' || !/^\d{1,20}$/.test(raw.lamports)) return null;
+  if (!isAddress(raw.host) || !isAddress(raw.program) || !isAddress(raw.room)) return null;
+  return { lamports: raw.lamports, host: raw.host, program: raw.program, room: raw.room };
+}
 
 /** Anything a peer sends is untrusted: keep only well-formed messages, with clean values. */
 export function parseMessage(raw: unknown): LiveMessage | null {
   if (!isObject(raw)) return null;
   switch (raw.t) {
-    case 'me':
-      return isInt(raw.cards, 0, 6) ? { t: 'me', name: cleanName(raw.name), cards: raw.cards } : null;
-    case 'room':
-      return typeof raw.preset === 'string' &&
-        raw.preset in rooms.ROOM_PRESETS &&
-        isInt(raw.round, 1, 1_000_000) &&
-        typeof raw.commitment === 'string' &&
-        HEX_64.test(raw.commitment) &&
-        typeof raw.playing === 'boolean'
-        ? { t: 'room', preset: raw.preset as RoomPresetId, round: raw.round, commitment: raw.commitment, playing: raw.playing }
-        : null;
+    case 'me': {
+      if (!isInt(raw.cards, 0, 6)) return null;
+      if (raw.wallet !== undefined && !isAddress(raw.wallet)) return null;
+      return { t: 'me', name: cleanName(raw.name), cards: raw.cards, ...(raw.wallet !== undefined ? { wallet: raw.wallet } : {}) };
+    }
+    case 'room': {
+      if (
+        typeof raw.preset !== 'string' ||
+        !(raw.preset in rooms.ROOM_PRESETS) ||
+        !isInt(raw.round, 1, 1_000_000) ||
+        !isHex64(raw.commitment) ||
+        typeof raw.playing !== 'boolean'
+      ) {
+        return null;
+      }
+      const msg: LiveMessage = { t: 'room', preset: raw.preset as RoomPresetId, round: raw.round, commitment: raw.commitment, playing: raw.playing };
+      if (raw.stake !== undefined) {
+        const stake = parseStake(raw.stake);
+        if (!stake) return null;
+        msg.stake = stake;
+      }
+      return msg;
+    }
     case 'start': {
-      if (!isInt(raw.round, 1, 1_000_000) || typeof raw.serverSeed !== 'string' || !HEX_64.test(raw.serverSeed)) return null;
+      if (!isInt(raw.round, 1, 1_000_000) || !isHex64(raw.serverSeed)) return null;
       if (typeof raw.startAt !== 'number' || !Number.isFinite(raw.startAt)) return null;
+      if (raw.entropy !== undefined && !isHex64(raw.entropy)) return null;
       if (!Array.isArray(raw.roster) || raw.roster.length < 1 || raw.roster.length > 500) return null;
       const roster: RosterEntry[] = [];
       const seen = new Set<string>();
@@ -138,7 +166,7 @@ export function parseMessage(raw: unknown): LiveMessage | null {
         seen.add(e.id);
         roster.push({ id: e.id, name: cleanName(e.name), cards: e.cards });
       }
-      return { t: 'start', round: raw.round, serverSeed: raw.serverSeed, startAt: raw.startAt, roster };
+      return { t: 'start', round: raw.round, serverSeed: raw.serverSeed, startAt: raw.startAt, roster, ...(raw.entropy !== undefined ? { entropy: raw.entropy } : {}) };
     }
     case 'claim':
       return isInt(raw.round, 1, 1_000_000) && isInt(raw.card, 0, 5) && isInt(raw.ball, 1, 90)

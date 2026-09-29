@@ -29,10 +29,16 @@ import {
   type Instruction,
   type Rpc,
   type SolanaRpcApi,
+  compileTransaction,
+  getBase64EncodedWireTransaction,
+  signTransaction,
+  setTransactionMessageFeePayer,
   type TransactionSendingSigner,
 } from '@solana/kit';
 import { sha256Hex } from '@beach-bingo/engine';
-import { CLUSTER } from './config.ts';
+
+/** Vite injects `import.meta.env`; scripts and tests run without it. */
+const env: Record<string, string | undefined> = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
 
 /** The app's RPC (client.ts) or a test's; nothing here touches the wallet layer at import time. */
 export type SolanaRpc = Rpc<SolanaRpcApi>;
@@ -43,7 +49,7 @@ export type SolanaRpc = Rpc<SolanaRpcApi>;
  * and `lib.rs` must move together. Anchor discriminators: sha256("global:<ix>")[..8] and
  * sha256("account:<Struct>")[..8].
  */
-let programId: Address | null = import.meta.env.VITE_WAVE_DUEL_PROGRAM ? address(import.meta.env.VITE_WAVE_DUEL_PROGRAM) : null;
+let programId: Address | null = env.VITE_WAVE_DUEL_PROGRAM ? address(env.VITE_WAVE_DUEL_PROGRAM) : null;
 /** Tests and tools point the client at a program the build did not know. */
 export function configureProgram(id: Address | null): void {
   programId = id;
@@ -287,8 +293,8 @@ export interface Sent {
   explorer: string;
 }
 
-export function explorerUrl(signature: string): string {
-  return `https://explorer.solana.com/tx/${signature}${CLUSTER === 'devnet' ? '?cluster=devnet' : ''}`;
+export function explorerUrl(signature: string, cluster: 'mainnet' | 'devnet' = env.VITE_SOLANA_CLUSTER === 'devnet' ? 'devnet' : 'mainnet'): string {
+  return `https://explorer.solana.com/tx/${signature}${cluster === 'devnet' ? '?cluster=devnet' : ''}`;
 }
 
 /** Sign with the wallet and send; resolves once the transaction is confirmed or throws with its error. */
@@ -306,15 +312,38 @@ export async function send(rpc: SolanaRpc, signer: TransactionSendingSigner, ins
   return { signature, explorer: explorerUrl(signature) };
 }
 
-async function confirm(rpc: SolanaRpc, signature: string, timeoutMs = 60_000): Promise<void> {
+/** Scripts and tests: sign with raw key pairs and send over RPC. */
+export async function sendSigned(rpc: SolanaRpc, feePayer: Address, keyPairs: CryptoKeyPair[], instructions: Instruction[]): Promise<Sent> {
+  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
+  const message = pipe(
+    createTransactionMessage({ version: 0 }),
+    (m) => setTransactionMessageFeePayer(feePayer, m),
+    (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
+    (m) => appendTransactionMessageInstructions(instructions, m),
+  );
+  const signed = await signTransaction(keyPairs, compileTransaction(message));
+  const signature = await rpc.sendTransaction(getBase64EncodedWireTransaction(signed), { encoding: 'base64', preflightCommitment: 'confirmed' }).send();
+  await confirm(rpc, signature);
+  return { signature, explorer: explorerUrl(signature) };
+}
+
+async function confirm(rpc: SolanaRpc, signature: string, timeoutMs = 90_000): Promise<void> {
   const started = Date.now();
+  let wait = 1500;
   for (;;) {
-    const { value } = await rpc.getSignatureStatuses([signature as never]).send();
-    const status = value[0];
-    if (status?.err) throw new Error(`transaction failed: ${JSON.stringify(status.err)}`);
-    if (status && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')) return;
+    try {
+      const { value } = await rpc.getSignatureStatuses([signature as never]).send();
+      const status = value[0];
+      if (status?.err) throw new Error(`transaction failed: ${JSON.stringify(status.err)}`);
+      if (status && (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized')) return;
+      wait = 1500;
+    } catch (e) {
+      // Public RPCs rate-limit (429) and hiccup; a failed status read is not a failed transaction.
+      if (e instanceof Error && e.message.startsWith('transaction failed')) throw e;
+      wait = Math.min(wait * 2, 8000);
+    }
     if (Date.now() - started > timeoutMs) throw new Error('transaction not confirmed in time');
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, wait));
   }
 }
 

@@ -39,6 +39,7 @@ export function Splash() {
       {pendingJoin && <p className="splash__join t-outline t-outline--navy">Room {pendingJoin} is waiting for you</p>}
       <img src={art.chestShadow} alt="" className="splash__chest-shadow" />
       <img src={art.chestSplash} alt="" className="splash__chest" />
+      {import.meta.env.VITE_BUILD_LABEL && <p className="splash__build">{import.meta.env.VITE_BUILD_LABEL} build · test SOL only</p>}
       <p className="splash__legal">Provably fair · Free to play · beachbingo.xyz</p>
     </Stage>
   );

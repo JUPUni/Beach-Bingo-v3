@@ -11,6 +11,10 @@ interface ImportMetaEnv {
   readonly VITE_NOSTR_RELAYS?: string;
   /** Must be "true" AND pass the compliance gate before any on-chain stake UI appears. */
   readonly VITE_ENABLE_ONCHAIN_STAKES?: string;
+  /** The wave_duel escrow program id; with the flag above, staked Wave Rush rooms appear. */
+  readonly VITE_WAVE_DUEL_PROGRAM?: string;
+  /** A label shown on the splash for non-production builds ("devnet"). */
+  readonly VITE_BUILD_LABEL?: string;
 }
 
 interface ImportMeta {

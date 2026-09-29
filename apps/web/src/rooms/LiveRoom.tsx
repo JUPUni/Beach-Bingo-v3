@@ -1,8 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { rooms, type RoomPresetId } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { useNow } from '../lib/hooks.ts';
+import { ONCHAIN_STAKES_ENABLED } from '../solana/config.ts';
 import { useGame } from '../state/store.ts';
 import { Confetti, GreenButton } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
@@ -13,6 +14,10 @@ import { inviteLink, makeCode, maxCardsFor } from './live/protocol.ts';
 import { useLiveRoom } from './live/useLiveRoom.ts';
 import { Caller, Feed, PlayerCards, Results, RoomStat } from './RoomParts.tsx';
 import './rooms.css';
+
+/** Staked rooms need the flag and a deployed escrow program; the wallet code loads only then. */
+const STAKES = ONCHAIN_STAKES_ENABLED && Boolean(import.meta.env.VITE_WAVE_DUEL_PROGRAM);
+const StakePanel = lazy(() => import('./live/StakePanel.tsx'));
 
 /** A bingo hall played with friends over a room code. The rules live in `live/machine.ts`. */
 export default function LiveRoom({ code, host, preset }: { code: string; host: boolean; preset?: RoomPresetId }) {
@@ -89,6 +94,11 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
       <div className="room__lobby panel">
         <h2>Room closed</h2>
         <p>{m.error}</p>
+        {STAKES && m.stake && (
+          <Suspense fallback={null}>
+            <StakePanel m={m} />
+          </Suspense>
+        )}
         <div className="room__buy">
           <GreenButton onClick={() => go({ name: 'rooms' })}>Rooms</GreenButton>
           {(m.hostLeft || host) && (
@@ -131,15 +141,22 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
             </li>
           ))}
         </ul>
-        <div className="room__buy">
-          {Array.from({ length: maxCardsFor(config) - m.myCards }, (_, i) => i + 1)
-            .slice(0, 3)
-            .map((n) => (
-              <GreenButton key={n} onClick={() => m.buy(n)}>
-                +{n} card{n > 1 ? 's' : ''} · {config.cardPrice * n}
-              </GreenButton>
-            ))}
-        </div>
+        {!m.stake && (
+          <div className="room__buy">
+            {Array.from({ length: maxCardsFor(config) - m.myCards }, (_, i) => i + 1)
+              .slice(0, 3)
+              .map((n) => (
+                <GreenButton key={n} onClick={() => m.buy(n)}>
+                  +{n} card{n > 1 ? 's' : ''} · {config.cardPrice * n}
+                </GreenButton>
+              ))}
+          </div>
+        )}
+        {STAKES && livePreset === 'waveRush' && (m.host || m.stake) && (
+          <Suspense fallback={null}>
+            <StakePanel m={m} />
+          </Suspense>
+        )}
         {m.host ? (
           <GreenButton tone="gold" disabled={!m.canStart} onClick={() => m.start()}>
             {m.canStart ? `Start · ${withCards} players` : `Need ${m.minPlayers} players with cards`}
@@ -176,13 +193,14 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
   }
 
   const myWin = m?.myPayout ?? 0;
+  const won = m ? (m.stake ? m.iWon : myWin > 0) : false;
 
   return (
     <Stage bg={bg} top={<GameHeader title={title} onBack={() => go({ name: 'rooms' })} />} bottom="none" className="room">
       <div className="room__body">
         {config && m && (
           <div className="room__info">
-            <RoomStat label="Prize pool" value={formatCoins(room ? room.pool : m.poolPreview)} />
+            <RoomStat label={m.stake ? 'Stake' : 'Prize pool'} value={m.stake ? `◎${(Number(m.stake.lamports) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 3 })}` : formatCoins(room ? room.pool : m.poolPreview)} />
             <RoomStat
               label={room ? 'Stage' : 'Players'}
               value={room ? `${Math.min(room.stage + 1, config.stages.length)}/${config.stages.length}` : m.players.length}
@@ -205,9 +223,9 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
 
       {m && status === 'finished' && room && m.settlement && (
         <>
-          {myWin > 0 && <Confetti />}
+          {won && <Confetti />}
           <Popup
-            title={myWin > 0 ? 'You Win' : 'Round Over'}
+            title={won ? 'You Win' : 'Round Over'}
             footer={
               <>
                 <GreenButton onClick={() => go({ name: 'rooms' })}>Rooms</GreenButton>
@@ -224,7 +242,11 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
             }
           >
             <div className="popup-center">
-              {myWin > 0 ? (
+              {m.stake ? (
+                <Suspense fallback={null}>
+                  <StakePanel m={m} />
+                </Suspense>
+              ) : myWin > 0 ? (
                 <div className="reward-pill">
                   <img src={art.iconCoin} alt="" /> +{formatCoins(myWin)}
                 </div>
