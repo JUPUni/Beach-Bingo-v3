@@ -43,7 +43,7 @@ pnpm site:app
 It builds `apps/web` (Vite's `base` is `/app/`), checks that the page, the manifest and the service
 worker all stay inside `/app/`, and replaces `public/app/` with the result. Commit it. The game's
 service worker can only control `/app/`, so it never caches or takes over the landing page or
-`/play`. The game keeps its progress, SAND and coins in the browser's local storage; there is no
+`/play`. The game keeps its progress, shells and coins in the browser's local storage; there is no
 account and no server (the one function it calls, `/api/geo`, keeps nothing).
 
 ## Icons and link previews
@@ -86,9 +86,20 @@ vercel deploy --prod
 `.vercelignore` keeps `package.json` and `scripts/` out of the upload, so Vercel serves the files
 as they are and runs no build.
 
+## Credits
+
+Every credit lives behind the **Credits** button in the footer of the landing page and both
+notices: the studio and the copyright line, the art licence (the Island Figma kit, CC BY 4.0) and
+the fonts (SIL Open Font License). The chrome itself carries only the wordmark. The button opens a
+`popover` (no script; Escape, a click outside and its Close button dismiss it, focus returns to the
+button); the same markup sits before `</body>` on the three pages, styled in `index.html` and
+`assets/legal.css`, so edit all three together. A browser without the Popover API shows the card
+inline under the footer instead. The notices still name the operator in their own text, as a
+contract and a privacy notice must. The game keeps its credits behind Settings → Credits & legal.
+
 ## Rules the page keeps
 
-- Free to play: SAND is play money; coins are bought, have no cash value and never leave the game. Never "win cash", "payout" or "real money".
+- Free to play: shells are play money; coins are bought, have no cash value and never leave the game. Never "win cash", "payout" or "real money".
 - Ink text on every colour; Cream text only on Ink.
 - Every claim on the page is something the app does today; the numbers come from
   `packages/engine` (levels, rooms, boosters, the faucet) and `apps/web` (the room card limits).

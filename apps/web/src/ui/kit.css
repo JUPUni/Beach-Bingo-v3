@@ -6,11 +6,11 @@
   filter: drop-shadow(0 0.1rem 0.1rem rgb(0 0 0 / 0.3));
 }
 
-.sand-icon {
+.shell-icon {
   overflow: visible;
 }
 
-/* ---------- Balances: SAND and coins, the switch between them ---------- */
+/* ---------- Balances: shells and coins, the switch between them ---------- */
 .balances {
   display: flex;
   align-items: center;
@@ -67,7 +67,7 @@
   width: 4rem;
   height: 2.4rem;
   border-radius: 99rem;
-  background: #b9a37a;
+  background: #ff5f9e;
   border: 0.15rem solid rgb(255 255 255 / 0.5);
   box-shadow: inset 0 0.2rem 0.3rem rgb(0 0 0 / 0.35);
   transition: background 0.2s ease;
@@ -374,8 +374,8 @@
   letter-spacing: 0.05em;
 }
 
-/* SAND prizes: the same pill shape in sand colours (the kit's pill has the coin baked in). */
-.reward-pill--sand {
+/* Shell prizes: the same pill shape in shell pinks (the kit's pill has the coin baked in). */
+.reward-pill--shells {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -384,11 +384,11 @@
   min-width: 13.8rem;
   padding: 0 1.6rem 0 1rem;
   border-radius: 2.8rem;
-  background: linear-gradient(#ffe9b0, #e4b55c);
-  border: 0.3rem solid #b87936;
-  box-shadow: 0 0.3rem 0 #6b3a12;
+  background: linear-gradient(#ffd6e6, #ff7fb4);
+  border: 0.3rem solid #b4215f;
+  box-shadow: 0 0.3rem 0 #5c0b30;
   color: var(--c-ink);
-  text-shadow: 0 0.1rem 0 #fff6e2;
+  text-shadow: 0 0.1rem 0 #ffe6f0;
 }
 
 .bingo-btn {

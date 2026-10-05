@@ -89,9 +89,9 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
   };
 
   const practice = () => go(livePreset ? { name: 'game', mode: livePreset } : { name: 'rooms' });
-  const currency = m?.currency ?? 'sand';
+  const currency = m?.currency ?? 'shells';
   const freeGame = useGame((s) => s.freeGames > 0);
-  /** A coin room asks a guest for the age declaration first (SAND rooms never ask). */
+  /** A coin room asks a guest for the age declaration first (shell rooms never ask). */
   const buy = (n: number) => {
     if (!m) return;
     const s = useGame.getState();
@@ -152,7 +152,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
         </p>
         {!m.stake && (
           <p className="small-note">
-            {currency === 'coins' ? `A coin room: cards are ${config.cardPrice} coins each and prizes pay coins.` : `Cards are ${config.cardPrice} SAND each and prizes pay SAND.`}
+            {currency === 'coins' ? `A coin room: cards are ${config.cardPrice} coins each and prizes pay coins.` : `Cards are ${config.cardPrice} shells each and prizes pay shells.`}
           </p>
         )}
         <button type="button" className="room__link" onClick={() => (sfx.click(), void share())}>

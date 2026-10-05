@@ -157,6 +157,22 @@ a:hover{color:var(--lime)}
 .foot a:hover{color:var(--ink);background:var(--lime)}
 .foot a:focus-visible{outline-color:var(--ink)}
 .fine{margin:0;max-width:70ch;font-weight:600;font-size:15px;letter-spacing:.02em}
+/* credits: the chrome carries only the wordmark; one button in the foot opens every credit as a card in the top layer */
+.foot__btn{all:unset;cursor:pointer;color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.foot__btn:hover{background:var(--lime)}
+.foot__btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.credits{width:min(560px,calc(100% - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));max-height:calc(100svh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));margin:auto;padding:clamp(20px,2.4vw,28px);background:var(--ink);color:var(--cream);border:4px solid var(--cream);box-shadow:10px 10px 0 var(--surf);font-size:17px;line-height:1.45}
+.credits::backdrop{background:rgba(14,8,24,.72)}
+.credits h2{margin:0 0 14px;font-family:var(--sign);font-weight:400;font-size:clamp(20px,2.3vw,26px);line-height:1.1;text-transform:uppercase;color:var(--gold)}
+.credits dl{margin:0;display:grid;gap:10px}
+.credits dt{font-weight:800;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--surf)}
+.credits dd{margin:0}
+.credits a{color:var(--surf)}
+.credits a:hover{color:var(--lime);background:none}
+.credits__links{margin:16px 0 0;font-weight:800;font-size:14px;letter-spacing:.24em;text-transform:uppercase}
+.credits__close{display:inline-grid;place-items:center;min-height:44px;margin:18px 0 0;padding:8px 18px;font:inherit;font-weight:800;font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);background:var(--gold);border:3px solid var(--cream);cursor:pointer;box-shadow:5px 5px 0 var(--pink),-5px -5px 0 var(--surf)}
+.credits__close:hover,.credits__close:focus-visible{background:var(--lime)}
+.credits__close:focus-visible{outline:3px solid var(--cream);outline-offset:3px}
 
 /* ── motion: an entrance, and a slow tide. None of it when motion is reduced.
    Fill backwards only, so a finished entrance cannot pin a transform over the
@@ -189,7 +205,7 @@ a:hover{color:var(--lime)}
 
 <header class="hero">
   <div class="top">
-    <span><b>Beach Bingo</b> // A Fete Labs game</span>
+    <span><b>Beach Bingo</b></span>
     <span class="rt">Status: <b>In the lab</b></span>
   </div>
 
@@ -199,7 +215,7 @@ a:hover{color:var(--lime)}
     <p class="tagbar">Provably fair island bingo</p>
     <p class="sub">Free-to-play bingo on the beach: a <span class="nw">40-level</span> island adventure, 75- and 90-ball rooms, and rounds you can <mark>check yourself</mark>.</p>
     <a class="cta" href="/app/">Play now</a>
-    <p class="hint">Free to play · SAND is free play money</p>
+    <p class="hint">Free to play · Shells are free play money</p>
   </div>
 
   <i class="spark" style="--s:30px;--c:var(--gold);left:6%;top:18%" aria-hidden="true"></i>
@@ -222,11 +238,11 @@ a:hover{color:var(--lime)}
     <div class="strip" id="strip" role="region" aria-label="Screenshots" tabindex="0">
       <!-- BUILD:screens -->
       <figure class="shot" style="--c:#22E0F2"><img src="/assets/screens/screen-01-480.webp?v=852e4c0c04" srcset="/assets/screens/screen-01-480.webp?v=852e4c0c04 480w, /assets/screens/screen-01-720.webp?v=7be05ab6e1 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing the Beach Bingo title screen. Free to play: Bingo on the beach." loading="lazy" decoding="async"></figure>
-      <figure class="shot" style="--c:#FF2E88"><img src="/assets/screens/screen-02-480.webp?v=d46df7359c" srcset="/assets/screens/screen-02-480.webp?v=d46df7359c 480w, /assets/screens/screen-02-720.webp?v=0414992c7f 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing the island level map. Adventure: 40 levels. 4 islands." loading="lazy" decoding="async"></figure>
-      <figure class="shot" style="--c:#F4B400"><img src="/assets/screens/screen-03-480.webp?v=863b2f3f92" srcset="/assets/screens/screen-03-480.webp?v=863b2f3f92 480w, /assets/screens/screen-03-720.webp?v=09012bef16 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing an adventure level in play. Boosters: Daub fast. Call bingo." loading="lazy" decoding="async"></figure>
-      <figure class="shot" style="--c:#9BE22D"><img src="/assets/screens/screen-04-480.webp?v=b818e59f95" srcset="/assets/screens/screen-04-480.webp?v=b818e59f95 480w, /assets/screens/screen-04-720.webp?v=aa1bd3bc6e 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing a game in Sunset Hall, the 75-ball room. 75-ball rooms: Up to 4 cards a game." loading="lazy" decoding="async"></figure>
-      <figure class="shot" style="--c:#FF8A1F"><img src="/assets/screens/screen-05-480.webp?v=e219567f8a" srcset="/assets/screens/screen-05-480.webp?v=e219567f8a 480w, /assets/screens/screen-05-720.webp?v=e9a4147dd4 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing a game in Pier Hall, the 90-ball room. 90-ball rooms: Line, two lines, full house." loading="lazy" decoding="async"></figure>
-      <figure class="shot" style="--c:#0F9BD6"><img src="/assets/screens/screen-06-480.webp?v=e1c8193cdc" srcset="/assets/screens/screen-06-480.webp?v=e1c8193cdc 480w, /assets/screens/screen-06-720.webp?v=045f9e828b 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing the provably fair screen. Provably fair: Check every round yourself." loading="lazy" decoding="async"></figure>
+      <figure class="shot" style="--c:#FF2E88"><img src="/assets/screens/screen-02-480.webp?v=3d094585e1" srcset="/assets/screens/screen-02-480.webp?v=3d094585e1 480w, /assets/screens/screen-02-720.webp?v=87bfe4d1ab 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing the island level map. Adventure: 40 levels. 4 islands." loading="lazy" decoding="async"></figure>
+      <figure class="shot" style="--c:#F4B400"><img src="/assets/screens/screen-03-480.webp?v=22acfb2dcb" srcset="/assets/screens/screen-03-480.webp?v=22acfb2dcb 480w, /assets/screens/screen-03-720.webp?v=dc0e69efa2 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing an adventure level in play. Boosters: Daub fast. Call bingo." loading="lazy" decoding="async"></figure>
+      <figure class="shot" style="--c:#9BE22D"><img src="/assets/screens/screen-04-480.webp?v=7e313856ac" srcset="/assets/screens/screen-04-480.webp?v=7e313856ac 480w, /assets/screens/screen-04-720.webp?v=a97926c56c 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing a game in Sunset Hall, the 75-ball room. 75-ball rooms: Up to 4 cards a game." loading="lazy" decoding="async"></figure>
+      <figure class="shot" style="--c:#FF8A1F"><img src="/assets/screens/screen-05-480.webp?v=b82713740e" srcset="/assets/screens/screen-05-480.webp?v=b82713740e 480w, /assets/screens/screen-05-720.webp?v=abd65885c6 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing a game in Pier Hall, the 90-ball room. 90-ball rooms: Line, two lines, full house." loading="lazy" decoding="async"></figure>
+      <figure class="shot" style="--c:#0F9BD6"><img src="/assets/screens/screen-06-480.webp?v=64a9d469d3" srcset="/assets/screens/screen-06-480.webp?v=64a9d469d3 480w, /assets/screens/screen-06-720.webp?v=2de0757ec3 720w" sizes="(min-width: 760px) 300px, 62vw" width="1080" height="1920" alt="A phone showing the provably fair screen. Provably fair: Check every round yourself." loading="lazy" decoding="async"></figure>
       <!-- /BUILD:screens -->
     </div>
     <div class="wrap strip-nav">
@@ -247,7 +263,7 @@ a:hover{color:var(--lime)}
         <li class="card" style="--c:var(--lime);--t:var(--pink)"><span class="tag">90-ball</span><h3>Pier Hall</h3><p>Classic 90-ball: one line, two lines, full house. Up to three cards a game.</p></li>
         <li class="card" style="--c:var(--coconut)"><span class="tag">Speed · royale · duel</span><h3>Three more rooms</h3><p>Wave Rush is 30-ball speed bingo. Last Castle Standing washes out the bottom half every five balls. Riptide Duel is one on one, with no <span class="nw">auto-daub</span>.</p></li>
         <li class="card" style="--c:var(--surf);--t:var(--pink)"><span class="tag">Live rooms</span><h3>Play with friends</h3><p>Open Sunset Hall, Pier Hall, Wave Rush or Riptide Duel as a live room, share a five-letter code, and every phone sees the same balls and checks every win. No server, no sign-up.</p></li>
-        <li class="card" style="--c:var(--deep);--t:var(--gold)"><span class="tag">Free to play</span><h3>SAND is play money</h3><p>SAND is free and has no cash value; run dry, and 500 more wash up every four hours. Coins, for the coin tables, come from the Coin Shop and never leave the game.</p></li>
+        <li class="card" style="--c:var(--deep);--t:var(--gold)"><span class="tag">Free to play</span><h3>Shells are play money</h3><p>Shells are free and have no cash value; run dry, and 500 more wash up every four hours. Coins, for the coin tables, come from the Coin Shop and never leave the game.</p></li>
       </ul>
     </div>
   </section>
@@ -280,8 +296,8 @@ a:hover{color:var(--lime)}
 <footer class="foot">
   <div class="sea" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="foot__row"><span>Beach Bingo · A <a href="https://fetelabs.ai">Fete Labs</a> game</span><span><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></span><span>© 2026 Fete Labs</span></p>
-    <p class="fine">Free to play. SAND is free play money; coins are bought, have no cash value and never leave the game.</p>
+    <p class="foot__row"><span>Beach Bingo</span><span><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · <button type="button" class="foot__btn" popovertarget="credits">Credits</button></span></p>
+    <p class="fine">Free to play. Shells are free play money; coins are bought, have no cash value and never leave the game.</p>
   </div>
 </footer>
 
@@ -309,5 +325,18 @@ a:hover{color:var(--lime)}
   update();
 })();
 </script>
+<div id="credits" class="credits" popover role="dialog" aria-labelledby="credits-title" tabindex="-1" autofocus>
+  <h2 id="credits-title">Credits</h2>
+  <dl>
+    <dt>Made by</dt>
+    <dd>Beach Bingo is a <a href="https://fetelabs.ai">Fete Labs</a> game. The name, logo, brand and code are © 2026 Fete Labs. All rights reserved.</dd>
+    <dt>Art</dt>
+    <dd>In-game art adapted from the “Island | mobile game” Figma Community file, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</dd>
+    <dt>Type</dt>
+    <dd>Lilita One, Luckiest Guy, Fredoka, Bungee, Rubik Wet Paint and Barlow Condensed, each under the <a href="https://openfontlicense.org/">SIL Open Font License</a>.</dd>
+  </dl>
+  <p class="credits__links"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+  <button type="button" class="credits__close" popovertarget="credits" popovertargetaction="hide">Close</button>
+</div>
 </body>
 </html>

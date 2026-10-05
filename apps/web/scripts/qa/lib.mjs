@@ -76,7 +76,7 @@ export function launch(extraArgs = []) {
  * nothing: the splash is still shown, it only marks the intro seen), `clock: true` installs
  * Playwright's fake clock so long ball timers can be run forward with `page.clock.runFor`.
  */
-export async function player(browser, { viewport = VIEWPORTS.phone, seed = null, seedVersion = 2, clock = false, relayUrl = null, serviceWorkers = 'block' } = {}) {
+export async function player(browser, { viewport = VIEWPORTS.phone, seed = null, seedVersion = 3, clock = false, relayUrl = null, serviceWorkers = 'block' } = {}) {
   const ctx = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 1,
@@ -107,8 +107,8 @@ export async function player(browser, { viewport = VIEWPORTS.phone, seed = null,
 
 /** The persisted store as the game saved it. */
 export const stored = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key) || '{}').state ?? {}, STORE_KEY);
-/** The two ledgers: SAND is the free currency every default flow plays with; coins come from the shop. */
-export const sand = async (page) => (await stored(page)).sand;
+/** The two ledgers: shells are the free currency every default flow plays with; coins come from the shop. */
+export const shells = async (page) => (await stored(page)).shells;
 export const coins = async (page) => (await stored(page)).coins;
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

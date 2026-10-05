@@ -35,9 +35,9 @@ export function useWager(mode: ModeId, initial = 50) {
       return false;
     }
     if (!s.freeGameCovers(amount, BASE_STAKE, t) && s.balance(t) < amount) {
-      if (t === 'sand') {
-        // The free path never sees a purchase prompt: SAND comes from the tide.
-        toast('Not enough SAND — the tide brings more at the + button', 'warn');
+      if (t === 'shells') {
+        // The free path never sees a purchase prompt: shells come from the tide.
+        toast('Not enough shells — the tide brings more at the + button', 'warn');
         openPopup('faucet');
       } else {
         toast('Not enough coins', 'warn');

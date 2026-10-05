@@ -22,16 +22,19 @@ const OUT = fileURLToPath(new URL('../screens/captures/', import.meta.url));
 const { capture: CAP } = JSON.parse(readFileSync(new URL('../devices/generic-phone/device.json', import.meta.url), 'utf8'));
 const BASE = process.env.BASE_URL || 'http://localhost:5173/';
 
-// A player a week in: coins, keys, boosters, and the first seven levels starred.
+// A player a week in: shells, a pack of coins, keys, boosters, and the first seven levels starred.
 const SAVE = {
   state: {
-    coins: 4250,
+    shells: 4250,
+    coins: 1500,
+    table: 'shells',
+    ageGate: { confirmedAt: 1 },
     keys: 2,
     onboarded: true,
     stars: { 1: 3, 2: 3, 3: 2, 4: 3, 5: 2, 6: 3, 7: 1 },
     boosters: { seagull: 2, crab: 3, wave: 2, sun: 1 },
   },
-  version: 1,
+  version: 3,
 };
 
 const play = async (page) => {

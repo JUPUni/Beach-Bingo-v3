@@ -3,8 +3,8 @@ import { useNow } from '../lib/hooks.ts';
 import { adventure } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
-import { CHEST_KEYS, DAILY_TASKS, FAUCET_COOLDOWN_MS, FAUCET_SAND, FOLLOW_URL, SPEND_CAP_OPTIONS, TABLES, TABLE_NAME, useGame } from '../state/store.ts';
-import { Confetti, GreenButton, RoundButton, SandIcon } from '../ui/kit.tsx';
+import { CHEST_KEYS, DAILY_TASKS, FAUCET_COOLDOWN_MS, FAUCET_SHELLS, FOLLOW_URL, SPEND_CAP_OPTIONS, TABLES, TABLE_NAME, useGame } from '../state/store.ts';
+import { Confetti, GreenButton, RoundButton, ShellIcon } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { Popup } from '../ui/Popup.tsx';
@@ -180,7 +180,7 @@ export function TasksPopup() {
               onClick={() => {
                 if (claimTask(t.id)) {
                   sfx.coin();
-                  toast(`+${t.reward} SAND`, 'win');
+                  toast(`+${t.reward} shells`, 'win');
                 }
               }}
             >
@@ -189,7 +189,7 @@ export function TasksPopup() {
           </div>
         );
       })}
-      <p className="small-note">Tasks pay SAND and reset every day at midnight.</p>
+      <p className="small-note">Tasks pay shells and reset every day at midnight.</p>
       <div className="divider" />
       <h3>Rewards</h3>
       <FollowReward />
@@ -260,7 +260,7 @@ export function FaucetPopup() {
   };
   return (
     <Popup
-      title="Free SAND"
+      title="Free shells"
       onClose={close}
       footer={
         <GreenButton
@@ -269,21 +269,21 @@ export function FaucetPopup() {
             if (claimFaucet()) {
               sfx.coin();
               setCelebrate(true);
-              toast(`+${formatCoins(FAUCET_SAND)} SAND!`, 'win');
+              toast(`+${formatCoins(FAUCET_SHELLS)} shells!`, 'win');
             }
           }}
         >
-          {wait > 0 ? fmt(wait) : `Collect ${FAUCET_SAND}`}
+          {wait > 0 ? fmt(wait) : `Collect ${FAUCET_SHELLS}`}
         </GreenButton>
       }
     >
       {celebrate && <Confetti pieces={40} />}
       <div className="popup-center">
-        <SandIcon size={8} className="faucet-coin anim-float" />
+        <ShellIcon size={8} className="faucet-coin anim-float" />
         <p>
-          The tide brings <b>{FAUCET_SAND} free SAND</b> every 4 hours.
+          The tide brings <b>{FAUCET_SHELLS} free shells</b> every 4 hours.
         </p>
-        <p className="small-note">SAND is free play money: never bought or sold, no cash value. Every game plays with it. Coins come from the Coin Shop.</p>
+        <p className="small-note">Shells are free play money: never bought or sold, no cash value. Every game plays with them. Coins come from the Coin Shop.</p>
       </div>
     </Popup>
   );
@@ -293,7 +293,7 @@ export function ChestPopup() {
   const keys = useGame((s) => s.keys);
   const openChest = useGame((s) => s.openChest);
   const close = useGame((s) => s.closePopup);
-  const [reward, setReward] = useState<{ sand: number; booster: string } | null>(null);
+  const [reward, setReward] = useState<{ shells: number; booster: string } | null>(null);
   return (
     <Popup
       title="Golden Key"
@@ -305,7 +305,7 @@ export function ChestPopup() {
             const r = openChest();
             if (r) {
               sfx.bingo();
-              setReward({ sand: r.sand, booster: adventure.BOOSTERS[r.booster].name });
+              setReward({ shells: r.shells, booster: adventure.BOOSTERS[r.booster].name });
             }
           }}
         >
@@ -322,7 +322,7 @@ export function ChestPopup() {
         </div>
         {reward ? (
           <p>
-            You found <b>{reward.sand} SAND</b> and a <b>{reward.booster}</b>!
+            You found <b>{reward.shells} shells</b> and a <b>{reward.booster}</b>!
           </p>
         ) : (
           <p>
@@ -344,7 +344,7 @@ export function LimitsPopup() {
   // The cap in force: a raise that has come due counts (the store applies it on the next event).
   const cap = limits.spendCapRaise && limits.spendCapRaise.at <= now ? limits.spendCapRaise.value : limits.dailySpendCap;
   const fresh = today.day === new Date(now).toLocaleDateString('en-CA');
-  const net = (t: 'sand' | 'coins') => (fresh ? today.won[t] - today.wagered[t] : 0);
+  const net = (t: 'shells' | 'coins') => (fresh ? today.won[t] - today.wagered[t] : 0);
   const signed = (n: number) => `${n >= 0 ? '+' : ''}${formatCoins(n)}`;
   const option = (value: number | null, current: number | null, set: (v: number | null) => void, label: string) => (
     <button key={label} type="button" className={`chip-opt ${value === current ? 'is-on' : ''}`} onClick={() => (sfx.click(), set(value))}>
@@ -436,9 +436,9 @@ export function CreditsPopup() {
         Every house game is provably fair: results come from HMAC-SHA256 of a committed server seed, your client seed and a nonce.
         You can rotate seeds and verify past rounds in Settings → Provably fair.
       </p>
-      <h3>SAND and coins</h3>
+      <h3>Shells and coins</h3>
       <p className="small-note">
-        SAND is free play money: it is never bought or sold and has no cash value. Coins are bought in the Coin Shop; they have no
+        Shells are free play money: they are never bought or sold and have no cash value. Coins are bought in the Coin Shop; they have no
         cash value, cannot be sold, transferred or refunded, and never leave the game. Coin tables and the shop are for players
         aged 18 and over and are not offered in Washington State.
       </p>
@@ -460,7 +460,7 @@ export function CreditsPopup() {
   );
 }
 
-/** The one-time declaration before coin tables and the Coin Shop open. SAND play never sees it. */
+/** The one-time declaration before coin tables and the Coin Shop open. Free play with shells never sees it. */
 export function AgeGatePopup() {
   const confirmAge = useGame((s) => s.confirmAge);
   const [adult, setAdult] = useState(false);
@@ -476,7 +476,7 @@ export function AgeGatePopup() {
         </GreenButton>
       }
     >
-      <p>Coin tables and the Coin Shop are for adults. SAND play is open to everyone and never asks.</p>
+      <p>Coin tables and the Coin Shop are for adults. Free play with shells is open to everyone and never asks.</p>
       <label className="check">
         <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
         <span>I am 18 or older</span>

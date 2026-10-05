@@ -65,32 +65,30 @@ export function CoinIcon({ size, className = '' }: { size?: number; className?: 
   return <img src={art.iconCoin} alt="" className={`coin-icon ${className}`} style={iconSize(size)} />;
 }
 
-/** SAND, the free currency: a small pile of sand with a shell on it (drawn here; the kit has no sand art). */
-export function SandIcon({ size, className = '' }: { size?: number; className?: string }) {
+/** Shells, the free currency: the brand's shell (packages/brand/src/draw.mjs) at icon scale, in the game's warmer pink. */
+export function ShellIcon({ size, className = '' }: { size?: number; className?: string }) {
   return (
-    <svg viewBox="0 0 48 48" className={`coin-icon sand-icon ${className}`} style={iconSize(size)} aria-hidden="true">
-      <ellipse cx="24" cy="38" rx="21" ry="6" fill="#7a3b12" opacity="0.35" />
-      <path d="M4 37c3-11 11-18 20-18s17 7 20 18z" fill="#e9b85e" />
-      <path d="M8 35c4-7 9-11 16-11s12 4 16 11z" fill="#f6d48b" />
-      <path d="M13 33c3-4 7-6 11-6s8 2 11 6z" fill="#ffe9b0" />
-      <path d="M20 26c-2-6 2-11 7-11 4 0 7 3 7 7 0 4-4 7-8 7h-4z" fill="#fff7e6" stroke="#c98a3e" strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M23 28l5-10M26 28l6-8M21 25l3-8" stroke="#c98a3e" strokeWidth="1.2" strokeLinecap="round" />
+    <svg viewBox="0 0 48 48" className={`coin-icon shell-icon ${className}`} style={iconSize(size)} aria-hidden="true">
+      <path d="M16.86 31.76L20.94 35.5L22.98 39.24H25.02L27.06 35.5L31.14 31.76Z" fill="#ff4d97" stroke="#4a0d2a" strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M20.94 35.5L7 27.85Q4.3 21.72 9.28 18.5Q9.58 12.58 15.5 12.28Q18.72 7.3 24 10Q29.28 7.3 32.5 12.28Q38.42 12.58 38.72 18.5Q43.7 21.72 41 27.85L27.06 35.5Z" fill="#ff4d97" stroke="#4a0d2a" strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M12.6 18.4Q14.2 13.6 19.4 12.3" fill="none" stroke="#ffc1dc" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M24 34.65L12.52 20.37M24 34.65L17.37 15.52M24 34.65L24 13.74M24 34.65L30.63 15.52M24 34.65L35.48 20.37" fill="none" stroke="#4a0d2a" strokeWidth="1.68" strokeLinecap="round" />
     </svg>
   );
 }
 
 export function CurrencyIcon({ table, size, className = '' }: { table: Table; size?: number; className?: string }) {
-  return table === 'sand' ? <SandIcon size={size} className={className} /> : <CoinIcon size={size} className={className} />;
+  return table === 'shells' ? <ShellIcon size={size} className={className} /> : <CoinIcon size={size} className={className} />;
 }
 
-/** The one place the table changes: SAND or coins. Coins go through the age gate and the region check first. */
+/** The one place the table changes: shells or coins. Coins go through the age gate and the region check first. */
 export function TableSwitch({ className = '' }: { className?: string }) {
   const table = useGame((s) => s.table);
   const coins = table === 'coins';
   const flip = () => {
     sfx.click();
     const s = useGame.getState();
-    if (coins) return s.setTable('sand');
+    if (coins) return s.setTable('shells');
     if (s.requestCoins('table') === 'blocked') toast(s.coinsBlockedReason() ?? '', 'warn');
   };
   return (
@@ -98,7 +96,7 @@ export function TableSwitch({ className = '' }: { className?: string }) {
       type="button"
       role="switch"
       aria-checked={coins}
-      aria-label={coins ? 'Playing with coins. Switch to SAND' : 'Playing with SAND. Switch to coins'}
+      aria-label={coins ? 'Playing with coins. Switch to shells' : 'Playing with shells. Switch to coins'}
       className={`table-switch table-switch--${table} ${className}`}
       onClick={flip}
     >
@@ -111,7 +109,7 @@ export function TableSwitch({ className = '' }: { className?: string }) {
 
 /** Both balances with the switch between them; the active table's chip is lit. */
 export function Balances({ className = '' }: { className?: string }) {
-  const sand = useGame((s) => s.sand);
+  const shells = useGame((s) => s.shells);
   const coins = useGame((s) => s.coins);
   const table = useGame((s) => s.table);
   const freeGames = useGame((s) => s.freeGames);
@@ -124,13 +122,13 @@ export function Balances({ className = '' }: { className?: string }) {
     <div className={`balances ${className}`}>
       <button
         type="button"
-        className={`chip chip--plus balance balance--sand ${table === 'sand' ? 'is-on' : ''}`}
-        aria-label="SAND — free from the tide"
+        className={`chip chip--plus balance balance--shells ${table === 'shells' ? 'is-on' : ''}`}
+        aria-label="Shells — free from the tide"
         onClick={() => (sfx.click(), openPopup('faucet'))}
       >
-        <SandIcon className="chip__icon" />
+        <ShellIcon className="chip__icon" />
         <span className="t-outline t-outline--wood">
-          <Counter value={sand} format={formatCompact} />
+          <Counter value={shells} format={formatCompact} />
         </span>
       </button>
       <TableSwitch />
@@ -153,7 +151,7 @@ export function Balances({ className = '' }: { className?: string }) {
 export function RewardPill({ amount, table }: { amount: number; table: Table }) {
   return (
     <div className={`reward-pill reward-pill--${table}`}>
-      {table === 'sand' && <SandIcon size={3} className="reward-pill__icon" />}
+      {table === 'shells' && <ShellIcon size={3} className="reward-pill__icon" />}
       +{formatCoins(amount)} <small>{TABLE_NAME[table]}</small>
     </div>
   );

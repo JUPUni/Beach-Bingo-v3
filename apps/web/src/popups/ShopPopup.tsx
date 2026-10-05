@@ -122,7 +122,7 @@ export default function ShopPopup() {
     <Popup title="Coin Shop" onClose={close} wide>
       {celebrate && <Confetti pieces={40} />}
       <p className="small-note">
-        You have <b>{formatCoins(coins)} coins</b>. Coins play the coin tables; SAND stays free.{isDevShop(shop) ? ' Test shop: nothing is charged.' : ''}
+        You have <b>{formatCoins(coins)} coins</b>. Coins play the coin tables; shells stay free.{isDevShop(shop) ? ' Test shop: nothing is charged.' : ''}
       </p>
       {!open && !needsWallet && <p className="shop__soon">The Coin Shop opens soon.</p>}
       {needsWallet && (

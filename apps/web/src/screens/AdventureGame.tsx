@@ -36,7 +36,7 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
   const [phase, setPhase] = useState<Phase>('ready');
   const [countdown, setCountdown] = useState(3);
   const [crabMode, setCrabMode] = useState(false);
-  const [result, setResult] = useState<{ stars: number; sand: number; newKey: boolean } | null>(null);
+  const [result, setResult] = useState<{ stars: number; shells: number; newKey: boolean } | null>(null);
   const [shakeCard, setShakeCard] = useState(-1);
 
   useEffect(() => playedMode('adventure'), [playedMode]);
@@ -126,9 +126,9 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
       say('Bingo!');
       track('bingo');
       const stars = adventure.starsFor(run);
-      const sand = adventure.coinsFor(run);
-      const { newKey } = completeLevel(level.id, stars, sand);
-      setResult({ stars, sand, newKey });
+      const shells = adventure.coinsFor(run);
+      const { newKey } = completeLevel(level.id, stars, shells);
+      setResult({ stars, shells, newKey });
       setPhase('won');
     } else {
       sfx.miss();
@@ -139,7 +139,7 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
 
   const addWave = () => {
     const owned = boosters.wave > 0 && consumeBooster('wave');
-    // An extra wave is a booster: bought with coins, never with SAND (earned waves come from chests and the perk).
+    // An extra wave is a booster: bought with coins, never with shells (earned waves come from chests and the perk).
     if (!owned && !charge(WAVE_PRICE, { table: 'coins' })) {
       toast(`Big Wave costs ${WAVE_PRICE} coins — earn more from chests`, 'warn');
       return;
@@ -271,7 +271,7 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
               <p>
                 BINGO on ball <b>{run.ballAtBingo}</b> · Score <b>{run.score.toLocaleString()}</b>
               </p>
-              <RewardPill amount={result.sand} table="sand" />
+              <RewardPill amount={result.shells} table="shells" />
               {result.newKey && <p className="small-note">🗝️ You earned a golden key!</p>}
             </div>
           </Popup>

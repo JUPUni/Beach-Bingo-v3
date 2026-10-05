@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy · Beach Bingo</title>
-<meta name="description" content="What Beach Bingo keeps and where: no accounts, no analytics, no cookies. Progress, SAND and coins live in your browser; the region check keeps no IP address; live rooms talk browser to browser.">
+<meta name="description" content="What Beach Bingo keeps and where: no accounts, no analytics, no cookies. Progress, shells and coins live in your browser; the region check keeps no IP address; live rooms talk browser to browser.">
 <meta name="theme-color" content="#1FB5A8">
 <link rel="canonical" href="https://beachbingo.xyz/privacy/">
 <!-- BUILD:icons -->
@@ -29,20 +29,20 @@
 <meta property="og:description" content="No accounts, no analytics, no cookies. What the game keeps lives in your browser.">
 <meta property="og:image" content="https://beachbingo.xyz/assets/og.png?v=2a395a7261">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/assets/legal.css?v=a2eeb7ae09">
+<link rel="stylesheet" href="/assets/legal.css?v=88822e272c">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="hero">
   <div class="top">
-    <span><b><a href="/">Beach Bingo</a></b> // A Fete Labs game</span>
+    <span><b><a href="/">Beach Bingo</a></b></span>
     <span class="rt">Updated: <b>5 Oct 2026</b></span>
   </div>
   <div class="core">
     <p class="kicker"><b>Privacy</b>What the game knows about you</p>
     <h1 class="h">Not much, <em>and it stays on your device.</em></h1>
-    <p class="lede">Beach Bingo has no accounts, sets no cookies and runs no analytics. Your progress, SAND and coins live in your browser. When you play a live room, your browser talks to your friends' browsers, not to us.</p>
+    <p class="lede">Beach Bingo has no accounts, sets no cookies and runs no analytics. Your progress, shells and coins live in your browser. When you play a live room, your browser talks to your friends' browsers, not to us.</p>
   </div>
   <div class="sea" aria-hidden="true"></div>
 </header>
@@ -55,7 +55,7 @@
     <h2>What the game keeps, and where</h2>
     <dl>
       <dt>Your progress</dt>
-      <dd>Stars, SAND, coins, your Coin Shop purchases (the transaction signature, the pack, the token, the amount and the time), the date of your 18+ declaration, boosters, daily tasks, settings, the table you play on, the name and avatar you pick, and the seeds behind the fairness check. All of it lives in your browser's storage on your device (<code>localStorage</code>). It is never sent to us; there is no server to send it to. Clearing this site's data in your browser removes all of it, and there is no copy anywhere else.</dd>
+      <dd>Stars, shells, coins, your Coin Shop purchases (the transaction signature, the pack, the token, the amount and the time), the date of your 18+ declaration, boosters, daily tasks, settings, the table you play on, the name and avatar you pick, and the seeds behind the fairness check. All of it lives in your browser's storage on your device (<code>localStorage</code>). It is never sent to us; there is no server to send it to. Clearing this site's data in your browser removes all of it, and there is no copy anywhere else.</dd>
       <dt>A linked wallet</dt>
       <dd>If you link a Solana wallet, the game asks the wallet for your public address and keeps that address in the same browser storage, to show it and to look up a Seeker Genesis Token for the welcome perk. It never sees a private key, and asks you to sign a transaction only when you buy a coin pack in the Coin Shop. Unlinking removes the address.</dd>
       <dt>Nothing else</dt>
@@ -67,7 +67,7 @@
     <p>We run none of this and keep none of it. The relays are the public ones the <code>trystero</code> library lists, unless you point the game at a relay of your own. The people in a room see the name you typed in your profile; pick one you are happy to show them.</p>
 
     <h2>The region check</h2>
-    <p>Once, when it loads, the game asks <code>beachbingo.xyz/api/geo</code>. That function reads the country and region that Vercel attaches to the request from your connection's address and returns them; it does not read, log or store the address itself, and we keep nothing from the call. The game uses the answer for one thing: keeping the Coin Shop and the coin tables closed in Washington State. If the call fails or answers nothing, play goes on with your own declaration. SAND play is never affected by the answer.</p>
+    <p>Once, when it loads, the game asks <code>beachbingo.xyz/api/geo</code>. That function reads the country and region that Vercel attaches to the request from your connection's address and returns them; it does not read, log or store the address itself, and we keep nothing from the call. The game uses the answer for one thing: keeping the Coin Shop and the coin tables closed in Washington State. If the call fails or answers nothing, play goes on with your own declaration. Play with shells is never affected by the answer.</p>
 
     <h2>Server logs</h2>
     <p>The site is served by Vercel. As with any website, requests for its pages and files pass through its servers, which keep standard access logs (the address the request came from, the page asked for, the browser's user-agent string, the time) for a short period to run and protect the service. We do not add anything to those logs and do not use them to identify players.</p>
@@ -76,7 +76,7 @@
     <p>The app for Solana Seeker phones opens <code>beachbingo.xyz/app/</code> inside an app shell, so everything above applies to it unchanged. The shell asks for no permissions beyond the network. Installs and updates go through the Solana dApp Store under its own policies.</p>
 
     <h2>Children</h2>
-    <p>Beach Bingo is free to play with SAND and asks for no personal details from anyone. The coin tables and the Coin Shop are for players aged 18 and over, behind a declaration kept on your device.</p>
+    <p>Beach Bingo is free to play with shells and asks for no personal details from anyone. The coin tables and the Coin Shop are for players aged 18 and over, behind a declaration kept on your device.</p>
 
     <h2>Your choices</h2>
     <ul>
@@ -94,9 +94,22 @@
 <footer class="foot">
   <div class="sea" aria-hidden="true"></div>
   <div class="wrap">
-    <p class="foot__row"><span>Beach Bingo · A <a href="https://fetelabs.ai">Fete Labs</a> game</span><span><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></span><span>© 2026 Fete Labs</span></p>
-    <p class="fine">Free to play. SAND is free play money; coins are bought, have no cash value and never leave the game.</p>
+    <p class="foot__row"><span>Beach Bingo</span><span><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a> · <button type="button" class="foot__btn" popovertarget="credits">Credits</button></span></p>
+    <p class="fine">Free to play. Shells are free play money; coins are bought, have no cash value and never leave the game.</p>
   </div>
 </footer>
+<div id="credits" class="credits" popover role="dialog" aria-labelledby="credits-title" tabindex="-1" autofocus>
+  <h2 id="credits-title">Credits</h2>
+  <dl>
+    <dt>Made by</dt>
+    <dd>Beach Bingo is a <a href="https://fetelabs.ai">Fete Labs</a> game. The name, logo, brand and code are © 2026 Fete Labs. All rights reserved.</dd>
+    <dt>Art</dt>
+    <dd>In-game art adapted from the “Island | mobile game” Figma Community file, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</dd>
+    <dt>Type</dt>
+    <dd>Lilita One, Luckiest Guy, Fredoka, Bungee, Rubik Wet Paint and Barlow Condensed, each under the <a href="https://openfontlicense.org/">SIL Open Font License</a>.</dd>
+  </dl>
+  <p class="credits__links"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
+  <button type="button" class="credits__close" popovertarget="credits" popovertargetaction="hide">Close</button>
+</div>
 </body>
 </html>

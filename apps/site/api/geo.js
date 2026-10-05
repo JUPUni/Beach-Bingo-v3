@@ -6,7 +6,7 @@
 // as they are. No third-party lookup, no database, nothing logged or stored: the IP address is
 // never read here, only the two headers derived from it. The game treats a missing or failed
 // answer as unknown and lets the player's own 18+ declaration stand (docs/GAME_MODES.md,
-// "SAND and coins"); only a positive Washington answer closes the shop and the coin tables.
+// "Shells and coins"); only a positive Washington answer closes the shop and the coin tables.
 
 const clean = (value) => {
   const v = Array.isArray(value) ? value[0] : value;

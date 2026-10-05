@@ -9,7 +9,7 @@
 //
 //   pnpm --filter @beach-bingo/web build && node scripts/qa/live.mjs
 import { startRelay } from '../nostr-relay.mjs';
-import { VIEWPORTS, bodyText, fitProblems, launch, player, reporter, requireBuild, sand, serveDist, shot, stored, text } from './lib.mjs';
+import { VIEWPORTS, bodyText, fitProblems, launch, player, reporter, requireBuild, shells, serveDist, shot, stored, text } from './lib.mjs';
 
 requireBuild();
 const relay = await startRelay(0);
@@ -30,7 +30,7 @@ const results = async (page) => ({
   win: Number(((await page.locator('.popup .reward-pill').innerText().catch(() => '+0')).match(/\d[\d,]*/) || ['0'])[0].replace(/,/g, '')),
 });
 
-const seedFor = (name) => ({ onboarded: true, sand: 1000, profile: { name, avatar: '🦀' } });
+const seedFor = (name) => ({ onboarded: true, shells: 1000, profile: { name, avatar: '🦀' } });
 const host = await player(browser, { viewport: VIEWPORTS.laptop, relayUrl: relay.url, seed: seedFor('Ana') });
 const guest = await player(browser, { viewport: VIEWPORTS.phone, relayUrl: relay.url, seed: seedFor('Bo') });
 const late = await player(browser, { viewport: VIEWPORTS.phone, relayUrl: relay.url, seed: seedFor('Cy') });
@@ -64,13 +64,13 @@ try {
   await fit(guest.page, 'guest-lobby-phone');
 
   // Cards: the host takes 2 (20 coins), the guest 1 (10 coins).
-  const h0 = await sand(host.page);
-  const g0 = await sand(guest.page);
+  const h0 = await shells(host.page);
+  const g0 = await shells(guest.page);
   await host.page.getByRole('button', { name: /\+2 cards/ }).click({ force: true });
   await guest.page.getByRole('button', { name: /\+1 card ·/ }).click({ force: true });
   await host.page.locator('.room__players li', { hasText: /Bo.*1 card/ }).waitFor({ timeout: 15_000 });
   await guest.page.locator('.room__players li', { hasText: /Ana.*2 cards/ }).waitFor({ timeout: 15_000 });
-  R.ok('cards are paid for at once (host −20, guest −10)', (await sand(host.page)) === h0 - 20 && (await sand(guest.page)) === g0 - 10, `${h0}->${await sand(host.page)} ${g0}->${await sand(guest.page)}`);
+  R.ok('cards are paid for at once (host −20, guest −10)', (await shells(host.page)) === h0 - 20 && (await shells(guest.page)) === g0 - 10, `${h0}->${await shells(host.page)} ${g0}->${await shells(guest.page)}`);
   const preview = await text(host.page, '.room__info .room-stat b');
   R.ok('the prize pool preview is 88% of 30 coins on both screens', preview === '26' && (await text(guest.page, '.room__info .room-stat b')) === '26', preview);
   R.ok('the guest sees "Waiting for Ana to start…"', /Waiting for Ana to start/.test(await text(guest.page, '.room__count')));
@@ -108,8 +108,8 @@ try {
   R.ok(`somebody won the full house (${winner})`, hostWon || guestWon);
   const pool = 26;
   const share = hostWon && guestWon ? pool / 2 : pool;
-  R.ok('host SAND = 1000 − 20 + prize', (await sand(host.page)) === h0 - 20 + (hostWon ? Math.floor(share) : 0), `${await sand(host.page)} win=${rh.win}`);
-  R.ok('guest SAND = 1000 − 10 + prize', (await sand(guest.page)) === g0 - 10 + (guestWon ? Math.floor(share) : 0), `${await sand(guest.page)} win=${rg.win}`);
+  R.ok('host shells = 1000 − 20 + prize', (await shells(host.page)) === h0 - 20 + (hostWon ? Math.floor(share) : 0), `${await shells(host.page)} win=${rh.win}`);
+  R.ok('guest shells = 1000 − 10 + prize', (await shells(guest.page)) === g0 - 10 + (guestWon ? Math.floor(share) : 0), `${await shells(guest.page)} win=${rg.win}`);
   R.ok('the winner sees "You Win", the other "Round Over"', (hostWon ? rh.title === 'You Win' : rh.title === 'Round Over') && (guestWon ? rg.title === 'You Win' : rg.title === 'Round Over'), `${rh.title} / ${rg.title}`);
   await fit(host.page, 'host-results-laptop');
   await fit(guest.page, 'guest-results-phone');
@@ -129,12 +129,12 @@ try {
   R.ok('the late joiner buys a card for round 2 and the host sees it', true);
 
   // The guest leaves the lobby: its card is refunded.
-  const g1 = await sand(guest.page);
+  const g1 = await shells(guest.page);
   await guest.page.getByRole('button', { name: /\+1 card ·/ }).click({ force: true });
   await guest.page.waitForTimeout(300);
   await guest.page.locator('.gamehead__back').click({ force: true });
   await guest.page.locator('.mode-card').first().waitFor();
-  R.ok('leaving a lobby refunds the cards bought for it', (await sand(guest.page)) === g1, `${g1} -> ${await sand(guest.page)}`);
+  R.ok('leaving a lobby refunds the cards bought for it', (await shells(guest.page)) === g1, `${g1} -> ${await shells(guest.page)}`);
   await host.page.locator('.room__players li', { hasText: 'Bo' }).waitFor({ state: 'detached', timeout: 20_000 });
   R.ok('the host sees the guest leave', true);
 
@@ -150,7 +150,7 @@ try {
   await fit(host.page, 'host-fairness-log');
   await late.page.locator('.room__lobby h2', { hasText: 'Room closed' }).waitFor({ timeout: 20_000 });
   R.ok('a guest left in the lobby is told the host closed the room', true);
-  R.ok('the late joiner got its round-2 card refunded when the room closed', (await sand(late.page)) === 1000, String(await sand(late.page)));
+  R.ok('the late joiner got its round-2 card refunded when the room closed', (await shells(late.page)) === 1000, String(await shells(late.page)));
   for (const p of [host, guest, late]) {
     const errs = p.errors.filter((e) => !/trystero|ERR_INTERNET/.test(e));
     R.ok(`no page errors (${(await stored(p.page)).profile?.name})`, errs.length === 0, errs.join(' | '));

@@ -109,7 +109,7 @@ describe('a live room', () => {
     vi.useRealTimers();
   });
 
-  it("plays in the host's currency: a coin room charges and pays everyone in coins, an old room message means SAND", async () => {
+  it("plays in the host's currency: a coin room charges and pays everyone in coins, an old room message means shells", async () => {
     const seen: string[] = [];
     const ledger = (): Wallet => ({
       blocked: () => null,
@@ -132,10 +132,10 @@ describe('a live room', () => {
     await tick(START_LEAD_MS + 100);
     await playUntil(a, () => a.status === 'finished' && b.status === 'finished', 40);
     expect(seen.filter((x) => x.startsWith('win'))).toEqual(['win:coins', 'win:coins']);
-    // A room message without a currency (a build from before the two tables) reads as SAND.
+    // A room message without a currency (a build from before the two tables) reads as shells.
     hub.inject(CODE, a.selfId, { t: 'room', preset: 'waveRush', round: 1, commitment: a.commitment, playing: false });
     await tick(100);
-    expect(b.currency).toBe('sand');
+    expect(b.currency).toBe('shells');
     a.leave();
     b.leave();
   });
@@ -186,7 +186,14 @@ describe('a live room', () => {
     expect(paid).toBeLessThanOrEqual(a.m.settlement!.pool);
     expect(a.w.coins).toBe(980 + a.m.myPayout);
     expect(b.w.coins).toBe(990 + b.m.myPayout);
-    expect(a.m.myPayout + b.m.myPayout).toBe(a.m.settlement!.pool);
+    // A prize shared by several winning cards is floored per card and the engine reports the remainder as
+    // unawarded; the room hands that back by cards (2 and 1 of 3 here), floored again, so a unit can stay behind.
+    const settled = a.m.settlement!;
+    const share = (cards: number) => Math.floor((settled.unawarded * cards) / a.m.room!.cardsSold);
+    expect(a.m.myPayout).toBe((settled.payouts[a.m.selfId] ?? 0) + share(2));
+    expect(b.m.myPayout).toBe((settled.payouts[b.m.selfId] ?? 0) + share(1));
+    expect(a.m.myPayout + b.m.myPayout).toBeLessThanOrEqual(settled.pool);
+    expect(a.m.myPayout + b.m.myPayout).toBeGreaterThanOrEqual(settled.pool - 2);
 
     // Anyone can rebuild the round from the record.
     const again = buildRoom(a.m.config!, a.m.commitment, a.m.revealedSeed!, a.m.roster!);

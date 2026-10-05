@@ -136,7 +136,7 @@ export interface MachineOptions {
   host: boolean;
   /** Which hall; the host chooses, guests learn it from the host. */
   preset?: RoomPresetId;
-  /** Host: what the room's cards cost and its prizes pay (SAND by default). Guests learn it from the host. */
+  /** Host: what the room's cards cost and its prizes pay (shells by default). Guests learn it from the host. */
   currency?: Currency;
   name: string;
   wallet: Wallet;
@@ -159,7 +159,7 @@ export class LiveRoomMachine {
   preset: RoomPresetId | null = null;
   config: RoomConfig | null = null;
   /** What this room plays with; fixed when the host opened it. */
-  currency: Currency = 'sand';
+  currency: Currency = 'shells';
   hostId: string | null = null;
   hostLeft = false;
   round = 1;
@@ -208,7 +208,7 @@ export class LiveRoomMachine {
       if (!opts.preset) throw new Error('a host needs a preset');
       this.preset = opts.preset;
       this.config = rooms.ROOM_PRESETS[opts.preset];
-      this.currency = opts.currency ?? 'sand';
+      this.currency = opts.currency ?? 'shells';
       this.newSeed();
     }
   }
@@ -355,7 +355,7 @@ export class LiveRoomMachine {
     }
     const blocked = this.opts.wallet.blocked(this.currency);
     if (blocked) return this.toast(blocked, 'warn');
-    if (!this.opts.wallet.spend(config.cardPrice * count, this.currency)) return this.toast(`Not enough ${this.currency === 'sand' ? 'SAND' : 'coins'}`, 'warn');
+    if (!this.opts.wallet.spend(config.cardPrice * count, this.currency)) return this.toast(`Not enough ${this.currency}`, 'warn');
     this.myCards += count;
     if (me.cards === 0) me.firstCardAt = Date.now();
     me.cards = this.myCards;
@@ -555,7 +555,7 @@ export class LiveRoomMachine {
           if (this.status === 'finished') this.nextRoundReady = true;
         }
         this.playing = msg.playing;
-        this.currency = msg.currency ?? 'sand';
+        this.currency = msg.currency ?? 'shells';
         if (msg.stake) this.stake = msg.stake;
         // The host called the escrow off while we were in the lobby: our seat, if we had one,
         // was refunded on chain with it. (At the results the panel keeps the old stake to settle.)

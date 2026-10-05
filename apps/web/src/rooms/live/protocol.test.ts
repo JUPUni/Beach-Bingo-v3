@@ -64,8 +64,9 @@ describe('messages', () => {
       const msg = parseMessage({ ...base, currency });
       return msg?.t === 'room' ? (msg.currency ?? 'absent') : null;
     };
-    expect(currencyOf(undefined)).toBe('absent'); // older builds: SAND
-    expect(currencyOf('sand')).toBe('sand');
+    expect(currencyOf(undefined)).toBe('absent'); // older builds: the free currency
+    expect(currencyOf('shells')).toBe('shells');
+    expect(currencyOf('sand')).toBe('shells'); // the free currency's name before the rename
     expect(currencyOf('coins')).toBe('coins');
     expect(currencyOf('SOL')).toBeNull();
     expect(currencyOf(1)).toBeNull();

@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitSeed } from '@beach-bingo/engine';
-import { migratePersisted, SPEND_CAP_DELAY_MS, STARTING_SAND, useGame, WASHINGTON_MESSAGE } from './store.ts';
+import { migratePersisted, SPEND_CAP_DELAY_MS, STARTING_SHELLS, useGame, WASHINGTON_MESSAGE } from './store.ts';
 
 const reset = () =>
   useGame.setState({
-    sand: STARTING_SAND,
+    shells: STARTING_SHELLS,
     coins: 0,
-    table: 'sand',
+    table: 'shells',
     freeGames: 0,
     freeGameClaims: [],
     purchases: [],
@@ -16,7 +16,7 @@ const reset = () =>
     popup: null,
     linkedWallet: null,
     limits: { reminderMinutes: 60, dailyLossLimit: null, coolOffUntil: 0, dailySpendCap: null, spendCapRaise: null },
-    today: { day: new Date().toLocaleDateString('en-CA'), wagered: { sand: 0, coins: 0 }, won: { sand: 0, coins: 0 }, bought: 0 },
+    today: { day: new Date().toLocaleDateString('en-CA'), wagered: { shells: 0, coins: 0 }, won: { shells: 0, coins: 0 }, bought: 0 },
   });
 
 describe('game store', () => {
@@ -49,24 +49,42 @@ describe('game store', () => {
 describe('the two currencies', () => {
   beforeEach(reset);
 
-  it('starts every player on the SAND table with 1,000 SAND and no coins', () => {
+  it('starts every player on the shells table with 1,000 shells and no coins', () => {
     const s = useGame.getState();
-    expect([s.table, s.sand, s.coins, s.freeGames]).toEqual(['sand', STARTING_SAND, 0, 0]);
+    expect([s.table, s.shells, s.coins, s.freeGames]).toEqual(['shells', STARTING_SHELLS, 0, 0]);
   });
 
-  it('migrates a v1 save: the free coins become SAND, coins start at 0, the jackpot and the day move to the SAND side', () => {
+  it('migrates a v1 save: the free coins become shells, coins start at 0, the jackpot and the day move to the shells side', () => {
     const day = new Date().toLocaleDateString('en-CA');
     const v1 = { coins: 1234, jackpot: { pool: 7200, lastWonDay: day }, today: { day, wagered: 300, won: 120 }, limits: { reminderMinutes: 30, dailyLossLimit: 1000, coolOffUntil: 0 } };
     const p = migratePersisted(v1, 1);
-    expect(p.sand).toBe(1234);
+    expect(p.shells).toBe(1234);
     expect(p.coins).toBe(0);
     expect(p).not.toHaveProperty('jackpot');
-    expect((p.jackpots as { sand: { pool: number }; coins: { pool: number } }).sand.pool).toBe(7200);
+    expect((p.jackpots as { shells: { pool: number }; coins: { pool: number } }).shells.pool).toBe(7200);
     expect((p.jackpots as { coins: { pool: number } }).coins.pool).toBe(5000);
-    expect(p.today).toEqual({ day, wagered: { sand: 300, coins: 0 }, won: { sand: 120, coins: 0 }, bought: 0 });
+    expect(p.today).toEqual({ day, wagered: { shells: 300, coins: 0 }, won: { shells: 120, coins: 0 }, bought: 0 });
     expect(p.limits).toEqual({ reminderMinutes: 30, dailyLossLimit: 1000, coolOffUntil: 0, dailySpendCap: null, spendCapRaise: null });
     // A v2 save passes through untouched.
-    expect(migratePersisted({ sand: 5, coins: 9 }, 2)).toEqual({ sand: 5, coins: 9 });
+    expect(migratePersisted({ shells: 5, coins: 9 }, 3)).toEqual({ shells: 5, coins: 9 });
+  });
+
+  it('migrates a v2 save: SAND becomes shells in the balance, the table, the jackpots and the day', () => {
+    const day = new Date().toLocaleDateString('en-CA');
+    const p = migratePersisted(
+      {
+        sand: 777,
+        coins: 12,
+        table: 'sand',
+        jackpots: { sand: { pool: 6000, lastWonDay: day }, coins: { pool: 5000, lastWonDay: day } },
+        today: { day, wagered: { sand: 30, coins: 5 }, won: { sand: 10, coins: 0 }, bought: 0 },
+      },
+      2,
+    );
+    expect('sand' in p).toBe(false);
+    expect([p.shells, p.coins, p.table]).toEqual([777, 12, 'shells']);
+    expect(p.jackpots).toEqual({ shells: { pool: 6000, lastWonDay: day }, coins: { pool: 5000, lastWonDay: day } });
+    expect(p.today).toEqual({ day, wagered: { shells: 30, coins: 5 }, won: { shells: 10, coins: 0 }, bought: 0 });
   });
 
   it('migrates through the persist layer on first load', async () => {
@@ -86,11 +104,11 @@ describe('the two currencies', () => {
     try {
       await useGame.persist.rehydrate();
       const s = useGame.getState();
-      expect(s.sand).toBe(777);
+      expect(s.shells).toBe(777);
       expect(s.coins).toBe(0);
-      expect(s.table).toBe('sand');
-      expect(s.jackpots.sand.pool).toBe(6000);
-      expect(JSON.parse(blob['beach-bingo']!).version).toBe(2);
+      expect(s.table).toBe('shells');
+      expect(s.jackpots.shells.pool).toBe(6000);
+      expect(JSON.parse(blob['beach-bingo']!).version).toBe(3);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -99,12 +117,12 @@ describe('the two currencies', () => {
   it('charges and credits the active table, and an explicit one', () => {
     const s = useGame.getState();
     expect(s.charge(100, { wager: true })).toBe(true);
-    expect(useGame.getState().sand).toBe(STARTING_SAND - 100);
+    expect(useGame.getState().shells).toBe(STARTING_SHELLS - 100);
     expect(useGame.getState().coins).toBe(0);
-    expect(useGame.getState().today.wagered).toEqual({ sand: 100, coins: 0 });
+    expect(useGame.getState().today.wagered).toEqual({ shells: 100, coins: 0 });
     useGame.getState().recordWin(250);
-    expect(useGame.getState().sand).toBe(STARTING_SAND + 150);
-    expect(useGame.getState().today.won.sand).toBe(250);
+    expect(useGame.getState().shells).toBe(STARTING_SHELLS + 150);
+    expect(useGame.getState().today.won.shells).toBe(250);
     // Coins are empty: a coin charge fails and takes nothing.
     expect(useGame.getState().charge(10, { table: 'coins' })).toBe(false);
     useGame.getState().credit(500, { table: 'coins' });
@@ -113,9 +131,9 @@ describe('the two currencies', () => {
     useGame.getState().refund(10, { table: 'coins' });
     expect(useGame.getState().coins).toBe(450);
     expect(useGame.getState().today.wagered.coins).toBe(50);
-    expect(useGame.getState().sand).toBe(STARTING_SAND + 150);
+    expect(useGame.getState().shells).toBe(STARTING_SHELLS + 150);
     expect(useGame.getState().balance('coins')).toBe(450);
-    expect(useGame.getState().balance()).toBe(STARTING_SAND + 150);
+    expect(useGame.getState().balance()).toBe(STARTING_SHELLS + 150);
   });
 
   it('applies the daily loss limit per table', () => {
@@ -128,7 +146,7 @@ describe('the two currencies', () => {
     expect(useGame.getState().charge(10, { wager: true, table: 'coins' })).toBe(true);
   });
 
-  it('the free money stays SAND: faucet, tasks, levels, chest and the Seeker perk', () => {
+  it('the free money stays shells: faucet, tasks, levels, chest and the Seeker perk', () => {
     useGame.setState({ faucetAt: 0, keys: 3, tasks: { ...useGame.getState().tasks, progress: { daub: 60, bingo: 0, modes: 0, spins: 0 }, claimed: [] } });
     expect(useGame.getState().claimFaucet()).toBe(true);
     expect(useGame.getState().claimTask('daub')).toBe(true);
@@ -136,7 +154,7 @@ describe('the two currencies', () => {
     const chest = useGame.getState().openChest();
     expect(useGame.getState().claimSeekerPerk('mint-1')).toBe(true);
     expect(useGame.getState().coins).toBe(0);
-    expect(useGame.getState().sand).toBe(STARTING_SAND + 500 + 150 + 60 + chest!.sand + 2500);
+    expect(useGame.getState().shells).toBe(STARTING_SHELLS + 500 + 150 + 60 + chest!.shells + 2500);
   });
 });
 
@@ -148,7 +166,7 @@ describe('the coin gate', () => {
     expect(s.coinsReady()).toBe(false);
     expect(s.requestCoins('table')).toBe('gate');
     expect(useGame.getState().popup).toBe('age');
-    expect(useGame.getState().table).toBe('sand');
+    expect(useGame.getState().table).toBe('shells');
     useGame.getState().confirmAge();
     const after = useGame.getState();
     expect(after.ageGate?.confirmedAt).toBeGreaterThan(0);
@@ -156,22 +174,22 @@ describe('the coin gate', () => {
     expect(after.popup).toBe('shop');
     expect(after.pendingCoins).toBeNull();
     // The second time there is no gate.
-    useGame.getState().setTable('sand');
+    useGame.getState().setTable('shells');
     useGame.getState().closePopup();
     expect(useGame.getState().requestCoins('shop')).toBe('done');
     expect(useGame.getState().popup).toBe('shop');
   });
 
-  it('blocks Washington State with one line and keeps SAND play open; an unknown region fails open', () => {
+  it('blocks Washington State with one line and keeps shells play open; an unknown region fails open', () => {
     useGame.getState().setRegion({ country: 'US', region: 'WA' });
     expect(useGame.getState().coinsBlockedReason()).toBe(WASHINGTON_MESSAGE);
     expect(useGame.getState().requestCoins('table')).toBe('blocked');
     expect(useGame.getState().popup).toBeNull();
-    expect(useGame.getState().table).toBe('sand');
+    expect(useGame.getState().table).toBe('shells');
     useGame.getState().confirmAge();
     expect(useGame.getState().coinsReady()).toBe(false);
     useGame.getState().setTable('coins');
-    expect(useGame.getState().table).toBe('sand');
+    expect(useGame.getState().table).toBe('shells');
     expect(useGame.getState().charge(10, { wager: true })).toBe(true);
     useGame.getState().setRegion({ country: null, region: null });
     expect(useGame.getState().coinsBlockedReason()).toBeNull();
@@ -180,11 +198,11 @@ describe('the coin gate', () => {
     expect(useGame.getState().coinsReady()).toBe(true);
   });
 
-  it('SAND never needs the gate', () => {
+  it('shells never needs the gate', () => {
     expect(useGame.getState().ageGate).toBeNull();
     expect(useGame.getState().charge(50, { wager: true })).toBe(true);
     useGame.getState().recordWin(80);
-    expect(useGame.getState().sand).toBe(STARTING_SAND + 30);
+    expect(useGame.getState().shells).toBe(STARTING_SHELLS + 30);
   });
 });
 
@@ -202,11 +220,11 @@ describe('the free game ticket', () => {
     expect(useGame.getState().freeGames).toBe(2);
     expect(useGame.getState().freeGameClaims).toEqual(['device', 'WaLLet1111111111111111111111111111111111111']);
 
-    // On the SAND table the ticket is not used.
+    // On the shells table the ticket is not used.
     expect(useGame.getState().freeGameCovers(25, 25)).toBe(false);
     expect(useGame.getState().charge(25, { wager: true, base: 25 })).toBe(true);
     expect(useGame.getState().freeGames).toBe(2);
-    expect(useGame.getState().sand).toBe(STARTING_SAND - 25);
+    expect(useGame.getState().shells).toBe(STARTING_SHELLS - 25);
 
     useGame.setState({ table: 'coins', coins: 0 });
     expect(useGame.getState().freeGameCovers(25, 25)).toBe(true);

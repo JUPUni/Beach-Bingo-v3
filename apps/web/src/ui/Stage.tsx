@@ -76,7 +76,7 @@ export function GameHeader({ title, onBack, right }: { title: string; onBack: ()
   const openBalance = () => {
     sfx.click();
     const s = useGame.getState();
-    if (s.table === 'sand') return s.openPopup('faucet');
+    if (s.table === 'shells') return s.openPopup('faucet');
     if (s.requestCoins('shop') === 'blocked') toast(s.coinsBlockedReason() ?? '', 'warn');
   };
   return (

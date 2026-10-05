@@ -3,7 +3,7 @@
 Provably fair island bingo, free to play. Live at **[beachbingo.xyz/app/](https://beachbingo.xyz/app/)**;
 the Android app for Solana Seeker phones is on its way to the Solana dApp Store.
 
-Two currencies, one switch. **SAND** is the free one: play money from the tide, the daily tasks,
+Two currencies, one switch. **Shells** are the free one: play money from the tide, the daily tasks,
 the adventure and the Seeker perk, never bought or sold, no cash value. **Coins** are bought in the
 Coin Shop (packs paid in SOL, USDC, PYUSD, JUP or SKR; 18+, not offered in Washington State); they
 have no cash value, cannot be sold, transferred or refunded, and never leave the game. Every mode
@@ -108,7 +108,7 @@ true before it did not.
   committed seed. The game shows the commitment before the round and lets the player reveal and
   recompute afterwards. Live rooms extend this to friends without a server: the host commits, the
   roster hashes into the client seed, every browser rebuilds the same round.
-- **SAND is free, coins are bought, nothing is cashed out.** Wager modes take SAND or coins,
+- **Shells are free, coins are bought, nothing is cashed out.** Wager modes take shells or coins,
   whichever table is on, through one pair of store actions (`charge`, `credit`). Coins come only
   from the Coin Shop and promo grants, have no cash value and never leave the game; the shop and
   the coin tables open after a one-time 18+ declaration and a header-based region check

@@ -81,7 +81,7 @@ Publishing goes through the **Publisher Portal** at
 
 ## 5. The listing
 
-Copy that follows the brand's one rule about words: free to play with SAND; coins are bought and
+Copy that follows the brand's one rule about words: free to play with shells; coins are bought and
 have no cash value; never a promise of money.
 
 - **Name:** Beach Bingo
@@ -89,7 +89,7 @@ have no cash value; never a promise of money.
 - **Long description:** Free-to-play bingo on the beach: a 40-level island adventure across four
   islands, 75- and 90-ball halls you can play alone or open for friends, quick games in Casino
   Cove, and rounds you can check yourself. Every draw comes from a seed the game commits to
-  before the first ball. SAND is free play money, never bought or sold. Coins, for the coin
+  before the first ball. Shells are free play money, never bought or sold. Coins, for the coin
   tables, come from the Coin Shop (SOL, USDC, PYUSD, JUP or SKR; SKR 20% off) and have no cash
   value: no selling, no transfers, no refunds. The coin tables and the shop are 18+ and not offered
   in Washington State. Link a Solana wallet on your Seeker for a welcome perk.
@@ -97,9 +97,9 @@ have no cash value; never a promise of money.
   and the fairness check.
 - **Category:** Games. **Age rating:** the questionnaire's answers for simulated casino-style play
   **with in-app purchases** (coin packs: digital goods consumed in the game, no cash value, no
-  refunds) and an in-app 18+ gate on the coin tables and the shop; SAND play is open to all. The
+  refunds) and an in-app 18+ gate on the coin tables and the shop; play with shells is open to all. The
   answers that change from the play-money listing: in-app purchases yes; real-money gambling no
-  (nothing is paid out, in SAND or in coins); a wallet signature is requested only to pay for a pack.
+  (nothing is paid out, in shells or in coins); a wallet signature is requested only to pay for a pack.
 - **Icon:** `packages/brand/kit/store/dapp-store-icon-512.png` (512 × 512).
 - **Banner:** `dapp-store-banner-1200x600.png`. **Feature graphic:** `dapp-store-feature-1200x1200.png`.
 - **Screenshots (1080 × 1920):** `screenshots/dapp-store-screenshot-01…06`. Portrait, no device
@@ -118,9 +118,9 @@ have no cash value; never a promise of money.
 - **A WebView must load only trusted URLs.** The shell opens `https://beachbingo.xyz/app/` and
   hands anything outside that host to the system browser (`android/README.md`). Do not add other
   hosts to the shell.
-- **No misleading financial promises.** No copy says cash, real money or winnings. SAND is free
+- **No misleading financial promises.** No copy says cash, real money or winnings. Shells are free
   play money; coins are bought, have no cash value and never leave the game, and the app, the terms
-  (the "Coins and SAND" section) and the listing all say so.
+  (the "Coins and shells" section) and the listing all say so.
 - **In-app purchases and age.** The coin packs are declared as in-app purchases. The 18+
   declaration and the Washington block (`apps/site/api/geo.js`, header-based, nothing stored; an
   unknown region fails open on the declaration) are described in the terms, and the privacy
@@ -156,7 +156,7 @@ Only the owner can do these:
       signing properties); verify with `apksigner`.
 - [ ] Fill the listing from section 5, upload the media from `packages/brand/kit/store/`, submit.
 - [ ] Answer the questionnaire's in-app-purchase items (coin packs, digital goods, no refunds) and
-      point the reviewer at the terms' "Coins and SAND" section and the 18+ gate.
+      point the reviewer at the terms' "Coins and shells" section and the 18+ gate.
 - [ ] Watch the mailbox for the review; fix and resubmit with a higher version code if asked.
 - [ ] When it is live: flip the landing page's "Coming soon · Solana dApp Store" card to the store
       link, and the same on fetelabs.ai and in FetePass.

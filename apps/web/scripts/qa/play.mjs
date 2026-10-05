@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // QA walkthrough of the game in headless Chromium at a phone (390×844, touch) and a laptop
-// window (1280×800): the splash, home, the service worker, the migration of a pre-SAND save, every
+// window (1280×800): the splash, home, the service worker, the migration of a pre-shells save, every
 // popup (the 18+ gate and the Coin Shop with its test stub included), the adventure map with
-// levels 1, 14 and 21 (win, lose, boosters, replay), the seven Casino Cove games on SAND (a bet, a
+// levels 1, 14 and 21 (win, lose, boosters, replay), the seven Casino Cove games on shells (a bet, a
 // round, the balance and the Provably-fair log), the five Beach Rooms with their bots to the
 // results popup, the responsible-play limits and the shop cap, the faucet cooldown, what survives
 // a reload, and the coins table (a free-game ticket, a cool-off closing the shop, Washington).
@@ -14,7 +14,7 @@
 //   QA_VIEWPORTS=phone,laptop                              which viewports (default: both)
 //   Screenshots and results.json land in scripts/qa/out/.
 import { writeFileSync } from 'node:fs';
-import { OUT, VIEWPORTS, bodyText, fitProblems, launch, player, reporter, requireBuild, runUntil, sand, serveDist, shot, stored, text, toHome } from './lib.mjs';
+import { OUT, VIEWPORTS, bodyText, fitProblems, launch, player, reporter, requireBuild, runUntil, shells, serveDist, shot, stored, text, toHome } from './lib.mjs';
 
 requireBuild();
 const { server, url } = await serveDist();
@@ -117,7 +117,7 @@ async function shell(vp, viewport) {
   R.ok(`${vp}: service worker update() does not throw`, updated === 'ok', updated);
   await page.locator('.splash__play').click({ force: true });
   await page.locator('.home__level').waitFor();
-  R.ok(`${vp}: home starts at Level 1 with 1,000 SAND, 0 coins and 0/3 keys`, (await text(page, '.home__level')) === 'Level 1' && (await sand(page)) === 1000 && (await stored(page)).coins === 0 && (await text(page, '.balance--coins')) === '0' && /0\/3/.test(await text(page, '.topbar__keys')), `${await text(page, '.home__level')} · ${await sand(page)}`);
+  R.ok(`${vp}: home starts at Level 1 with 1,000 shells, 0 coins and 0/3 keys`, (await text(page, '.home__level')) === 'Level 1' && (await shells(page)) === 1000 && (await stored(page)).coins === 0 && (await text(page, '.balance--coins')) === '0' && /0\/3/.test(await text(page, '.topbar__keys')), `${await text(page, '.home__level')} · ${await shells(page)}`);
   await fit(page, 'home', vp);
   // Offline: the game still opens from the worker's cache.
   await page.reload({ waitUntil: 'networkidle' });
@@ -130,12 +130,12 @@ async function shell(vp, viewport) {
   errorsOk(p, vp, 'shell');
   await p.close();
 
-  // A save from before SAND: its free coins become SAND, coins start at 0, the jackpot keeps its pool.
+  // A save from before shells: its free coins become shells, coins start at 0, the jackpot keeps its pool.
   const old = await player(browser, { viewport, seedVersion: 1, seed: { onboarded: true, coins: 1234, jackpot: { pool: 6000, lastWonDay: localDay }, today: { day: localDay, wagered: 0, won: 0 } } });
   await toHome(old.page, url);
   await old.page.waitForTimeout(800);
   const m = await stored(old.page);
-  R.ok(`${vp}: a v1 save migrates: 1,234 coins become SAND, coins start at 0, the jackpot moves to the SAND table`, m.sand === 1234 && m.coins === 0 && m.table === 'sand' && m.jackpots?.sand?.pool === 6000 && m.jackpot === undefined && (await text(old.page, '.balance--sand')) === '1,234', JSON.stringify({ sand: m.sand, coins: m.coins, table: m.table, chip: await text(old.page, '.balance--sand') }));
+  R.ok(`${vp}: a v1 save migrates: 1,234 coins become shells, coins start at 0, the jackpot moves to the shells table`, m.shells === 1234 && m.coins === 0 && m.table === 'shells' && m.jackpots?.shells?.pool === 6000 && m.jackpot === undefined && (await text(old.page, '.balance--shells')) === '1,234', JSON.stringify({ shells: m.shells, coins: m.coins, table: m.table, chip: await text(old.page, '.balance--shells') }));
   errorsOk(old, vp, 'shell (migration)');
   await old.close();
 }
@@ -220,26 +220,26 @@ async function popups(vp, viewport) {
   await closePopup(page);
 
   // Faucet
-  await page.locator('.topbar__balances .balance--sand').click({ force: true });
+  await page.locator('.topbar__balances .balance--shells').click({ force: true });
   await page.locator('.popup').first().waitFor();
   await fit(page, 'popup-coins', vp);
-  const c0 = await sand(page);
+  const c0 = await shells(page);
   await page.getByRole('button', { name: /Collect 500/ }).click({ force: true });
   await page.waitForTimeout(400);
-  const c1 = await sand(page);
+  const c1 = await shells(page);
   const countdown = await page.locator('.popup__footer button').innerText();
   R.ok(`${vp}: faucet pays 500 once and then counts down`, c1 === c0 + 500 && /^(4h 00m 0\ds|3h 59m \d\ds)$/.test(countdown.trim()) && (await page.locator('.popup__footer button').isDisabled()), `${c0} -> ${c1}, button "${countdown}"`);
   await page.locator('.popup__footer button').click({ force: true }).catch(() => {});
-  R.ok(`${vp}: a second collect does nothing`, (await sand(page)) === c1);
+  R.ok(`${vp}: a second collect does nothing`, (await shells(page)) === c1);
   await closePopup(page);
 
-  // The two balances and the switch: SAND is lit, coins read 0, and coins ask the 18+ gate first.
-  R.ok(`${vp}: the top bar shows SAND lit and 0 coins`, (await page.locator('.balance--sand.is-on').count()) === 1 && (await text(page, '.balance--coins')) === '0' && (await page.locator('.table-switch[aria-checked="false"]').count()) === 1);
+  // The two balances and the switch: shells is lit, coins read 0, and coins ask the 18+ gate first.
+  R.ok(`${vp}: the top bar shows shells lit and 0 coins`, (await page.locator('.balance--shells.is-on').count()) === 1 && (await text(page, '.balance--coins')) === '0' && (await page.locator('.table-switch[aria-checked="false"]').count()) === 1);
   await page.locator('.table-switch').first().click({ force: true });
   await page.locator('.popup').first().waitFor();
   await page.waitForTimeout(400);
   const gateText = await bodyText(page);
-  R.ok(`${vp}: switching to coins opens the 18+ gate with Confirm disabled`, /18 or older/.test(gateText) && /Washington State/.test(gateText) && (await page.locator('.popup__footer button').isDisabled()) && (await stored(page)).table === 'sand');
+  R.ok(`${vp}: switching to coins opens the 18+ gate with Confirm disabled`, /18 or older/.test(gateText) && /Washington State/.test(gateText) && (await page.locator('.popup__footer button').isDisabled()) && (await stored(page)).table === 'shells');
   await fit(page, 'popup-age-gate', vp);
   await page.locator('.check input').nth(0).click({ force: true });
   await page.locator('.check input').nth(1).click({ force: true });
@@ -272,7 +272,7 @@ async function popups(vp, viewport) {
   await closePopup(page);
   await page.locator('.table-switch').first().click({ force: true });
   await page.waitForTimeout(200);
-  R.ok(`${vp}: the switch goes back to SAND with no popup`, (await stored(page)).table === 'sand' && (await page.locator('.popup').count()) === 0 && (await page.locator('.balance--sand.is-on').count()) === 1);
+  R.ok(`${vp}: the switch goes back to shells with no popup`, (await stored(page)).table === 'shells' && (await page.locator('.popup').count()) === 0 && (await page.locator('.balance--shells.is-on').count()) === 1);
   await page.locator('.table-switch').first().click({ force: true });
   await page.waitForTimeout(400);
   if (held > 0) {
@@ -287,7 +287,7 @@ async function popups(vp, viewport) {
 
   // Limits and credits
   await openSetting(page, /Responsible play/);
-  R.ok(`${vp}: limits popup shows today's net result`, /Today's net result: \+0 SAND · \+0 coins/.test(await bodyText(page)), (await bodyText(page)).slice(0, 120));
+  R.ok(`${vp}: limits popup shows today's net result`, /Today's net result: \+0 shells · \+0 coins/.test(await bodyText(page)), (await bodyText(page)).slice(0, 120));
   await page.locator('.chip-opt', { hasText: /^30 min$/ }).click();
   R.ok(`${vp}: reminder choice is stored`, (await stored(page)).limits?.reminderMinutes === 30);
   const capOpts = page.locator('h3', { hasText: 'Coin Shop daily cap' }).locator('xpath=following-sibling::div[contains(@class,"chip-opts")][1]');
@@ -313,10 +313,10 @@ async function popups(vp, viewport) {
   await page.locator('.splash__play').click({ force: true });
   await page.locator('.home__level').waitFor();
   const s = await stored(page);
-  await page.locator('.topbar__balances .balance--sand').click({ force: true });
+  await page.locator('.topbar__balances .balance--shells').click({ force: true });
   await page.locator('.popup').first().waitFor();
   const cd2 = await page.locator('.popup__footer button').innerText();
-  R.ok(`${vp}: profile, SAND, coins, the age gate, faucet time and reminder survive a reload`, s.profile.name === 'QA Bot' && s.sand === c1 && s.coins === held && s.ageGate?.confirmedAt > 0 && /^(4h 00m|3h 5\dm)/.test(cd2.trim()) && s.limits.reminderMinutes === 30 && (await text(page, '.topbar__avatar')) === '🦈', `${JSON.stringify(s.profile)} ${s.coins} "${cd2}"`);
+  R.ok(`${vp}: profile, shells, coins, the age gate, faucet time and reminder survive a reload`, s.profile.name === 'QA Bot' && s.shells === c1 && s.coins === held && s.ageGate?.confirmedAt > 0 && /^(4h 00m|3h 5\dm)/.test(cd2.trim()) && s.limits.reminderMinutes === 30 && (await text(page, '.topbar__avatar')) === '🦈', `${JSON.stringify(s.profile)} ${s.coins} "${cd2}"`);
   await closePopup(page);
   errorsOk(p, vp, 'popups');
   await p.close();
@@ -379,7 +379,7 @@ async function playLevel(p, id, { manual = false, giveUp = false, pinch = false 
 /** Play the level already started until it is won; a lost one (a perfect player still loses a few percent) is restarted from the map. */
 async function winLevel(p, id, play = {}, boost = {}, attempts = 3) {
   for (let a = 1; ; a++) {
-    const before = await sand(p.page);
+    const before = await shells(p.page);
     const outcome = await playLevel(p, id, play);
     if (outcome === 'won' || a >= attempts) return { outcome, before };
     R.note(`level ${id} lost on attempt ${a} (${await ballsLeft(p.page)} balls left); playing it again`);
@@ -417,9 +417,9 @@ async function adventure(vp, viewport) {
   const win1 = await winLevel(p, 1, {}, { seagull: true });
   const stars = await page.locator('.popup .star--on').count();
   const st = await stored(page);
-  R.ok(`${vp}: level 1 with auto-daub is won and paid reward × stars in SAND`, win1.outcome === 'won' && stars >= 1 && st.sand === win1.before + LEVEL_REWARD(1) * stars && st.stars[1] === stars, `${win1.outcome}, ${stars}★, coins ${win1.before} -> ${st.coins}`);
+  R.ok(`${vp}: level 1 with auto-daub is won and paid reward × stars in shells`, win1.outcome === 'won' && stars >= 1 && st.shells === win1.before + LEVEL_REWARD(1) * stars && st.stars[1] === stars, `${win1.outcome}, ${stars}★, coins ${win1.before} -> ${st.coins}`);
   R.ok(`${vp}: a win counts for the BINGO task and a 3★ win gives a key`, st.tasks.progress.bingo >= 1 && st.keys === (stars === 3 ? 1 : 0), JSON.stringify({ progress: st.tasks.progress, keys: st.keys }));
-  R.ok(`${vp}: the level reward is paid in SAND, never coins`, st.coins === 0 && /SAND/.test(await text(page, '.popup .reward-pill')), await text(page, '.popup .reward-pill'));
+  R.ok(`${vp}: the level reward is paid in shells, never coins`, st.coins === 0 && /shells/.test(await text(page, '.popup .reward-pill')), await text(page, '.popup .reward-pill'));
   await fit(page, 'level-won', vp);
   // Replay twice in a row: each must start a fresh run.
   await page.locator('[aria-label="Replay"]').click({ force: true });
@@ -450,11 +450,11 @@ async function adventure(vp, viewport) {
   await page.waitForTimeout(100);
   R.ok(`${vp}: the owned Big Wave adds 5 balls and resumes play`, (await page.locator('.popup').count()) === 0 && (await ballsLeft(page)) === 5 && (await stored(page)).boosters.wave === wavesBefore - 1, `balls=${await ballsLeft(page)}`);
   const lost2 = await playLevel(p, 1, { giveUp: true });
-  const cw = await sand(page);
+  const cw = await shells(page);
   const buyLabel = await waveBtn.innerText();
   await waveBtn.click({ force: true });
   const noCoins = await page.locator('.toast', { hasText: /Big Wave costs 100 coins/ }).waitFor({ timeout: 3000 }).then(() => true, () => false);
-  R.ok(`${vp}: a Big Wave costs 100 coins, so a player with no coins keeps their SAND and the popup`, lost2 === 'lost' && /100/.test(buyLabel) && noCoins && (await sand(page)) === cw && (await stored(page)).coins === 0 && (await page.locator('.popup').count()) === 1, `${lost2} "${buyLabel}" ${cw} -> ${await sand(page)}`);
+  R.ok(`${vp}: a Big Wave costs 100 coins, so a player with no coins keeps their shells and the popup`, lost2 === 'lost' && /100/.test(buyLabel) && noCoins && (await shells(page)) === cw && (await stored(page)).coins === 0 && (await page.locator('.popup').count()) === 1, `${lost2} "${buyLabel}" ${cw} -> ${await shells(page)}`);
   // A plain click: Playwright waits for the popup's pop-in to settle and for the button to be the hit target.
   await page.getByRole('button', { name: 'Level map' }).click();
   await page.locator('.level-tile').first().waitFor();
@@ -468,7 +468,7 @@ async function adventure(vp, viewport) {
   await p.close();
 
   // Seeded player: levels 14 (four cards) and 21 (Shipwreck Bay) with boosters.
-  const seed = { onboarded: true, sand: 5000, coins: 500, boosters: { seagull: 3, crab: 2, wave: 0, sun: 2 }, stars: Object.fromEntries(Array.from({ length: 20 }, (_, i) => [i + 1, 1])) };
+  const seed = { onboarded: true, shells: 5000, coins: 500, boosters: { seagull: 3, crab: 2, wave: 0, sun: 2 }, stars: Object.fromEntries(Array.from({ length: 20 }, (_, i) => [i + 1, 1])) };
   const q = await player(browser, { viewport, clock: true, seed });
   const page2 = q.page;
   page2.on('crash', () => R.note('page crashed'));
@@ -500,7 +500,7 @@ async function seededLevels(vp, q, page2) {
   await fit(page2, 'level-14-four-cards', vp);
   const w14 = await winLevel(q, 14, {}, { seagull: true });
   const s14 = await page2.locator('.popup .star--on').count();
-  R.ok(`${vp}: level 14 is won with auto-daub and paid ${LEVEL_REWARD(14)} × stars`, w14.outcome === 'won' && (await sand(page2)) === w14.before + LEVEL_REWARD(14) * s14, `${w14.outcome} ${s14}★ ${w14.before} -> ${await sand(page2)}`);
+  R.ok(`${vp}: level 14 is won with auto-daub and paid ${LEVEL_REWARD(14)} × stars`, w14.outcome === 'won' && (await shells(page2)) === w14.before + LEVEL_REWARD(14) * s14, `${w14.outcome} ${s14}★ ${w14.before} -> ${await shells(page2)}`);
   await fit(page2, 'level-14-won', vp);
   await page2.locator('[aria-label="Next level"]').click({ force: true });
   await page2.locator('.bingo-btn').waitFor();
@@ -518,21 +518,21 @@ async function seededLevels(vp, q, page2) {
   const w21 = await winLevel(q, 21, { manual: true, pinch: true }, { sun: true });
   const s21 = await page2.locator('.popup .star--on').count();
   const st21 = await stored(page2);
-  R.ok(`${vp}: level 21 with manual daubs + Crab Pinch is won and the sun doubles the reward`, w21.outcome === 'won' && st21.sand === w21.before + LEVEL_REWARD(21) * s21 * 2 && st21.boosters.crab < crabs0, `${w21.outcome} ${s21}★ ${w21.before} -> ${st21.coins} crabs ${crabs0} -> ${st21.boosters.crab}`);
+  R.ok(`${vp}: level 21 with manual daubs + Crab Pinch is won and the sun doubles the reward`, w21.outcome === 'won' && st21.shells === w21.before + LEVEL_REWARD(21) * s21 * 2 && st21.boosters.crab < crabs0, `${w21.outcome} ${s21}★ ${w21.before} -> ${st21.coins} crabs ${crabs0} -> ${st21.boosters.crab}`);
   await fit(page2, 'level-21-won', vp);
   await page2.locator('[aria-label="Replay"]').click({ force: true});
   await page2.locator('.bingo-btn').waitFor();
   const o21b = await playLevel(q, 21, { giveUp: true });
   R.ok(`${vp}: level 21 lose path reaches Out of Balls`, o21b === 'lost', o21b);
-  // The seeded player has coins: a bought Big Wave costs 100 of them and never touches the SAND.
+  // The seeded player has coins: a bought Big Wave costs 100 of them and never touches the shells.
   const wavesLeft = (await stored(page2)).boosters.wave;
   if (wavesLeft === 0) {
-    const sandBefore = await sand(page2);
+    const shellsBefore = await shells(page2);
     // The popup's Big Wave button, not the HUD's booster slot of the same name; plain click: the popup footer's forced clicks miss on the laptop window.
     await page2.locator('.popup-layer').last().getByRole('button', { name: /\+5 balls/ }).click();
     await page2.waitForTimeout(100);
     const st = await stored(page2);
-    R.ok(`${vp}: a bought Big Wave costs 100 coins and adds 5 balls`, st.coins === 400 && (await sand(page2)) === sandBefore && (await ballsLeft(page2)) === 5, `coins ${st.coins} balls ${await ballsLeft(page2)}`);
+    R.ok(`${vp}: a bought Big Wave costs 100 coins and adds 5 balls`, st.coins === 400 && (await shells(page2)) === shellsBefore && (await ballsLeft(page2)) === 5, `coins ${st.coins} balls ${await ballsLeft(page2)}`);
     await page2.locator('.adv-hud__back').click({ force: true });
   } else {
     R.note(`level 21: ${wavesLeft} Big Wave still owned, the paid wave was not exercised`);
@@ -543,7 +543,7 @@ async function seededLevels(vp, q, page2) {
 
 /* ---------------- casino cove ---------------- */
 async function casino(vp, viewport) {
-  const p = await player(browser, { viewport, seed: { onboarded: true, sand: 3000 } });
+  const p = await player(browser, { viewport, seed: { onboarded: true, shells: 3000 } });
   const { page } = p;
   await toHome(page, url);
   await goList(page, 'casino');
@@ -554,11 +554,11 @@ async function casino(vp, viewport) {
   const spent = [];
   /** Leaves the game (the Provably-fair log opens from the list's nav) and checks the ledger against it. */
   const settleCheck = async (name, stake, extra = 0) => {
-    const now = await sand(page);
+    const now = await shells(page);
     await back(page);
     const { first, payout, nonce } = await lastLog(page);
     const expected = spent.at(-1) - stake - extra + payout;
-    R.ok(`${vp}: ${name}: SAND = before − stake + payout (${spent.at(-1)} − ${stake}${extra ? ` − ${extra}` : ''} + ${payout} = ${expected})`, Number.isFinite(payout) && now === expected, `now ${now}; log "${first}"`);
+    R.ok(`${vp}: ${name}: shells = before − stake + payout (${spent.at(-1)} − ${stake}${extra ? ` − ${extra}` : ''} + ${payout} = ${expected})`, Number.isFinite(payout) && now === expected, `now ${now}; log "${first}"`);
     return { payout, nonce, first };
   };
   const roundIdle = async () => {
@@ -571,7 +571,7 @@ async function casino(vp, viewport) {
   await openMode(page, 'Tide Pool');
   R.ok(`${vp}: Tide Pool paytable shows the sea's RTP`, /RTP 97\.\d+%/.test(await bodyText(page)));
   await fit(page, 'casino-tide-pool', vp);
-  spent.push(await sand(page));
+  spent.push(await shells(page));
   await page.locator('.casino__go').click({ force: true });
   await roundIdle();
   R.ok(`${vp}: Tide Pool reveals 35 balls and a result per card`, (await page.locator('.ball-tray .ball').count()) === 35 && (await page.locator('.tide-card__result').count()) === 2);
@@ -583,7 +583,7 @@ async function casino(vp, viewport) {
   // Crab Dig
   await openMode(page, 'Crab Dig');
   await fit(page, 'casino-crab-dig', vp);
-  spent.push(await sand(page));
+  spent.push(await shells(page));
   await page.getByRole('button', { name: /Start digging/ }).click({ force: true });
   await page.waitForTimeout(200);
   await tap(p, page.locator('[aria-label="Square 1"]'));
@@ -608,7 +608,7 @@ async function casino(vp, viewport) {
   await page.locator('input[type=range]').fill('27');
   R.ok(`${vp}: moving the slider updates the payout`, /Full house by ball 27/.test(await bodyText(page)));
   await fit(page, 'casino-blitz', vp);
-  spent.push(await sand(page));
+  spent.push(await shells(page));
   await page.locator('.casino__go').click({ force: true });
   await roundIdle();
   await fit(page, 'casino-blitz-result', vp);
@@ -617,7 +617,7 @@ async function casino(vp, viewport) {
   // Shell Spin
   await openMode(page, 'Shell Spin');
   await fit(page, 'casino-shell-spin', vp);
-  spent.push(await sand(page));
+  spent.push(await shells(page));
   for (let i = 0; i < 40; i++) {
     if (await page.getByRole('button', { name: /^Collect/ }).count()) {
       await page.getByRole('button', { name: /^Collect/ }).click({ force: true });
@@ -638,7 +638,7 @@ async function casino(vp, viewport) {
   await fit(page, 'casino-riptide', vp);
   let riptideDone = false;
   for (let attempt = 0; attempt < 4 && !riptideDone; attempt++) {
-    spent.push(await sand(page));
+    spent.push(await shells(page));
     await page.getByRole('button', { name: /Ride the tide/ }).click({ force: true });
     let label = '';
     for (let t = 0; t < 120; t++) {
@@ -669,17 +669,17 @@ async function casino(vp, viewport) {
   await openMode(page, 'Tiki Video Bingo');
   await page.locator('.segmented button').first().click({ force: true });
   await fit(page, 'casino-video-bingo', vp);
-  spent.push(await sand(page));
+  spent.push(await shells(page));
   await page.getByRole('button', { name: /^Play 10/ }).click({ force: true });
   await page.waitForTimeout(2500);
   let extraPrice = 0;
   const extra = page.getByRole('button', { name: /Extra ball/ });
   if (await extra.count()) {
     extraPrice = Number((await extra.innerText()).replace(/[^\d]/g, ''));
-    const cBefore = await sand(page);
+    const cBefore = await shells(page);
     await extra.click({ force: true });
     await page.waitForTimeout(600);
-    R.ok(`${vp}: an extra ball costs its listed price`, (await sand(page)) === cBefore - extraPrice, `${cBefore} -> ${await sand(page)} price ${extraPrice}`);
+    R.ok(`${vp}: an extra ball costs its listed price`, (await shells(page)) === cBefore - extraPrice, `${cBefore} -> ${await shells(page)} price ${extraPrice}`);
     if (await page.getByRole('button', { name: /^Collect/ }).count()) await page.getByRole('button', { name: /^Collect/ }).click({ force: true });
   } else {
     R.note('Video Bingo: no extra ball was offered this round');
@@ -694,7 +694,7 @@ async function casino(vp, viewport) {
   const picked = (await bodyText(page)).match(/(\d+)\/10 picked/)?.[1];
   R.ok(`${vp}: quick pick chooses 5–10 shells and shows a paytable`, Number(picked) >= 5 && (await page.locator('.keno-pays span').count()) === Number(picked) + 1, `${picked} picked`);
   await fit(page, 'casino-keno', vp);
-  spent.push(await sand(page));
+  spent.push(await shells(page));
   await page.getByRole('button', { name: /Draw 10/ }).click({ force: true });
   await roundIdle();
   R.ok(`${vp}: Keno draws ten shells`, (await page.locator('.keno-cell.is-drawn, .keno-cell.is-hit').count()) === 10);
@@ -706,11 +706,11 @@ async function casino(vp, viewport) {
   R.ok(`${vp}: seven house rounds count for the tasks and advance the nonce`, st.tasks.progress.spins >= 7 && st.tasks.progress.modes >= 7 && keno.nonce >= 7, JSON.stringify({ progress: st.tasks.progress, nonce: keno.nonce }));
   await openNav(page, 'Daily tasks');
   const ready = page.locator('.task:not(.task--follow) .task__claim.is-ready');
-  const cT = await sand(page);
+  const cT = await shells(page);
   R.ok(`${vp}: "Play 3 different games" is claimable`, (await ready.count()) >= 1);
   await ready.first().click({ force: true });
   await page.waitForTimeout(300);
-  R.ok(`${vp}: claiming the task pays 250 SAND once`, (await sand(page)) === cT + 250 && (await page.locator('.task:not(.task--follow) .task__claim', { hasText: '✓' }).count()) === 1, `${cT} -> ${await sand(page)}`);
+  R.ok(`${vp}: claiming the task pays 250 shells once`, (await shells(page)) === cT + 250 && (await page.locator('.task:not(.task--follow) .task__claim', { hasText: '✓' }).count()) === 1, `${cT} -> ${await shells(page)}`);
   await closePopup(page);
   const { items } = await lastLog(page);
   R.ok(`${vp}: the Provably-fair log lists the rounds with nonce, mode and result`, items.length >= 7 && items.slice(0, 7).every((l) => /#\d+ \w+ — .*→ \d/.test(l.replace(/\s+/g, ' '))), items.slice(0, 3).join(' | '));
@@ -718,7 +718,7 @@ async function casino(vp, viewport) {
   const before = await stored(page);
   await page.reload({ waitUntil: 'networkidle' });
   const after = await stored(page);
-  R.ok(`${vp}: SAND, nonce and task progress survive a reload`, after.sand === before.sand && after.fairness.nonce === before.fairness.nonce && after.tasks.progress.spins === before.tasks.progress.spins);
+  R.ok(`${vp}: shells, nonce and task progress survive a reload`, after.shells === before.shells && after.fairness.nonce === before.fairness.nonce && after.tasks.progress.spins === before.tasks.progress.spins);
   errorsOk(p, vp, 'casino');
   await p.close();
 }
@@ -747,13 +747,13 @@ async function rooms(vp, viewport) {
     const bots = Number((lobby.match(/(\d+) labelled bot/) || [])[1]);
     R.ok(`${vp}: ${name} opens as a practice room with labelled bots`, /Practice room|Duel lobby/.test(lobby) && bots >= 1 && /🤖/.test(lobby), lobby.slice(0, 160));
     await fit(page, `${screen}-lobby`, vp);
-    const c0 = await sand(page);
+    const c0 = await shells(page);
     const btn = page.locator('.room__buy .btn-green').nth(buyIndex);
     const label = await btn.innerText();
     const cost = Number(label.replace(/.*· /, ''));
     await btn.click({ force: true });
     await page.waitForTimeout(100);
-    R.ok(`${vp}: ${name}: buying "${label.trim()}" takes ${cost} SAND and starts the countdown`, (await sand(page)) === c0 - cost && /Starting in/.test(await text(page, '.room__count')), `${c0} -> ${await sand(page)}`);
+    R.ok(`${vp}: ${name}: buying "${label.trim()}" takes ${cost} shells and starts the countdown`, (await shells(page)) === c0 - cost && /Starting in/.test(await text(page, '.room__count')), `${c0} -> ${await shells(page)}`);
     const started = await runUntil(page, 1000, 12_000, async () => (await page.locator('.room__caller .ball').count()) > 0);
     R.ok(`${vp}: ${name}: the round starts after the countdown`, started);
     await page.clock.runFor(drawMs * 3);
@@ -765,7 +765,7 @@ async function rooms(vp, viewport) {
     const done = await runUntil(page, drawMs * 5, drawMs * (maxBalls + 6), async () => (await page.locator('.popup').count()) > 0);
     const r = done ? await results() : null;
     R.ok(`${vp}: ${name}: the round reaches the results popup with ${stages} stage(s) settled`, done && r.lines.length >= stages && /pool/.test(r.note), r ? `${r.title}: ${r.lines.join(' | ')} — ${r.note}` : 'no popup');
-    R.ok(`${vp}: ${name}: SAND = before − cards + prize (${c0} − ${cost} + ${r?.win ?? '?'})`, r && (await sand(page)) === c0 - cost + r.win, `now ${await sand(page)}`);
+    R.ok(`${vp}: ${name}: shells = before − cards + prize (${c0} − ${cost} + ${r?.win ?? '?'})`, r && (await shells(page)) === c0 - cost + r.win, `now ${await shells(page)}`);
     await fit(page, `${screen}-results`, vp);
     return r;
   };
@@ -798,22 +798,22 @@ async function rooms(vp, viewport) {
   // Last Castle Standing
   await openMode(page, 'Last Castle');
   await fit(page, 'room-castle-lobby', vp);
-  c0 = await sand(page);
+  c0 = await shells(page);
   await page.getByRole('button', { name: /Join · 50/ }).click({ force: true });
   await page.waitForTimeout(100);
-  R.ok(`${vp}: Last Castle takes the 50-SAND buy-in and seats 32 castles`, (await sand(page)) === c0 - 50 && /Castles left 32/i.test((await bodyText(page)).replace(/\s+/g, ' ')), (await bodyText(page)).slice(0, 200));
+  R.ok(`${vp}: Last Castle takes the 50-shell buy-in and seats 32 castles`, (await shells(page)) === c0 - 50 && /Castles left 32/i.test((await bodyText(page)).replace(/\s+/g, ' ')), (await bodyText(page)).slice(0, 200));
   await runUntil(page, 1000, 6000, async () => (await page.locator('.room__caller .ball').count()) > 0);
   await fit(page, 'room-castle-playing', vp);
   const castleDone = await runUntil(page, 3200, 3200 * 12, async () => (await page.locator('.popup').count()) > 0);
   const castle = castleDone ? await results() : null;
   // 32 castles halve five times: 5 waves × 5 balls.
   R.ok(`${vp}: Last Castle finishes with a champion after 25 balls and pays places`, castleDone && /Champion!|Place #\d+/.test(castle.title) && /Champion: .* · 25 balls · 32 players/.test(castle.note), castle ? `${castle.title} — ${castle.note}` : 'no popup');
-  R.ok(`${vp}: Last Castle SAND = before − 50 + prize`, castle && (await sand(page)) === c0 - 50 + castle.win, `${c0} -> ${await sand(page)} prize ${castle?.win}`);
+  R.ok(`${vp}: Last Castle shells = before − 50 + prize`, castle && (await shells(page)) === c0 - 50 + castle.win, `${c0} -> ${await shells(page)} prize ${castle?.win}`);
   await fit(page, 'room-castle-results', vp);
-  const cAgain = await sand(page);
+  const cAgain = await shells(page);
   await page.getByRole('button', { name: /Again · 50/ }).click({ force: true });
   await page.waitForTimeout(200);
-  R.ok(`${vp}: Last Castle: Again starts a new game for 50`, (await page.locator('.popup').count()) === 0 && (await sand(page)) === cAgain - 50 && /Wave 0\//i.test((await bodyText(page)).replace(/\s+/g, ' ')), `popup=${await page.locator('.popup').count()} ${cAgain} -> ${await sand(page)}`);
+  R.ok(`${vp}: Last Castle: Again starts a new game for 50`, (await page.locator('.popup').count()) === 0 && (await shells(page)) === cAgain - 50 && /Wave 0\//i.test((await bodyText(page)).replace(/\s+/g, ' ')), `popup=${await page.locator('.popup').count()} ${cAgain} -> ${await shells(page)}`);
   await back(page);
 
   // Riptide Duel: a false call, the lock-out, then a real BINGO the moment a line completes.
@@ -849,7 +849,7 @@ async function rooms(vp, viewport) {
   await page.waitForTimeout(100);
   const duel = (await page.locator('.popup').count()) ? await results() : null;
   const st = await stored(page);
-  R.ok(`${vp}: the duel settles: winner named, 95 of the 100-coin pot paid`, duel && duel.lines.length === 1 && /Any Line on ball \d+: .* · 95/.test(duel.lines[0]) && (duel.title === 'You Win' ? (await sand(page)) === c0 - 50 + 95 : (await sand(page)) === c0 - 50), duel ? `${duel.title}: ${duel.lines.join(' | ')} coins ${c0} -> ${await sand(page)}` : 'no popup');
+  R.ok(`${vp}: the duel settles: winner named, 95 of the 100-coin pot paid`, duel && duel.lines.length === 1 && /Any Line on ball \d+: .* · 95/.test(duel.lines[0]) && (duel.title === 'You Win' ? (await shells(page)) === c0 - 50 + 95 : (await shells(page)) === c0 - 50), duel ? `${duel.title}: ${duel.lines.join(' | ')} coins ${c0} -> ${await shells(page)}` : 'no popup');
   R.ok(`${vp}: manual daubs in the duel count for the daub task`, st.tasks.progress.daub > 0, String(st.tasks.progress.daub));
   await fit(page, 'room-duel-results', vp);
   await page.getByRole('button', { name: 'Rooms' }).click({ force: true });
@@ -862,7 +862,7 @@ async function rooms(vp, viewport) {
 
 /* ---------------- responsible play limits ---------------- */
 async function limits(vp, viewport) {
-  const p = await player(browser, { viewport, seed: { onboarded: true, sand: 2000 } });
+  const p = await player(browser, { viewport, seed: { onboarded: true, shells: 2000 } });
   const { page } = p;
   await toHome(page, url);
   await openSetting(page, /Responsible play/);
@@ -871,11 +871,11 @@ async function limits(vp, viewport) {
   await closePopup(page);
   await goList(page, 'casino');
   await openMode(page, 'Tide Pool');
-  const c0 = await sand(page);
+  const c0 = await shells(page);
   await page.locator('.casino__go').click({ force: true });
   const blocked = await page.locator('.toast', { hasText: /Cool-off active/ }).waitFor({ timeout: 3000 }).then(() => true, () => false);
   await page.waitForTimeout(300);
-  R.ok(`${vp}: a cool-off blocks a house bet and takes no SAND`, blocked && (await sand(page)) === c0 && (await page.locator('.ball-tray .ball').count()) === 0, `${c0} -> ${await sand(page)}`);
+  R.ok(`${vp}: a cool-off blocks a house bet and takes no shells`, blocked && (await shells(page)) === c0 && (await page.locator('.ball-tray .ball').count()) === 0, `${c0} -> ${await shells(page)}`);
   await back(page);
   await page.locator('.gamehead__back').click({ force: true });
   await page.locator('.home__level').waitFor();
@@ -885,7 +885,7 @@ async function limits(vp, viewport) {
   await page.locator('.toast').first().waitFor({ state: 'detached', timeout: 4000 }).catch(() => {});
   await page.locator('.room__buy .btn-green').first().click({ force: true });
   const blockedRoom = await page.locator('.toast', { hasText: /Cool-off active/ }).first().waitFor({ timeout: 3000 }).then(() => true, () => false);
-  R.ok(`${vp}: a cool-off blocks buying room cards`, blockedRoom && (await sand(page)) === c0 && !/Starting in/.test(await text(page, '.room__count')), `toast=${blockedRoom} coins ${c0} -> ${await sand(page)} "${await text(page, '.room__count')}"`, page);
+  R.ok(`${vp}: a cool-off blocks buying room cards`, blockedRoom && (await shells(page)) === c0 && !/Starting in/.test(await text(page, '.room__count')), `toast=${blockedRoom} coins ${c0} -> ${await shells(page)} "${await text(page, '.room__count')}"`, page);
   await back(page);
   await page.locator('.gamehead__back').click({ force: true });
   await page.locator('.home__level').waitFor();
@@ -896,19 +896,19 @@ async function limits(vp, viewport) {
   errorsOk(p, vp, 'limits (cool-off)');
   await p.close();
 
-  const q = await player(browser, { viewport, seed: { onboarded: true, sand: 2000, limits: { reminderMinutes: 60, dailyLossLimit: 1000, coolOffUntil: 0, dailySpendCap: null, spendCapRaise: null }, today: { day: localDay, wagered: { sand: 1000, coins: 0 }, won: { sand: 0, coins: 0 }, bought: 0 } } });
+  const q = await player(browser, { viewport, seed: { onboarded: true, shells: 2000, limits: { reminderMinutes: 60, dailyLossLimit: 1000, coolOffUntil: 0, dailySpendCap: null, spendCapRaise: null }, today: { day: localDay, wagered: { shells: 1000, coins: 0 }, won: { shells: 0, coins: 0 }, bought: 0 } } });
   await toHome(q.page, url);
   await openSetting(q.page, /Responsible play/);
-  R.ok(`${vp}: the limits popup shows a −1,000 day and the 1,000 limit selected`, /net result: -1,000 SAND/.test(await bodyText(q.page)) && (await q.page.locator('.chip-opt.is-on', { hasText: '1,000' }).count()) === 1, (await bodyText(q.page)).slice(0, 120));
+  R.ok(`${vp}: the limits popup shows a −1,000 day and the 1,000 limit selected`, /net result: -1,000 shells/.test(await bodyText(q.page)) && (await q.page.locator('.chip-opt.is-on', { hasText: '1,000' }).count()) === 1, (await bodyText(q.page)).slice(0, 120));
   await closePopup(q.page);
   await goList(q.page, 'casino');
   await openMode(q.page, 'Keno Cove');
   await q.page.getByRole('button', { name: /Quick pick/ }).click({ force: true });
-  const k0 = await sand(q.page);
+  const k0 = await shells(q.page);
   await q.page.getByRole('button', { name: /Draw 10/ }).click({ force: true });
   const lossBlocked = await q.page.locator('.toast', { hasText: /Daily loss limit reached/ }).waitFor({ timeout: 3000 }).then(() => true, () => false);
   await q.page.waitForTimeout(300);
-  R.ok(`${vp}: the daily loss limit blocks a bet once reached and takes no SAND`, lossBlocked && (await sand(q.page)) === k0);
+  R.ok(`${vp}: the daily loss limit blocks a bet once reached and takes no shells`, lossBlocked && (await shells(q.page)) === k0);
   errorsOk(q, vp, 'limits (daily loss)');
   await q.close();
 }
@@ -916,7 +916,7 @@ async function limits(vp, viewport) {
 /* ---------------- the coins table ---------------- */
 async function coinsTable(vp, viewport) {
   // A player who passed the gate, holds a Free Game ticket and 200 coins, on the coins table.
-  const p = await player(browser, { viewport, seed: { onboarded: true, sand: 500, coins: 200, freeGames: 1, ageGate: { confirmedAt: 1 }, table: 'coins' } });
+  const p = await player(browser, { viewport, seed: { onboarded: true, shells: 500, coins: 200, freeGames: 1, ageGate: { confirmedAt: 1 }, table: 'coins' } });
   const { page } = p;
   await toHome(page, url);
   R.ok(`${vp}: a coins player sees the coins chip lit with "1 free game"`, (await page.locator('.balance--coins.is-on').count()) === 1 && /1 free game/.test(await text(page, '.balance--coins')) && (await page.locator('.table-switch[aria-checked="true"]').count()) === 1, await text(page, '.balance--coins'));
@@ -942,7 +942,7 @@ async function coinsTable(vp, viewport) {
   await back(page);
   const { payout } = await lastLog(page);
   const st = await stored(page);
-  R.ok(`${vp}: the free game takes no coins, pays its prize in coins, uses the ticket and leaves the SAND alone`, st.freeGames === 0 && st.coins === c0 + payout && st.sand === 500 && !/Free game/.test(afterLabel), `${c0} -> ${st.coins} payout ${payout} sand ${st.sand} then "${afterLabel}"`);
+  R.ok(`${vp}: the free game takes no coins, pays its prize in coins, uses the ticket and leaves the shells alone`, st.freeGames === 0 && st.coins === c0 + payout && st.shells === 500 && !/Free game/.test(afterLabel), `${c0} -> ${st.coins} payout ${payout} shells ${st.shells} then "${afterLabel}"`);
   // A cool-off closes the shop as well as the tables.
   await openSetting(page, /Responsible play/);
   await page.locator('.chip-opt', { hasText: '24 hours' }).click();
@@ -962,24 +962,24 @@ async function coinsTable(vp, viewport) {
   errorsOk(p, vp, 'coins table');
   await p.close();
 
-  // Washington State: the region check answers US-WA, so the switch is one line and SAND play goes on.
+  // Washington State: the region check answers US-WA, so the switch is one line and free play goes on.
   const q = await player(browser, { viewport, seed: { onboarded: true } });
   await q.page.route('**/api/geo', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ country: 'US', region: 'WA' }) }));
   await toHome(q.page, url);
   await q.page.waitForTimeout(500);
   await q.page.locator('.table-switch').first().click({ force: true });
   const wa = await q.page.locator('.toast', { hasText: /not available in Washington State/ }).waitFor({ timeout: 3000 }).then(() => true, () => false);
-  R.ok(`${vp}: in Washington the switch shows one line, no gate, and the table stays SAND`, wa && (await stored(q.page)).table === 'sand' && (await q.page.locator('.popup').count()) === 0);
+  R.ok(`${vp}: in Washington the switch shows one line, no gate, and the table stays shells`, wa && (await stored(q.page)).table === 'shells' && (await q.page.locator('.popup').count()) === 0);
   await q.page.locator('.balance--coins').click({ force: true });
   await q.page.waitForTimeout(300);
   R.ok(`${vp}: in Washington the coins chip does not open the shop`, (await q.page.locator('.popup').count()) === 0);
   await goList(q.page, 'casino');
   await openMode(q.page, 'Tide Pool');
-  const s0 = await sand(q.page);
+  const s0 = await shells(q.page);
   await q.page.locator('.casino__go').click({ force: true });
   await q.page.waitForTimeout(400);
   await q.page.locator('.casino__go:not([disabled])').waitFor({ timeout: 20_000 });
-  R.ok(`${vp}: in Washington SAND play continues untouched`, (await sand(q.page)) !== s0 || (await q.page.locator('.ball-tray .ball').count()) === 35, `${s0} -> ${await sand(q.page)}`);
+  R.ok(`${vp}: in Washington free play continues untouched`, (await shells(q.page)) !== s0 || (await q.page.locator('.ball-tray .ball').count()) === 35, `${s0} -> ${await shells(q.page)}`);
   errorsOk(q, vp, 'coins table (Washington)');
   await q.close();
 }

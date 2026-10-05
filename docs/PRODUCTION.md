@@ -49,12 +49,12 @@ after the licence, fiat on-ramps last.
 
 | Built | State on 2026-09-29 |
 |---|---|
-| The game | Live at beachbingo.xyz/app/: the adventure, seven Casino Cove house games, four halls with practice bots, Last Castle Standing. Two currencies: SAND is free (faucet, daily tasks, a Seeker perk); coins come from the Coin Shop (the popup exists; a stub sells in local dev and the devnet build only, production shows the packs greyed until the chain purchase lands) behind an 18+ declaration, a header-based region check that blocks Washington, a daily cap and the cool-off. No accounts, cookies or analytics; progress lives in the browser. Privacy and terms pages are live. |
+| The game | Live at beachbingo.xyz/app/: the adventure, seven Casino Cove house games, four halls with practice bots, Last Castle Standing. Two currencies: shells are free (faucet, daily tasks, a Seeker perk); coins come from the Coin Shop (the popup exists; a stub sells in local dev and the devnet build only, production shows the packs greyed until the chain purchase lands) behind an 18+ declaration, a header-based region check that blocks Washington, a daily cap and the cool-off. No accounts, cookies or analytics; progress lives in the browser. Privacy and terms pages are live. |
 | Provably fair rounds | Commit → HMAC-SHA256 streams → reveal for every mode (docs/FAIRNESS.md). The house games' committed seed lives in the player's browser: fine for play money, not for real money. |
 | Live P2P rooms | The four halls with friends over a room code, browser to browser; every client verifies every ball and win. Play money; 85–95% of sales go to players, no rake. |
 | Wallet layer | Wallet Standard and Mobile Wallet Adapter; Sign-In-With-Solana; Seeker Genesis Token check. Display only in production. |
 | Devnet escrow | `wave_duel`: a trustless Wave Rush escrow in SOL on devnet, 1v1 rooms and halls of two to eight players with up to four cards each (30-ball only), with a 5% fee, vectors, LiteSVM suites, an admin script, two-browser and three-browser proofs and a devnet build, behind two build flags; the lobby stakes rooms and halls (docs/ESCROW.md). Token stakes (USDC, PYUSD, JUP, SKR), a mint registry, a claim path, a host forfeit on hall timeouts, an on-chain Seeker proof and the coin-shop instructions are being built to docs/plans/2026-10-05-tokens-design.md. |
-| Economy (decided 2026-10-05) | SAND is the free currency (faucet, tasks, level rewards, the Seeker perk) and every mode plays for it; coins are the paid currency, bought in the Coin Shop with SOL, USDC, PYUSD, JUP or SKR (20% off with SKR, more for a proved Seeker), played at coin tables with coin prizes and spent on boosters; no sell-back, no transfers, no refunds. The shop and coin tables sit behind an 18+ confirmation and a region check that blocks Washington State. A free coin-table game for following @mostlyjola on X (honour system until an X API integration exists). Being built. |
+| Economy (decided 2026-10-05) | Shells are the free currency (faucet, tasks, level rewards, the Seeker perk; called SAND until the 2026-10-05 rename) and every mode plays for them; coins are the paid currency, bought in the Coin Shop with SOL, USDC, PYUSD, JUP or SKR (20% off with SKR, more for a proved Seeker), played at coin tables with coin prizes and spent on boosters; no sell-back, no transfers, no refunds. The shop and coin tables sit behind an 18+ confirmation and a region check that blocks Washington State. A free coin-table game for following @mostlyjola on X (honour system until an X API integration exists). Being built. |
 | Android shell and store kit | The web shell builds (unsigned); listing copy and art exist; owner steps in docs/DAPP_STORE.md. |
 | Responsible play | Reminder, daily loss limit and cool-off, a daily spend cap on the shop, enforced in the browser only. |
 
@@ -162,7 +162,7 @@ Seeker-exclusive launch reaching 12,800 installs in weeks [R8]; UK remote bingo 
 
 The research's conservative line was to sell only cosmetics, story passes and convenience, never
 coins to keep playing chance rounds [R]. The owner decided otherwise on 2026-10-05: coins are sold
-in packs (the social-casino model that Bingo Blitz runs), SAND stays free for everyone, and the
+in packs (the social-casino model that Bingo Blitz runs), shells stay free for everyone, and the
 consequences are taken on: purchases are final, coins have no cash value and never leave the game,
 the shop and the coin tables are gated to 18+ and closed to Washington State (*Kater v. Churchill
 Downs*), the listing, terms and store questionnaire change accordingly (docs/DAPP_STORE.md), and

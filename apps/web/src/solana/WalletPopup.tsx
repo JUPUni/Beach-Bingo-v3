@@ -9,7 +9,7 @@ import {
 } from '@solana/kit-plugin-wallet/react';
 import { SolanaMobileWalletAdapterWalletName } from '@solana-mobile/wallet-standard-mobile';
 import { sfx } from '../lib/audio.ts';
-import { SEEKER_PERK_COINS, useGame } from '../state/store.ts';
+import { SEEKER_PERK_SHELLS, useGame } from '../state/store.ts';
 import { GreenButton } from '../ui/kit.tsx';
 import { Popup } from '../ui/Popup.tsx';
 import { toast } from '../ui/toast.ts';
@@ -87,7 +87,7 @@ export default function WalletPopup() {
       setSeeker(mint);
       if (claimSeekerPerk(mint)) {
         sfx.bingo();
-        toast(`Seeker verified! +${SEEKER_PERK_COINS.toLocaleString('en-US')} SAND and 8 boosters 🌴`, 'win');
+        toast(`Seeker verified! +${SEEKER_PERK_SHELLS.toLocaleString('en-US')} shells and 8 boosters 🌴`, 'win');
       } else {
         toast('Seeker verified — perk already claimed on this device');
       }
@@ -103,7 +103,7 @@ export default function WalletPopup() {
     <Popup title="Wallet" onClose={close} wide>
       <p className="small-note">
         Link a Solana wallet to carry your beach profile to the Seeker, claim Seeker perks and pay for coin packs. Beach Bingo never
-        asks for your seed phrase. SAND stays free; coins are bought in the Coin Shop and never leave the game. Network: <b>{CLUSTER}</b>
+        asks for your seed phrase. Shells stay free; coins are bought in the Coin Shop and never leave the game. Network: <b>{CLUSTER}</b>
         {isWebShell() ? ' · dApp Store app' : ''}
         {isSeedVaultDevice() ? ` · Seed Vault device${shellDeviceModel() ? ` (${shellDeviceModel()})` : ''}` : ''}.
       </p>
@@ -172,7 +172,7 @@ export default function WalletPopup() {
       <p className="small-note">
         {ONCHAIN_STAKES_ENABLED
           ? 'Devnet stakes are enabled: staked Wave Rush rooms and halls in SOL or a test token, and the Coin Shop paid in the same. Pay with SKR for the lowest house fee and the best pack price; a Seeker verified on chain pays less again. Badges describe your wallet and never grant anything by themselves.'
-          : 'The Coin Shop takes these five tokens, SKR at the best price. Staked rooms stay switched off on this site: real-money bingo is regulated gambling, so they wait for licensing, geo-checks and age verification. SAND play is free for everyone.'}
+          : 'The Coin Shop takes these five tokens, SKR at the best price. Staked rooms stay switched off on this site: real-money bingo is regulated gambling, so they wait for licensing, geo-checks and age verification. Playing with shells is free for everyone.'}
       </p>
     </Popup>
   );

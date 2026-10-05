@@ -168,7 +168,7 @@ function LevelStartPopup({ level, onClose }: { level: LevelDef; onClose(): void 
           })}
         </div>
         <p className="small-note">
-          Reward: {level.reward} SAND per star{sun ? ' ×2' : ''}. Crab Pinch and Big Wave can be used during play; extra boosters cost coins.
+          Reward: {level.reward} shells per star{sun ? ' ×2' : ''}. Crab Pinch and Big Wave can be used during play; extra boosters cost coins.
         </p>
       </div>
     </Popup>

@@ -86,7 +86,7 @@ export default function ModeList({ kind }: { kind: Extract<ModeKind, 'house' | '
           </button>
         ))}
         <p className="fair-note">
-          <b>SAND is free</b> and never bought or sold. Coins come from the Coin Shop, have no cash value and never leave the game.
+          <b>Shells are free</b> and never bought or sold. Coins come from the Coin Shop, have no cash value and never leave the game.
           Prices and prizes are the same on either table. House games use HMAC-SHA256 commit–reveal seeds you can verify in
           Settings → Provably fair
           {kind === 'pvp'

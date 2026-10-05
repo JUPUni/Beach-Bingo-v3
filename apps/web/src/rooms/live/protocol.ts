@@ -110,8 +110,10 @@ export type StakeInfo =
   | { kind: 'room'; lamports: string; host: string; program: string; room: string; mint?: string }
   | { kind: 'hall'; lamports: string; host: string; program: string; room: string; stakePerCard: string; maxPlayers: number; mint?: string };
 /** What cards are bought with: the host's table when the room opened. Guests pay in the same. */
-export type Currency = 'sand' | 'coins';
-const isCurrency = (x: unknown): x is Currency => x === 'sand' || x === 'coins';
+export type Currency = 'shells' | 'coins';
+const isCurrency = (x: unknown): x is Currency => x === 'shells' || x === 'coins';
+/** Builds from before the rename call the free currency 'sand' on the wire; it is the same ledger. */
+const currencyAlias = (x: unknown): unknown => (x === 'sand' ? 'shells' : x);
 /** A hall's shape (lib.rs MIN_HALL_PLAYERS..MAX_HALL_PLAYERS, MAX_HALL_CARDS). */
 export const HALL_PLAYERS = { min: 2, max: 8 } as const;
 export const HALL_CARDS = { min: 1, max: 4 } as const;
@@ -119,7 +121,7 @@ export const HALL_CARDS = { min: 1, max: 4 } as const;
 export type LiveMessage =
   /** Any peer: my name, how many cards I hold for the next round, and my wallet in a staked room. */
   | { t: 'me'; name: string; cards: number; wallet?: string }
-  /** Host: which hall this is, the commitment for the coming round, the stake if there is one, and the currency (SAND when absent: older builds). */
+  /** Host: which hall this is, the commitment for the coming round, the stake if there is one, and the currency (shells when absent: older builds). */
   | { t: 'room'; preset: RoomPresetId; round: number; commitment: string; playing: boolean; stake?: StakeInfo; currency?: Currency }
   /** Host: the reveal that starts a round. Staked rooms carry the escrow's entropy as the client seed. */
   | { t: 'start'; round: number; serverSeed: string; startAt: number; roster: RosterEntry[]; entropy?: string }
@@ -175,8 +177,9 @@ export function parseMessage(raw: unknown): LiveMessage | null {
         msg.stake = stake;
       }
       if (raw.currency !== undefined) {
-        if (!isCurrency(raw.currency)) return null;
-        msg.currency = raw.currency;
+        const currency = currencyAlias(raw.currency);
+        if (!isCurrency(currency)) return null;
+        msg.currency = currency;
       }
       return msg;
     }

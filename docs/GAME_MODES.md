@@ -1,14 +1,15 @@
 # Game modes
 
-## SAND and coins
+## Shells and coins
 
 Every mode plays on one of two currencies, picked with the switch in the top bar (and on the
 Casino Cove and Beach Rooms lists, where a game is chosen):
 
-- **SAND** is free play money. The tide (500 every four hours), the daily tasks, the adventure's
-  level rewards, the treasure chest and the Seeker perk all pay SAND, and it is never bought or
-  sold. Everyone starts on the SAND table with 1,000; a save from before the two currencies keeps
-  its old coins as SAND.
+- **Shells** are free play money. The tide (500 every four hours), the daily tasks, the adventure's
+  level rewards, the treasure chest and the Seeker perk all pay shells, and they are never bought or
+  sold. Everyone starts on the shells table with 1,000; a save from before the two currencies keeps
+  its old coins as shells, and a save from when they were called SAND keeps them under the new name
+  (the store's persisted-state migration, versions 2 and 3).
 - **Coins** come only from the Coin Shop (packs of 5,000 / 15,000 / 40,000 / 100,000, paid in SOL,
   USDC, PYUSD, JUP or SKR; SKR 20% off, a Seeker Genesis Token proved on chain 5% more; a build
   with the escrow program sells through it once a wallet is connected, local dev runs a test stub,
@@ -17,7 +18,7 @@ Casino Cove and Beach Rooms lists, where a game is chosen):
   never leave the game. Boosters in the level popup and an extra Big Wave are bought with coins;
   earned boosters still come from tasks, chests and the perk.
 
-Prices and prizes below are **per table currency**: a 25 card costs 25 SAND on the SAND table and
+Prices and prizes below are **per table currency**: a 25 card costs 25 shells on the shells table and
 25 coins on the coins table, and its prize pays in the same. The rules never change with the table,
 and no round ever asks for a purchase. Every charge and every prize goes through the store's
 `charge` and `credit`, which read the active table (a round keeps the table it was bought on).
@@ -26,8 +27,8 @@ and no round ever asks for a purchase. Every charge and every prize goes through
 resident of Washington State; kept on the device with its date) and a region check: the game asks
 `/api/geo` once when it loads, a Vercel function that returns the country and region Vercel
 attaches to the request and keeps nothing. A `US-WA` answer closes the shop and the coin tables
-with one line and leaves SAND play open; any other answer, and a missing one (local dev, the devnet
-build, a failed call), **fails open** and the declaration stands on its own. SAND play never asks
+with one line and leaves free play open; any other answer, and a missing one (local dev, the devnet
+build, a failed call), **fails open** and the declaration stands on its own. Play with shells never asks
 for any of this.
 
 **The Free Game ticket.** Following @mostlyjola on X (Tasks → Rewards) grants one ticket, once per
@@ -47,7 +48,7 @@ Forty levels across four islands (Palm Cove, Coral Reef, Shipwreck Bay, Volcano 
 Each level sets a card count, a pattern and a ball budget; finishing in fewer balls earns up to
 three stars, and three stars on a level earns a golden key (three keys open the treasure chest).
 Four boosters: Seagull daubs every call, Crab pinches any square, Big Wave adds five balls, Golden
-Sun doubles the level's SAND. Free to play; nothing is staked. Level rewards are SAND; an extra
+Sun doubles the level's shells. Free to play; nothing is staked. Level rewards are shells; an extra
 booster costs coins.
 
 ## Casino Cove (house games, one player against the island bank)
@@ -104,6 +105,6 @@ practice-only for now.
 Settings → Responsible play offers a play-time reminder (every 30, 60 or 90 minutes), a daily
 loss limit applied per table across wager modes, a daily cap on the coins the shop may sell (a
 lower cap applies at once, a higher one after 24 hours), and a cool-off that locks wager modes and
-the Coin Shop for a chosen time. SAND is free and refills from the tide (500 every four hours) and
-the daily tasks, so no limit on the SAND table ever costs a player anything of value. Coin tables
+the Coin Shop for a chosen time. Shells are free and refill from the tide (500 every four hours) and
+the daily tasks, so no limit on the shells table ever costs a player anything of value. Coin tables
 and the shop are for players aged 18 and over (the gate above).

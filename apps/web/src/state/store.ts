@@ -26,21 +26,21 @@ export type PopupName = 'settings' | 'profile' | 'tasks' | 'wallet' | 'fairness'
 export type TaskId = 'daub' | 'bingo' | 'modes' | 'spins';
 
 /**
- * The two currencies. SAND is free play money: the tide, the daily tasks, the adventure, the
- * chest and the Seeker perk all pay SAND, and it is never bought or sold. Coins come only from
+ * The two currencies. Shells are free play money: the tide, the daily tasks, the adventure, the
+ * chest and the Seeker perk all pay shells, and they are never bought or sold. Coins come only from
  * the Coin Shop and promo grants; they have no cash value, cannot be sold, transferred or
  * refunded, and never leave the game. Every mode plays on either: the `table` picks which
  * ledger a stake comes from and a prize goes to.
  */
-export type Table = 'sand' | 'coins';
-export const TABLES: readonly Table[] = ['sand', 'coins'];
-export const TABLE_NAME: Record<Table, string> = { sand: 'SAND', coins: 'coins' };
+export type Table = 'shells' | 'coins';
+export const TABLES: readonly Table[] = ['shells', 'coins'];
+export const TABLE_NAME: Record<Table, string> = { shells: 'shells', coins: 'coins' };
 
 export interface TaskDef {
   id: TaskId;
   label: string;
   goal: number;
-  /** SAND. */
+  /** Shells. */
   reward: number;
 }
 
@@ -51,19 +51,17 @@ export const DAILY_TASKS: readonly TaskDef[] = [
   { id: 'spins', label: 'Play 10 house rounds', goal: 10, reward: 150 },
 ];
 
-export const STARTING_SAND = 1000;
-export const FAUCET_SAND = 500;
+export const STARTING_SHELLS = 1000;
+export const FAUCET_SHELLS = 500;
 export const FAUCET_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 export const CHEST_KEYS = 3;
 export const JACKPOT_SEED = 5000;
-export const SEEKER_PERK_SAND = 2500;
-/** The wallet popup (solana/, not edited here) still imports this name; the perk pays SAND. */
-export const SEEKER_PERK_COINS = SEEKER_PERK_SAND;
+export const SEEKER_PERK_SHELLS = 2500;
 /** A raised Coin Shop cap takes effect this long after it is chosen; a lowered one at once. */
 export const SPEND_CAP_DELAY_MS = 24 * 60 * 60 * 1000;
 export const SPEND_CAP_OPTIONS: readonly (number | null)[] = [null, 5000, 15000, 40000];
 /** The one line a player in Washington State sees instead of the shop or a coin table. */
-export const WASHINGTON_MESSAGE = 'Coin tables and the Coin Shop are not available in Washington State. SAND play is open.';
+export const WASHINGTON_MESSAGE = 'Coin tables and the Coin Shop are not available in Washington State. Free play with shells is open.';
 export const FOLLOW_URL = 'https://x.com/intent/follow?screen_name=mostlyjola';
 
 interface Settings {
@@ -143,7 +141,7 @@ export interface LedgerOpts {
 }
 
 export interface GameState {
-  sand: number;
+  shells: number;
   coins: number;
   /** Which currency the games play with right now. */
   table: Table;
@@ -166,7 +164,7 @@ export interface GameState {
   linkedWallet: string | null;
   /** Seeker Genesis Token mints that already claimed the Seeker perk on this device. */
   seekerPerkMints: string[];
-  /** The 18+ and not-in-Washington declaration that opens coin tables and the shop; SAND never asks. */
+  /** The 18+ and not-in-Washington declaration that opens coin tables and the shop; shells never ask. */
   ageGate: { confirmedAt: number } | null;
   /** Free Game tickets held: each pays one coin-table entry at the mode's base price. */
   freeGames: number;
@@ -218,8 +216,8 @@ export interface GameState {
   freeGameCovers(amount: number, base?: number, table?: Table): boolean;
   setPendingJoin(code: string | null): void;
   claimFaucet(): boolean;
-  completeLevel(levelId: number, stars: number, sand: number): { newKey: boolean };
-  openChest(): { sand: number; booster: BoosterId } | null;
+  completeLevel(levelId: number, stars: number, shells: number): { newKey: boolean };
+  openChest(): { shells: number; booster: BoosterId } | null;
   addBooster(id: BoosterId, count: number): void;
   consumeBooster(id: BoosterId): boolean;
   track(task: TaskId, amount?: number): void;
@@ -253,7 +251,7 @@ export interface GameState {
   requestCoins(intent: 'shop' | 'table'): 'done' | 'gate' | 'blocked';
   /** The player confirmed 18+ and not in Washington; carries out the pending request. */
   confirmAge(): void;
-  /** SAND always; coins only once the gate is passed. */
+  /** Shells always; coins only once the gate is passed. */
   setTable(table: Table): void;
   /** Credit a confirmed purchase. False when a cool-off is on, the cap would be passed, or it was already credited. */
   creditPurchase(purchase: Purchase): boolean;
@@ -301,7 +299,7 @@ const emptyTasks = () => ({
   modesPlayed: [] as ModeId[],
 });
 
-const emptyDay = (): DayLedger => ({ day: localDay(), wagered: { sand: 0, coins: 0 }, won: { sand: 0, coins: 0 }, bought: 0 });
+const emptyDay = (): DayLedger => ({ day: localDay(), wagered: { shells: 0, coins: 0 }, won: { shells: 0, coins: 0 }, bought: 0 });
 const freshJackpot = (): Jackpot => ({ pool: JACKPOT_SEED, lastWonDay: localDay() });
 const todayOf = (s: Pick<GameState, 'today'>): DayLedger => (s.today.day === localDay() ? s.today : emptyDay());
 const keyOf = (table: Table) => table;
@@ -309,8 +307,10 @@ const keyOf = (table: Table) => table;
 const capLower = (next: number | null, current: number | null) => next !== null && (current === null || next < current);
 
 /**
- * Saved states from before the two currencies: `coins` was free money, so it becomes SAND and
- * coins start at 0; the one jackpot and the day's ledger become the SAND side of each.
+ * Saved states from before the two currencies (v1): `coins` was free money, so it becomes the free
+ * ledger and coins start at 0; the one jackpot and the day's ledger become the free side of each.
+ * Saved states from when the free currency was called SAND (v2): the same ledger under its new
+ * name, shells, in the balance, the table, the jackpots and the day's ledger.
  */
 export function migratePersisted(persisted: unknown, version: number): Record<string, unknown> {
   const p = { ...(persisted as Record<string, unknown>) };
@@ -329,15 +329,35 @@ export function migratePersisted(persisted: unknown, version: number): Record<st
     }
     p.limits = { dailySpendCap: null, spendCapRaise: null, ...((p.limits as object | undefined) ?? {}) };
   }
+  if (version < 3) {
+    if ('sand' in p) {
+      p.shells = (typeof p.shells === 'number' ? p.shells : 0) + (typeof p.sand === 'number' ? p.sand : 0);
+      delete p.sand;
+    }
+    if (p.table === 'sand') p.table = 'shells';
+    const jackpots = p.jackpots as Record<string, Jackpot> | undefined;
+    if (jackpots && 'sand' in jackpots) {
+      const { sand, ...rest } = jackpots;
+      p.jackpots = { ...rest, shells: sand };
+    }
+    const today = p.today as { wagered?: Record<string, number>; won?: Record<string, number> } | undefined;
+    for (const side of ['wagered', 'won'] as const) {
+      const ledger = today?.[side];
+      if (ledger && 'sand' in ledger) {
+        const { sand, ...rest } = ledger;
+        today![side] = { ...rest, shells: sand };
+      }
+    }
+  }
   return p;
 }
 
 export const useGame = create<GameState>()(
   persist(
     (set, get) => ({
-      sand: STARTING_SAND,
+      shells: STARTING_SHELLS,
       coins: 0,
-      table: 'sand',
+      table: 'shells',
       keys: 0,
       profile: { name: 'Beachcomber', avatar: '🦀' },
       settings: { sound: true, music: true, voice: true, haptics: true, reduceMotion: false },
@@ -348,7 +368,7 @@ export const useGame = create<GameState>()(
       today: emptyDay(),
       stats: { rounds: 0, bingos: 0, biggestWin: 0 },
       faucetAt: 0,
-      jackpots: { sand: freshJackpot(), coins: freshJackpot() },
+      jackpots: { shells: freshJackpot(), coins: freshJackpot() },
       fairness: freshFairness(),
       onboarded: false,
       linkedWallet: null,
@@ -455,17 +475,17 @@ export const useGame = create<GameState>()(
       claimFaucet: () => {
         const s = get();
         if (Date.now() - s.faucetAt < FAUCET_COOLDOWN_MS) return false;
-        set({ sand: s.sand + FAUCET_SAND, faucetAt: Date.now() });
+        set({ shells: s.shells + FAUCET_SHELLS, faucetAt: Date.now() });
         return true;
       },
 
-      completeLevel: (levelId, stars, sand) => {
+      completeLevel: (levelId, stars, shells) => {
         const s = get();
         const before = s.stars[levelId] ?? 0;
         const newKey = stars === 3 && before < 3;
         set({
           stars: { ...s.stars, [levelId]: Math.max(before, stars) },
-          sand: s.sand + sand,
+          shells: s.shells + shells,
           keys: s.keys + (newKey ? 1 : 0),
           stats: { ...s.stats, bingos: s.stats.bingos + 1 },
         });
@@ -477,13 +497,13 @@ export const useGame = create<GameState>()(
         if (s.keys < CHEST_KEYS) return null;
         const boosters: BoosterId[] = ['seagull', 'crab', 'wave', 'sun'];
         const booster = boosters[Math.floor(Math.random() * boosters.length)]!;
-        const sand = 400 + Math.floor(Math.random() * 5) * 100;
+        const shells = 400 + Math.floor(Math.random() * 5) * 100;
         set({
           keys: s.keys - CHEST_KEYS,
-          sand: s.sand + sand,
+          shells: s.shells + shells,
           boosters: { ...s.boosters, [booster]: s.boosters[booster] + 1 },
         });
-        return { sand, booster };
+        return { shells, booster };
       },
 
       addBooster: (id, count) => set((s) => ({ boosters: { ...s.boosters, [id]: s.boosters[id] + count } })),
@@ -513,7 +533,7 @@ export const useGame = create<GameState>()(
         const def = DAILY_TASKS.find((t) => t.id === task);
         if (!def || s.tasks.day !== localDay() || s.tasks.claimed.includes(task)) return false;
         if (s.tasks.progress[task] < def.goal) return false;
-        set({ sand: s.sand + def.reward, tasks: { ...s.tasks, claimed: [...s.tasks.claimed, task] } });
+        set({ shells: s.shells + def.reward, tasks: { ...s.tasks, claimed: [...s.tasks.claimed, task] } });
         return true;
       },
 
@@ -555,7 +575,7 @@ export const useGame = create<GameState>()(
         if (s.seekerPerkMints.includes(mint)) return false;
         set({
           seekerPerkMints: [...s.seekerPerkMints, mint],
-          sand: s.sand + SEEKER_PERK_SAND,
+          shells: s.shells + SEEKER_PERK_SHELLS,
           boosters: { ...s.boosters, seagull: s.boosters.seagull + 2, crab: s.boosters.crab + 2, wave: s.boosters.wave + 2, sun: s.boosters.sun + 2 },
         });
         return true;
@@ -648,11 +668,11 @@ export const useGame = create<GameState>()(
     }),
     {
       name: 'beach-bingo',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => safeStorage),
       migrate: migratePersisted,
       partialize: (s) => ({
-        sand: s.sand,
+        shells: s.shells,
         coins: s.coins,
         table: s.table,
         keys: s.keys,
