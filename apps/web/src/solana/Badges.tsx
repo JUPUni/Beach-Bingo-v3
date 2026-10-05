@@ -1,6 +1,6 @@
 import { useGame } from '../state/store.ts';
 import { badges } from './badges.ts';
-import { isSeedVaultDevice, shellDeviceModel } from './config.ts';
+import { isSeedVaultDevice, ONCHAIN_STAKES_ENABLED, shellDeviceModel } from './config.ts';
 import './badges.css';
 
 /** The wallet and device badges (badges.ts), from the store's wallet status and the shell's user agent. */
@@ -12,6 +12,7 @@ export function Badges({ provedThisRound = false, className = '' }: { provedThis
     seedVaultDevice: isSeedVaultDevice(),
     deviceModel: shellDeviceModel(),
     skrBalance: status?.skrBalance != null ? BigInt(status.skrBalance) : null,
+    stakesEnabled: ONCHAIN_STAKES_ENABLED,
   });
   if (!list.length) return null;
   return (

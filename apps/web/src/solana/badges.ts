@@ -14,6 +14,8 @@ export interface BadgeInput {
   deviceModel?: string | null;
   /** Base units of SKR held, or null when unknown. */
   skrBalance: bigint | null;
+  /** Staked rooms are on in this build (config.ts ONCHAIN_STAKES_ENABLED), so the SKR badge may name the stake picker. */
+  stakesEnabled?: boolean;
 }
 
 export type BadgeId = 'seeker' | 'seedVault' | 'skr';
@@ -44,7 +46,11 @@ export function badges(input: BadgeInput): Badge[] {
     });
   }
   if (input.skrBalance !== null && input.skrBalance > 0n) {
-    out.push({ id: 'skr', label: 'SKR ready', detail: 'This wallet holds SKR: the stake picker and the shop start on SKR, the cheapest tier.' });
+    out.push({
+      id: 'skr',
+      label: 'SKR ready',
+      detail: input.stakesEnabled ? 'This wallet holds SKR: the stake picker and the shop start on SKR, the cheapest tier.' : 'This wallet holds SKR: the shop starts on SKR, the cheapest tier.',
+    });
   }
   return out;
 }

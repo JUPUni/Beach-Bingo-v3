@@ -149,7 +149,7 @@ export default function WalletPopup() {
             </div>
             {linked === connected.account.address && <span className="wallet-card__ok">✓ linked</span>}
           </div>
-          {skr !== null && <p className="small-note wallet-skr">{formatAmount(skr, 6, 'SKR')} in this wallet{skr > 0n ? ' — the shop and the stake picker start on SKR.' : '.'}</p>}
+          {skr !== null && <p className="small-note wallet-skr">{formatAmount(skr, 6, 'SKR')} in this wallet{skr > 0n ? (ONCHAIN_STAKES_ENABLED ? ' — the shop and the stake picker start on SKR.' : ' — the shop starts on SKR.') : '.'}</p>}
           <Badges />
           <div className="wallet-actions">
             <GreenButton onClick={doSignIn} disabled={signIn.isRunning}>

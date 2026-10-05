@@ -1,6 +1,7 @@
 import logoUrl from '../assets/brand/beachbingo-logo-sticker.svg';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
+import { CLUSTER } from '../solana/config.ts';
 import { useGame } from '../state/store.ts';
 import { Stage } from '../ui/Stage.tsx';
 import './screens.css';
@@ -39,7 +40,11 @@ export function Splash() {
       {pendingJoin && <p className="splash__join t-outline t-outline--navy">Room {pendingJoin} is waiting for you</p>}
       <img src={art.chestShadow} alt="" className="splash__chest-shadow" />
       <img src={art.chestSplash} alt="" className="splash__chest" />
-      {import.meta.env.VITE_BUILD_LABEL && <p className="splash__build">{import.meta.env.VITE_BUILD_LABEL} build · test SOL only</p>}
+      {import.meta.env.VITE_BUILD_LABEL && (
+        <p className="splash__build">
+          {import.meta.env.VITE_BUILD_LABEL} build{CLUSTER === 'devnet' ? ' · test SOL only' : ''}
+        </p>
+      )}
       <p className="splash__legal">Provably fair · Free to play · beachbingo.xyz</p>
     </Stage>
   );
