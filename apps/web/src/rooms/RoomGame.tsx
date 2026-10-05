@@ -227,7 +227,7 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
                 .slice(0, 3)
                 .map((n) => (
                   <GreenButton key={n} onClick={() => buy(n)}>
-                    +{n} card{n > 1 ? 's' : ''} · {freeGame && n === 1 && me.cards.length === 0 ? 'Free game' : config.cardPrice * n}
+                    +{n} card{n > 1 ? 's' : ''} · {freeGame && n === 1 ? 'Free game' : config.cardPrice * n}
                   </GreenButton>
                 ))}
             </div>
