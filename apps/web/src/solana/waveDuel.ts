@@ -7,6 +7,8 @@ import {
   fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
   getBase58Decoder,
   getBase64Encoder,
   getBooleanDecoder,
@@ -17,9 +19,12 @@ import {
   getStructEncoder,
   getU16Decoder,
   getU16Encoder,
+  getU32Decoder,
+  getU32Encoder,
   getU64Decoder,
   getU64Encoder,
   getU8Decoder,
+  getBooleanEncoder,
   getUtf8Encoder,
   pipe,
   setTransactionMessageFeePayerSigner,
@@ -64,6 +69,11 @@ export const MAX_STAKE = 100_000_000_000n;
 export const STAKE_PRESETS = [10_000_000n, 25_000_000n, 50_000_000n, 100_000_000n, 250_000_000n] as const;
 /** lib.rs TIMEOUT_SLOTS: the host forfeits after this many slots without a reveal. */
 export const TIMEOUT_SLOTS = 3_000n;
+/** Coin packs in the shop (lib.rs PACKS) and the sizes `init_config` starts with. */
+export const PACKS = 4;
+export const DEFAULT_PACK_COINS = [5_000, 15_000, 40_000, 100_000] as const;
+/** The all-zero key: a round's `mint` when it is staked in SOL, a room's `guest` before a join. */
+export const NO_KEY = '11111111111111111111111111111111' as Address;
 
 export const enabled = (): boolean => programId !== null;
 
@@ -75,6 +85,8 @@ const discriminator = (name: string): Uint8Array => hexBytes(sha256Hex(name).sli
 const DISC = {
   initConfig: discriminator('global:init_config'),
   setConfig: discriminator('global:set_config'),
+  migrateConfig: discriminator('global:migrate_config'),
+  pause: discriminator('global:pause'),
   openRoom: discriminator('global:open_room'),
   joinRoom: discriminator('global:join_room'),
   cancelRoom: discriminator('global:cancel_room'),
@@ -115,11 +127,28 @@ export interface RoomAccount {
   stake: bigint;
   commitment: string;
   code: string;
+  /** `ready` also while `settled` is true (the round was played); check `settled` first. */
   state: RoomState;
+  /**
+   * A token round paid out as far as it could, with credits outstanding (`claim_credit`): the
+   * program's `Settled` state. Only token rooms get here; SOL rooms close on settlement.
+   */
+  settled: boolean;
   createdSlot: bigint;
   joinedSlot: bigint;
   entropy: string;
   lamports: bigint;
+  /** Snapshot taken when the room opened: an admin change never touches a running round. */
+  feeBps: number;
+  treasury: Address;
+  /** The staked mint, or null for SOL. */
+  mint: Address | null;
+  tokenProgram: Address | null;
+  /** The host proved a Seeker Genesis Token for this round. */
+  seeker: boolean;
+  /** Token payouts not yet delivered: [host, guest]. */
+  credits: [bigint, bigint];
+  treasuryCredit: bigint;
 }
 
 export interface ConfigAccount {
@@ -127,6 +156,27 @@ export interface ConfigAccount {
   treasury: Address;
   feeBps: number;
   paused: boolean;
+  /** May only pause; the admin does everything else. */
+  pauser: Address;
+  /** The Seeker Genesis Token group the program verifies against (a mock group on devnet). */
+  sgtGroup: Address;
+  packCoins: number[];
+  seekerDiscountBps: number;
+  /** Lamports per pack; 0 = not sold for SOL. */
+  solPackPrices: bigint[];
+  solSeekerFeeBps: number;
+}
+
+/** Everything `set_config` writes (the treasury travels as an account). */
+export interface ConfigTerms {
+  feeBps: number;
+  paused: boolean;
+  pauser: Address;
+  sgtGroup: Address;
+  packCoins: number[];
+  seekerDiscountBps: number;
+  solPackPrices: bigint[];
+  solSeekerFeeBps: number;
 }
 
 const roomDecoder = getStructDecoder([
@@ -141,6 +191,13 @@ const roomDecoder = getStructDecoder([
   ['joinedSlot', getU64Decoder()],
   ['entropy', fixDecoderSize(getBytesDecoder(), 32)],
   ['bump', getU8Decoder()],
+  ['feeBps', getU16Decoder()],
+  ['treasury', getAddressDecoder()],
+  ['mint', getAddressDecoder()],
+  ['tokenProgram', getAddressDecoder()],
+  ['seeker', getBooleanDecoder()],
+  ['credits', getArrayDecoder(getU64Decoder(), { size: 2 })],
+  ['treasuryCredit', getU64Decoder()],
 ]);
 
 const configDecoder = getStructDecoder([
@@ -150,10 +207,16 @@ const configDecoder = getStructDecoder([
   ['feeBps', getU16Decoder()],
   ['paused', getBooleanDecoder()],
   ['bump', getU8Decoder()],
+  ['pauser', getAddressDecoder()],
+  ['sgtGroup', getAddressDecoder()],
+  ['packCoins', getArrayDecoder(getU32Decoder(), { size: PACKS })],
+  ['seekerDiscountBps', getU16Decoder()],
+  ['solPackPrices', getArrayDecoder(getU64Decoder(), { size: PACKS })],
+  ['solSeekerFeeBps', getU16Decoder()],
 ]);
 
-const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((x, i) => x === b[i]);
-const NO_GUEST = '11111111111111111111111111111111';
+export const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((x, i) => x === b[i]);
+const NO_GUEST = NO_KEY;
 
 async function accountBytes(rpc: SolanaRpc, addr: Address): Promise<{ data: Uint8Array; lamports: bigint } | null> {
   const { value } = await rpc.getAccountInfo(addr, { encoding: 'base64' }).send();
@@ -172,18 +235,37 @@ export function decodeRoom(addr: Address, data: Uint8Array, lamports: bigint): R
     stake: r.stake,
     commitment: bytesToHex(r.commitment),
     code: new TextDecoder().decode(r.code),
-    state: r.state === 1 ? 'ready' : 'open',
+    state: r.state === 0 ? 'open' : 'ready',
+    settled: r.state === 2,
     createdSlot: r.createdSlot,
     joinedSlot: r.joinedSlot,
     entropy: bytesToHex(r.entropy),
     lamports,
+    feeBps: r.feeBps,
+    treasury: r.treasury,
+    mint: r.mint === NO_KEY ? null : r.mint,
+    tokenProgram: r.tokenProgram === NO_KEY ? null : r.tokenProgram,
+    seeker: r.seeker,
+    credits: [r.credits[0]!, r.credits[1]!],
+    treasuryCredit: r.treasuryCredit,
   };
 }
 
 export function decodeConfig(data: Uint8Array): ConfigAccount | null {
   const c = configDecoder.decode(data);
   if (!same(c.discriminator as Uint8Array, DISC.configAccount)) return null;
-  return { admin: c.admin, treasury: c.treasury, feeBps: c.feeBps, paused: c.paused };
+  return {
+    admin: c.admin,
+    treasury: c.treasury,
+    feeBps: c.feeBps,
+    paused: c.paused,
+    pauser: c.pauser,
+    sgtGroup: c.sgtGroup,
+    packCoins: [...c.packCoins],
+    seekerDiscountBps: c.seekerDiscountBps,
+    solPackPrices: [...c.solPackPrices],
+    solSeekerFeeBps: c.solSeekerFeeBps,
+  };
 }
 
 export async function fetchRoom(rpc: SolanaRpc, addr: Address): Promise<RoomAccount | null> {
@@ -218,6 +300,44 @@ export async function initConfigIx(admin: Address, treasury: Address, feeBps: nu
       meta(SYSTEM_PROGRAM, AccountRole.READONLY),
     ],
     data,
+  };
+}
+
+/** The admin writes the whole config; rounds already open keep their snapshot. */
+export async function setConfigIx(admin: Address, treasury: Address, terms: ConfigTerms): Promise<Instruction> {
+  const data = getStructEncoder([
+    ['d', fixEncoderSize(getBytesEncoder(), 8)],
+    ['feeBps', getU16Encoder()],
+    ['paused', getBooleanEncoder()],
+    ['pauser', getAddressEncoder()],
+    ['sgtGroup', getAddressEncoder()],
+    ['packCoins', getArrayEncoder(getU32Encoder(), { size: PACKS })],
+    ['seekerDiscountBps', getU16Encoder()],
+    ['solPackPrices', getArrayEncoder(getU64Encoder(), { size: PACKS })],
+    ['solSeekerFeeBps', getU16Encoder()],
+  ]).encode({ d: DISC.setConfig, ...terms });
+  return {
+    programAddress: program(),
+    accounts: [meta(await configAddress(), AccountRole.WRITABLE), meta(admin, AccountRole.READONLY_SIGNER), meta(treasury, AccountRole.READONLY)],
+    data,
+  };
+}
+
+/** Grow a first-deployment (76-byte) config to the current layout; the admin pays the rent. */
+export async function migrateConfigIx(admin: Address): Promise<Instruction> {
+  return {
+    programAddress: program(),
+    accounts: [meta(await configAddress(), AccountRole.WRITABLE), meta(admin, AccountRole.WRITABLE_SIGNER), meta(SYSTEM_PROGRAM, AccountRole.READONLY)],
+    data: DISC.migrateConfig,
+  };
+}
+
+/** The pauser (or the admin) stops new rounds and purchases; only `set_config` unpauses. */
+export async function pauseIx(authority: Address): Promise<Instruction> {
+  return {
+    programAddress: program(),
+    accounts: [meta(await configAddress(), AccountRole.WRITABLE), meta(authority, AccountRole.READONLY_SIGNER)],
+    data: DISC.pause,
   };
 }
 

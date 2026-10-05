@@ -7,6 +7,7 @@ import {
   getAddressEncoder,
   getArrayDecoder,
   getBase64Encoder,
+  getBooleanDecoder,
   getBytesDecoder,
   getBytesEncoder,
   getProgramDerivedAddress,
@@ -23,7 +24,7 @@ import {
   type Instruction,
 } from '@solana/kit';
 import { sha256Hex } from '@beach-bingo/engine';
-import { bytesToHex, configAddress, program, SLOT_HASHES, SYSTEM_PROGRAM, TIMEOUT_SLOTS, type SolanaRpc } from './waveDuel.ts';
+import { bytesToHex, configAddress, NO_KEY, program, SLOT_HASHES, SYSTEM_PROGRAM, TIMEOUT_SLOTS, type SolanaRpc } from './waveDuel.ts';
 
 /**
  * Client for the `wave_duel` program's halls (programs/wave_duel, "Halls" in lib.rs): a Wave Rush
@@ -92,7 +93,13 @@ export interface HallAccount {
   maxPlayers: number;
   commitment: string;
   code: string;
+  /** `locked` also while `settled` is true (the round was played); check `settled` first. */
   state: HallState;
+  /**
+   * A token round paid out as far as it could, with credits outstanding (`claim_credit_hall`):
+   * the program's `Settled` state. Only token halls get here; SOL halls close on settlement.
+   */
+  settled: boolean;
   /** The roster in join order, the host first. */
   seats: HallSeat[];
   cardsSold: number;
@@ -101,6 +108,17 @@ export interface HallAccount {
   lockedSlot: bigint;
   createdSlot: bigint;
   lamports: bigint;
+  /** Snapshot taken when the hall opened: an admin change never touches a running round. */
+  feeBps: number;
+  treasury: Address;
+  /** The staked mint, or null for SOL. */
+  mint: Address | null;
+  tokenProgram: Address | null;
+  /** The host proved a Seeker Genesis Token for this round. */
+  seeker: boolean;
+  /** Token payouts not yet delivered, by seat (the first `seats.length` entries matter). */
+  credits: bigint[];
+  treasuryCredit: bigint;
 }
 
 const hallDecoder = getStructDecoder([
@@ -119,6 +137,13 @@ const hallDecoder = getStructDecoder([
   ['lockedSlot', getU64Decoder()],
   ['createdSlot', getU64Decoder()],
   ['bump', getU8Decoder()],
+  ['feeBps', getU16Decoder()],
+  ['treasury', getAddressDecoder()],
+  ['mint', getAddressDecoder()],
+  ['tokenProgram', getAddressDecoder()],
+  ['seeker', getBooleanDecoder()],
+  ['credits', getArrayDecoder(getU64Decoder(), { size: MAX_HALL_PLAYERS })],
+  ['treasuryCredit', getU64Decoder()],
 ]);
 
 const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -135,13 +160,21 @@ export function decodeHall(addr: Address, data: Uint8Array, lamports: bigint): H
     maxPlayers: h.maxPlayers,
     commitment: bytesToHex(h.commitment),
     code: new TextDecoder().decode(h.code),
-    state: h.state === 1 ? 'locked' : 'open',
+    state: h.state === 0 ? 'open' : 'locked',
+    settled: h.state === 2,
     seats: h.players.slice(0, h.playerCount).map((player, i) => ({ player, cards: cards[i]! })),
     cardsSold: h.cardsSold,
     entropy: bytesToHex(h.entropy),
     lockedSlot: h.lockedSlot,
     createdSlot: h.createdSlot,
     lamports,
+    feeBps: h.feeBps,
+    treasury: h.treasury,
+    mint: h.mint === NO_KEY ? null : h.mint,
+    tokenProgram: h.tokenProgram === NO_KEY ? null : h.tokenProgram,
+    seeker: h.seeker,
+    credits: [...h.credits],
+    treasuryCredit: h.treasuryCredit,
   };
 }
 
@@ -288,7 +321,10 @@ export async function settleHallIx(hall: HallAccount, treasury: Address, settler
   return { programAddress: program(), accounts: await settleHallAccounts(hall, treasury, settler), data };
 }
 
-/** After the timeout, anyone refunds every seat of a hall whose host never revealed. */
+/**
+ * After the timeout, anyone closes a hall whose host never revealed: the guests get their deposits
+ * back plus the host's deposit split pro rata to their cards (the host forfeits), no fee.
+ */
 export async function claimTimeoutHallIx(hall: HallAccount, treasury: Address, settler: Address): Promise<Instruction> {
   return { programAddress: program(), accounts: await settleHallAccounts(hall, treasury, settler), data: DISC.claimTimeoutHall };
 }
