@@ -14,7 +14,7 @@ import { GreenButton } from '../ui/kit.tsx';
 import { Popup } from '../ui/Popup.tsx';
 import { toast } from '../ui/toast.ts';
 import { walletClient } from './client.ts';
-import { CLUSTER, ONCHAIN_STAKES_ENABLED, isAndroid, isWebShell, shortAddress } from './config.ts';
+import { CLUSTER, ONCHAIN_STAKES_ENABLED, isAndroid, isSeedVaultDevice, isWebShell, shellDeviceModel, shortAddress } from './config.ts';
 import { findSeekerGenesisToken, solBalance } from './seeker.ts';
 import { createSignInInput, verifySignInLocally } from './siws.ts';
 import './wallet.css';
@@ -95,9 +95,10 @@ export default function WalletPopup() {
   return (
     <Popup title="Wallet" onClose={close} wide>
       <p className="small-note">
-        Link a Solana wallet to carry your beach profile to the Seeker and claim Seeker perks. Beach Bingo never asks for your seed
-        phrase, and coins stay play money. Network: <b>{CLUSTER}</b>
-        {isWebShell() ? ' · dApp Store app' : ''}.
+        Link a Solana wallet to carry your beach profile to the Seeker, claim Seeker perks and pay for coin packs. Beach Bingo never
+        asks for your seed phrase. SAND stays free; coins are bought in the Coin Shop and never leave the game. Network: <b>{CLUSTER}</b>
+        {isWebShell() ? ' · dApp Store app' : ''}
+        {isSeedVaultDevice() ? ` · Seed Vault device${shellDeviceModel() ? ` (${shellDeviceModel()})` : ''}` : ''}.
       </p>
 
       {!connected ? (
@@ -158,11 +159,11 @@ export default function WalletPopup() {
       )}
 
       <div className="divider" />
-      <h3>Play with SOL / USDC / SKR?</h3>
+      <h3>SOL, USDC, PYUSD, JUP and SKR</h3>
       <p className="small-note">
         {ONCHAIN_STAKES_ENABLED
-          ? 'Devnet stakes are enabled for testing only.'
-          : 'Not yet. Real-money bingo is regulated gambling, so on-chain stakes stay switched off until licensing, geo-checks and age verification are in place. Everything here is free to play.'}
+          ? 'This devnet build takes test tokens: staked Wave Rush rooms and halls, and the Coin Shop once its program is live. Pay with SKR for the best price.'
+          : 'The Coin Shop takes these five tokens, SKR at the best price. Staked rooms stay switched off on this site: real-money bingo is regulated gambling, so they wait for licensing, geo-checks and age verification. SAND play is free for everyone.'}
       </p>
     </Popup>
   );
