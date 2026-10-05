@@ -208,10 +208,11 @@ before each call [S].
 10,000 MAU, with Triton pay-as-you-go as failover ($60–90 a month together); Helius Business at
 $499 only when sustained sends exceed five a second [S10][S13]. Rent is 5,080 lamports a byte since
 11 Sep 2026 (SIMD-0437 step 2 [S6]; the figure reproduces the devnet program-data and room balances
-exactly): the program's data account, 303 KB after the hall upgrade, holds about 1.54 SOL today
-(1.09 SOL at the 1v1 size the stack report priced) and about 0.21 SOL at the final 696 lamports a
-byte, expected around November 2026; a room costs 0.0015 SOL, fronted by the host and returned at
-close.
+exactly): the program's data account holds about 3.83 SOL today for the 753 KB of space the token
+version needs (the program is 711 KB with the Token-2022 crates; it was 303 KB with SOL halls and
+1.54 SOL, 215 KB and 1.09 SOL at the 1v1 size the stack report priced) and about 0.52 SOL at the
+final 696 lamports a byte, expected around November 2026; a room costs 0.0015 SOL, a token room
+its vault's rent on top, fronted by the host and returned at close.
 An indexer, a status page, runbooks, key custody.
 
 **Phase F: the dApp Store.** The play-money listing (docs/DAPP_STORE.md) goes first. A licensed
@@ -229,7 +230,7 @@ Monthly running costs from the revenue report (estimates from public price lists
 
 The stack report's infrastructure line for 10,000 MAU is $100–150 a month; its phases run from
 devnet at no cost beyond a $12 VPS, through an audited mainnet beta in 6–10 weeks (audit
-$10,000–15,000, about 1.1 SOL to deploy at the size it priced and 1.54 SOL at today's, under 0.2 SOL
+$10,000–15,000, about 1.1 SOL to deploy at the size it priced and 3.8 SOL at today's 711 KB, under 0.2 SOL
 for Squads and store NFTs, VRF at 0.0005 SOL a room), to scale at 10,000 MAU with a second audit
 ($10,000–20,000) and a $25,000–50,000 bounty reserve [S].
 
