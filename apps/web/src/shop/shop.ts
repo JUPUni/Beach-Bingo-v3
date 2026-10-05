@@ -65,6 +65,8 @@ export interface Shop {
   seekerVerified?: () => boolean;
   /** Settle a purchase this device sent and never credited (the chain shop; shop/pendingPurchase.ts); null when there is none. */
   settlePending?(): Promise<PendingSettlement | null>;
+  /** The wallet's SOL and its balance of `mint` (the chain shop), so Buy is off before the wallet would fail. */
+  balances?(mint: Mint): Promise<Balances>;
 }
 
 /** The program's price: `base × (10_000 − bps) / 10_000`, floor, never below one base unit. */
@@ -83,6 +85,24 @@ export function quote(pack: Pack, mint: Mint, seekerVerified: boolean, seekerDis
 /** The saving on a pack with `mint` as a whole percentage ("20"), from its offer. */
 export function savingPercent(pack: Pack, mint: Mint): number {
   return (pack.offers[mint]?.discountBps ?? 0) / 100;
+}
+
+/** What the wallet holds for a purchase: its lamports, and its base units of the token (null when unknown; the lamports again for SOL). */
+export interface Balances {
+  sol: bigint;
+  token: bigint | null;
+}
+
+/** SOL a purchase needs besides its price: the fee, and on a wallet's first purchase the Buyer record's rent (about 0.0013 SOL). */
+export const MIN_SOL_FOR_FEES = 3_000_000n;
+
+/** Why Buy is off for `mint` at `price` with what the wallet holds, or null; nothing is said while the balances are unknown. */
+export function buyBlockedReason(mint: Mint, price: bigint, held: Balances | null): string | null {
+  if (!held) return null;
+  if (mint === 'SOL') return held.sol < price + MIN_SOL_FOR_FEES ? 'Not enough SOL in this wallet' : null;
+  if (held.token !== null && held.token < price) return `Not enough ${mint} in this wallet`;
+  if (held.sol < MIN_SOL_FOR_FEES) return 'Needs about 0.003 SOL for fees';
+  return null;
 }
 
 /**

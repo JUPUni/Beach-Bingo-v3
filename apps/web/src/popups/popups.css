@@ -257,6 +257,10 @@
   color: #2c7a06;
 }
 
+.pack__short {
+  color: #a63a00;
+}
+
 .pack__buy {
   min-width: 6.6rem;
   font-size: 1.4rem;

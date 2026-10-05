@@ -1,13 +1,13 @@
-import type { Address, TransactionSendingSigner } from '@solana/kit';
+import { getBase64Encoder, type Address, type TransactionSendingSigner } from '@solana/kit';
 import { buyPackIx, buyPackTokenIx, fetchBuyer, fetchCoinsBought } from '../solana/shop.ts';
 import { purchaseBudgetIxs } from '../solana/computeBudget.ts';
 import { SGT_GROUP } from '../solana/config.ts';
 import { knownSymbol, SOL_DECIMALS } from '../solana/tokens.ts';
 import { fetchConfig, NO_KEY, PACKS, type ConfigAccount, type SolanaRpc } from '../solana/waveDuel.ts';
-import { fetchMintEntries, type MintEntryAccount, type SeekerProof } from '../solana/waveToken.ts';
+import { ataAddress, fetchMintEntries, type MintEntryAccount, type SeekerProof } from '../solana/waveToken.ts';
 import { clearPendingPurchase, PendingPurchaseError, readPendingPurchase } from './pendingPurchase.ts';
 import { pendingPurchaseCoins, pendingStateOf, sendPurchase } from './purchaseFlow.ts';
-import type { Catalogue, Mint, Offer, Pack, PendingSettlement, Shop } from './shop.ts';
+import type { Balances, Catalogue, Mint, Offer, Pack, PendingSettlement, Shop } from './shop.ts';
 
 /**
  * The Coin Shop sold by the `wave_duel` program (`buy_pack` for SOL, `buy_pack_token` for a
@@ -65,6 +65,9 @@ export function catalogueFrom(config: ConfigAccount, entries: MintEntryAccount[]
 export function seekerApplies(chainGroup: string, buildGroup: string = SGT_GROUP): boolean {
   return chainGroup === buildGroup && chainGroup !== NO_KEY;
 }
+
+/** A token account's amount (SPL Token and Token-2022 share the base layout: u64 LE at offset 64). */
+export const tokenAccountAmount = (data: Uint8Array): bigint => new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(64, true);
 
 /** What a "restore" credits: the chain's running total less what this device already gave the wallet, never negative. */
 export function restoreAmount(coinsTotal: bigint, credited: number): number {
@@ -134,6 +137,16 @@ export function createChainShop(deps: ChainShopDeps): Shop {
     restore: async () => {
       const buyer = await fetchBuyer(deps.rpc, deps.wallet);
       return buyer ? restoreAmount(buyer.coinsTotal, deps.credited()) : 0;
+    },
+    balances: async (mint): Promise<Balances> => {
+      const cat = catalogue ?? (await load());
+      const sol = BigInt((await deps.rpc.getBalance(deps.wallet).send()).value);
+      if (mint === 'SOL') return { sol, token: sol };
+      const entry = cat.mints[mint];
+      if (!entry) return { sol, token: null };
+      // The wallet's ATA for the mint; no account yet is none of the token (a failed read throws, and the popup then blocks nothing).
+      const { value } = await deps.rpc.getAccountInfo(await ataAddress(deps.wallet, entry.mint, entry.tokenProgram), { encoding: 'base64' }).send();
+      return { sol, token: value ? tokenAccountAmount(getBase64Encoder().encode(value.data[0]) as Uint8Array) : 0n };
     },
     settlePending: async (): Promise<PendingSettlement | null> => {
       const pending = readPendingPurchase(deps.wallet);

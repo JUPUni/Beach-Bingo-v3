@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { packPrice } from '../solana/shop.ts';
 import {
+  buyBlockedReason,
   devStub,
   discounted,
   formatPrice,
   getShop,
   isDevShop,
+  MIN_SOL_FOR_FEES,
   PACKS,
   quote,
   registerShop,
@@ -66,6 +68,20 @@ describe('the shop behind the popup', () => {
     expect(bought.signature).toMatch(/^dev-/);
     await expect(devStub.buy('nope', 'SOL')).rejects.toThrow(/No such pack/);
     expect(await devStub.restore()).toBe(0);
+  });
+
+  it('switches Buy off before the wallet would fail: short of the token, or of the SOL for the fee and the rent', () => {
+    const held = { sol: 10_000_000n, token: 90_000_000n };
+    expect(buyBlockedReason('SKR', 96_000_000n, held)).toBe('Not enough SKR in this wallet');
+    expect(buyBlockedReason('SKR', 90_000_000n, held)).toBeNull();
+    expect(buyBlockedReason('USDC', 4_990_000n, { sol: 2_999_999n, token: 5_000_000n })).toBe('Needs about 0.003 SOL for fees');
+    expect(buyBlockedReason('USDC', 4_990_000n, { sol: MIN_SOL_FOR_FEES, token: 5_000_000n })).toBeNull();
+    expect(buyBlockedReason('SOL', 40_000_000n, { sol: 42_000_000n, token: 42_000_000n })).toBe('Not enough SOL in this wallet');
+    expect(buyBlockedReason('SOL', 40_000_000n, { sol: 43_000_000n, token: 43_000_000n })).toBeNull();
+    // Unknown balances block nothing; an unknown token balance still needs the SOL.
+    expect(buyBlockedReason('SKR', 96_000_000n, null)).toBeNull();
+    expect(buyBlockedReason('JUP', 12_000_000n, { sol: 1_000_000n, token: null })).toBe('Needs about 0.003 SOL for fees');
+    expect(buyBlockedReason('JUP', 12_000_000n, { sol: 5_000_000n, token: null })).toBeNull();
   });
 
   it('discounts with the program arithmetic: floor, never below one base unit', () => {

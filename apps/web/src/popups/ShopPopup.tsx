@@ -3,7 +3,7 @@ import { Segmented } from '../games/common.tsx';
 import { sfx } from '../lib/audio.ts';
 import { settlePendingPurchase } from '../shop/pendingCredit.ts';
 import { PendingPurchaseError } from '../shop/pendingPurchase.ts';
-import { formatPrice, getShop, isDevShop, MINTS, PACKS, quote, savingPercent, shopNeedsWallet, subscribeShop, type Catalogue, type Mint, type Pack, type Shop } from '../shop/shop.ts';
+import { buyBlockedReason, formatPrice, getShop, isDevShop, MINTS, PACKS, quote, savingPercent, shopNeedsWallet, subscribeShop, type Balances, type Catalogue, type Mint, type Pack, type Shop } from '../shop/shop.ts';
 import { Badges } from '../solana/Badges.tsx';
 import { useGame, type Purchase } from '../state/store.ts';
 import { formatCoins } from '../ui/format.ts';
@@ -45,6 +45,9 @@ export default function ShopPopup() {
   const [celebrate, setCelebrate] = useState(false);
   // A purchase the chain has not answered on yet: said in place, since a toast is gone in a moment.
   const [notice, setNotice] = useState<string | null>(null);
+  // What the wallet holds of the token on offer (and SOL for the fees); read again after each purchase.
+  const [held, setHeld] = useState<{ shop: Shop; mint: Mint; balances: Balances } | null>(null);
+  const [purchaseCount, setPurchaseCount] = useState(0);
   // The catalogue of the shop that answered; a different shop (the wallet changed) starts over.
   const [loaded, setLoaded] = useState<{ shop: Shop; catalogue: Catalogue } | null>(null);
   const catalogue = loaded && loaded.shop === shop ? loaded.catalogue : null;
@@ -59,6 +62,7 @@ export default function ShopPopup() {
   const offered = MINTS.filter((m) => packs.some((p) => p.offers[m]));
   // SKR when the wallet holds some and the shop sells it; otherwise the first token on offer.
   const mint: Mint = !offered.length || offered.includes(picked) ? picked : skrReady && offered.includes('SKR') ? 'SKR' : offered[0]!;
+  const balances = held && held.shop === shop && held.mint === mint ? held.balances : null;
 
   useEffect(() => {
     if (!shop) return;
@@ -76,6 +80,18 @@ export default function ShopPopup() {
   useEffect(() => {
     if (shop) void settlePendingPurchase(shop);
   }, [shop]);
+
+  useEffect(() => {
+    if (!shop?.balances) return;
+    let on = true;
+    shop
+      .balances(mint)
+      .then((b) => on && setHeld({ shop, mint, balances: b }))
+      .catch(() => on && setHeld(null));
+    return () => {
+      on = false;
+    };
+  }, [shop, mint, purchaseCount]);
 
   const buy = async (pack: Pack) => {
     if (!shop) return;
@@ -103,6 +119,7 @@ export default function ShopPopup() {
       }
     } finally {
       setBusy(null);
+      setPurchaseCount((n) => n + 1);
     }
   };
 
@@ -160,6 +177,8 @@ export default function ShopPopup() {
       <div className="packs">
         {packs.map((pack) => {
           const shown = price(pack, mint);
+          const q = quote(pack, mint, seekerVerified, seekerBps);
+          const short = q === null ? null : buyBlockedReason(mint, q, balances);
           return (
             <div key={pack.id} className={`pack ${open ? '' : 'pack--soon'}`}>
               <CoinIcon size={3.4} />
@@ -168,9 +187,10 @@ export default function ShopPopup() {
                 <span>{shown ?? `Not sold in ${mint}`}</span>
                 {mint !== 'SKR' && skrLine(pack) && <small>{skrLine(pack)}</small>}
                 {seekerVerified && shown && <small className="pack__seeker">Seeker saving included</small>}
+                {short && <small className="pack__short">{short}</small>}
               </div>
               {open && (
-                <GreenButton tone="gold" className="pack__buy" disabled={busy !== null || !shown} onClick={() => void buy(pack)}>
+                <GreenButton tone="gold" className="pack__buy" disabled={busy !== null || !shown || short !== null} onClick={() => void buy(pack)}>
                   {busy === pack.id ? '…' : 'Buy'}
                 </GreenButton>
               )}
