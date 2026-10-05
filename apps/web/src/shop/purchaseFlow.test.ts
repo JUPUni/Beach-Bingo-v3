@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BUY_PACK_COMPUTE_UNITS,
+  BUY_PACK_MEASURED_CU,
+  clampedMedianFee,
+  MAX_PRIORITY_FEE_LAMPORTS,
+  PRIORITY_FEE_CAP,
+  PRIORITY_FEE_FLOOR,
+  priorityFeeLamports,
+  setComputeUnitPriceIx,
+} from '../solana/computeBudget.ts';
+import { COMPUTE_BUDGET_PROGRAM, setComputeUnitLimitIx } from '../solana/waveHall.ts';
+import {
   clearPendingPurchase,
   parsePendingPurchase,
   PENDING_MESSAGE,
@@ -86,5 +97,34 @@ describe('the pending purchase record', () => {
     expect(e.name).toBe('PendingPurchaseError');
     expect(e.pending).toBe(pending);
     expect(e).toBeInstanceOf(Error);
+  });
+});
+
+describe('the purchase compute budget', () => {
+  it('limits the units to 1.3× the measured worst case, never under 60,000, and keeps the fee at the cap under 0.002 SOL', () => {
+    expect(BUY_PACK_COMPUTE_UNITS).toBeGreaterThanOrEqual(60_000);
+    expect(BUY_PACK_COMPUTE_UNITS).toBeGreaterThanOrEqual(BUY_PACK_MEASURED_CU * 1.3);
+    expect(priorityFeeLamports(BUY_PACK_COMPUTE_UNITS, PRIORITY_FEE_CAP)).toBeLessThanOrEqual(MAX_PRIORITY_FEE_LAMPORTS);
+    expect(priorityFeeLamports(60_000, 20_000n)).toBe(1_200n);
+    expect(priorityFeeLamports(1, 1n)).toBe(1n);
+  });
+
+  it('prices at the median of recent fees, floored and capped, and at the floor without data', () => {
+    expect(clampedMedianFee([])).toBe(PRIORITY_FEE_FLOOR);
+    expect(clampedMedianFee([0n, 0n, 0n, 0n])).toBe(PRIORITY_FEE_FLOOR);
+    expect(clampedMedianFee([500n, 1_500n, 100_000n])).toBe(1_500n);
+    expect(clampedMedianFee([5_000n, 7_000n])).toBe(6_000n);
+    expect(clampedMedianFee([50_000n, 60_000n, 70_000n])).toBe(PRIORITY_FEE_CAP);
+    expect(clampedMedianFee([30_000n, 1n, 2n, 3n, 4n])).toBe(PRIORITY_FEE_FLOOR);
+  });
+
+  it('encodes the two ComputeBudget instructions as the runtime reads them', () => {
+    const limit = setComputeUnitLimitIx(60_000);
+    expect(limit.programAddress).toBe(COMPUTE_BUDGET_PROGRAM);
+    expect(Array.from(limit.data!)).toEqual([2, 0x60, 0xea, 0, 0]);
+    const price = setComputeUnitPriceIx(20_000n);
+    expect(price.programAddress).toBe(COMPUTE_BUDGET_PROGRAM);
+    expect(price.accounts).toEqual([]);
+    expect(Array.from(price.data!)).toEqual([3, 0x20, 0x4e, 0, 0, 0, 0, 0, 0]);
   });
 });

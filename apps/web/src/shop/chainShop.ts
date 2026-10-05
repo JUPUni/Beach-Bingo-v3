@@ -1,5 +1,6 @@
 import type { Address, TransactionSendingSigner } from '@solana/kit';
 import { buyPackIx, buyPackTokenIx, fetchBuyer, fetchCoinsBought } from '../solana/shop.ts';
+import { purchaseBudgetIxs } from '../solana/computeBudget.ts';
 import { SGT_GROUP } from '../solana/config.ts';
 import { knownSymbol, SOL_DECIMALS } from '../solana/tokens.ts';
 import { fetchConfig, NO_KEY, PACKS, type ConfigAccount, type SolanaRpc } from '../solana/waveDuel.ts';
@@ -109,7 +110,8 @@ export function createChainShop(deps: ChainShopDeps): Shop {
           ? await buyPackIx(deps.wallet, config!.treasury, index, proof)
           : await buyPackTokenIx(deps.wallet, cat.mints[mint]!, index, proof, config!.treasury);
       const before = await fetchBuyer(deps.rpc, deps.wallet);
-      const { signature, pending } = await sendPurchase(deps.rpc, deps.signer, [ix], { wallet: deps.wallet, packId: id, mint, coinsTotalBefore: before?.coinsTotal ?? 0n });
+      // The compute limit and the priority fee go first (solana/computeBudget.ts).
+      const { signature, pending } = await sendPurchase(deps.rpc, deps.signer, [...(await purchaseBudgetIxs(deps.rpc)), ix], { wallet: deps.wallet, packId: id, mint, coinsTotalBefore: before?.coinsTotal ?? 0n });
       // Confirmed: the coins from the event, else the Buyer's growth. If the chain cannot be read
       // right now the record stays, and the next open credits them.
       let coins: number | null = null;
