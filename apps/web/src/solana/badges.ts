@@ -35,7 +35,9 @@ export function badges(input: BadgeInput): Badge[] {
       label: input.provedThisRound ? 'Seeker verified · proved this round' : 'Seeker verified',
       detail: input.provedThisRound
         ? 'The program checked your Seeker Genesis Token for this round: the Seeker fee tier applies.'
-        : 'A Seeker Genesis Token of the configured group is in this wallet. Prove it to the program for the Seeker fee tier.',
+        : input.stakesEnabled
+          ? 'A Seeker Genesis Token of the configured group is in this wallet. Prove it to the program for the Seeker fee tier.'
+          : 'A Seeker Genesis Token of the configured group is in this wallet: the Coin Shop takes the Seeker discount off every pack.',
     });
   }
   if (input.seedVaultDevice) {
