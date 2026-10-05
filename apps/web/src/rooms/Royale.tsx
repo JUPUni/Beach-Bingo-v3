@@ -4,9 +4,9 @@ import { art } from '../assets/art.ts';
 import { say, sfx } from '../lib/audio.ts';
 import { newRound, type FairRound } from '../lib/fair.ts';
 import { useModel } from '../lib/hooks.ts';
-import { useGame } from '../state/store.ts';
+import { TABLE_NAME, useGame, type Table } from '../state/store.ts';
 import { BingoGrid } from '../ui/BingoGrid.tsx';
-import { Ball, Confetti, GreenButton } from '../ui/kit.tsx';
+import { Ball, Confetti, GreenButton, RewardPill } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { Popup } from '../ui/Popup.tsx';
@@ -24,6 +24,10 @@ export default function Royale() {
   const profile = useGame((s) => s.profile);
   const recordWin = useGame((s) => s.recordWin);
   const playedMode = useGame((s) => s.playedMode);
+  const activeTable = useGame((s) => s.table);
+  const freeGame = useGame((s) => s.table === 'coins' && s.freeGames > 0);
+  /** The table the running game was bought in on. */
+  const [gameTable, setGameTable] = useState<Table>(activeTable);
   const [size, setSize] = useState<number>(32);
   const [wave, setWave] = useState<WaveResult | null>(null);
   const [revealed, setRevealed] = useState(0);
@@ -34,9 +38,10 @@ export default function Royale() {
 
   const join = () => {
     const s = useGame.getState();
-    const blocked = s.wagerBlockedReason();
+    const blocked = s.wagerBlockedReason(s.table);
     if (blocked) return toast(blocked, 'warn');
-    if (!s.spend(BUY_IN, { wager: true })) return toast('Not enough coins', 'warn');
+    if (!s.charge(BUY_IN, { wager: true, table: s.table, base: BUY_IN })) return toast(`Not enough ${TABLE_NAME[s.table]}`, 'warn');
+    setGameTable(s.table);
     const fair = newRound('lastCastle');
     fairRef.current = fair;
     const entrants = [{ id: 'me', name: profile.name }, ...botRoster(size - 1)];
@@ -65,13 +70,13 @@ export default function Royale() {
       }
       if (state.finished) {
         const payouts = royale.royalePayouts(state);
-        recordWin(payouts.me ?? 0);
+        recordWin(payouts.me ?? 0, { table: gameTable });
         fairRef.current?.log(`place ${me.place} → ${payouts.me ?? 0}`);
       }
       render();
     }, wave ? WAVE_MS : 1500);
     return () => window.clearTimeout(id);
-  }, [state, wave, recordWin, render]);
+  }, [state, wave, recordWin, render, gameTable]);
 
   useEffect(() => {
     if (!wave || revealed >= wave.balls.length) return;
@@ -98,9 +103,9 @@ export default function Royale() {
             </p>
             <Segmented options={SIZES} value={size} onChange={setSize} render={(n) => `${n} players`} />
             <p className="small-note">
-              Buy-in {BUY_IN} coins · pool {Math.round(royale.ROYALE_PAYOUT_RATE * 100)}% · practice lobby filled with labelled bots 🤖
+              Buy-in {BUY_IN} {TABLE_NAME[activeTable]} · pool {Math.round(royale.ROYALE_PAYOUT_RATE * 100)}% · practice lobby filled with labelled bots 🤖
             </p>
-            <GreenButton onClick={join}>Join · {BUY_IN}</GreenButton>
+            <GreenButton onClick={join}>Join · {freeGame ? 'Free game' : BUY_IN}</GreenButton>
           </div>
         ) : (
           <>
@@ -162,9 +167,7 @@ export default function Royale() {
           >
             <div className="popup-center">
               {(payouts.me ?? 0) > 0 ? (
-                <div className="reward-pill">
-                  <img src={art.iconCoin} alt="" /> +{formatCoins(payouts.me!)}
-                </div>
+                <RewardPill amount={payouts.me!} table={gameTable} />
               ) : (
                 <p>The tide took your castle this time.</p>
               )}

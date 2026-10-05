@@ -13,7 +13,7 @@ const SEAS: readonly SeaState[] = ['calm', 'choppy', 'storm'];
 const SEA_LABEL: Record<SeaState, string> = { calm: '🌤️ Calm', choppy: '🌊 Choppy', storm: '⛈️ Storm' };
 
 export default function TidePool() {
-  const { stake, setStake, placeBet, settle } = useWager('tidePool', 25);
+  const { stake, setStake, placeBet, settle, covers } = useWager('tidePool', 25);
   const commitment = useGame((s) => s.fairness.commitment);
   const [sea, setSea] = useState<SeaState>('calm');
   const [count, setCount] = useState(2);
@@ -67,7 +67,7 @@ export default function TidePool() {
           <Segmented options={[1, 2, 3, 4]} value={count} onChange={changeCount} disabled={busy} render={(n) => `${n}🃏`} />
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={busy} label="Per card" />
           <GreenButton onClick={play} disabled={busy} className="casino__go">
-            {busy ? '…' : `Splash ${stake * count}`}
+            {busy ? '…' : covers(stake * count) ? 'Splash · Free game' : `Splash ${stake * count}`}
           </GreenButton>
         </>
       }

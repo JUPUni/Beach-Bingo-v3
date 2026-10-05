@@ -108,6 +108,9 @@ export type RosterEntry = {
 export type StakeInfo =
   | { kind: 'room'; lamports: string; host: string; program: string; room: string }
   | { kind: 'hall'; lamports: string; host: string; program: string; room: string; stakePerCard: string; maxPlayers: number };
+/** What cards are bought with: the host's table when the room opened. Guests pay in the same. */
+export type Currency = 'sand' | 'coins';
+const isCurrency = (x: unknown): x is Currency => x === 'sand' || x === 'coins';
 /** A hall's shape (lib.rs MIN_HALL_PLAYERS..MAX_HALL_PLAYERS, MAX_HALL_CARDS). */
 export const HALL_PLAYERS = { min: 2, max: 8 } as const;
 export const HALL_CARDS = { min: 1, max: 4 } as const;
@@ -115,8 +118,8 @@ export const HALL_CARDS = { min: 1, max: 4 } as const;
 export type LiveMessage =
   /** Any peer: my name, how many cards I hold for the next round, and my wallet in a staked room. */
   | { t: 'me'; name: string; cards: number; wallet?: string }
-  /** Host: which hall this is, the commitment for the coming round, and the stake if there is one. */
-  | { t: 'room'; preset: RoomPresetId; round: number; commitment: string; playing: boolean; stake?: StakeInfo }
+  /** Host: which hall this is, the commitment for the coming round, the stake if there is one, and the currency (SAND when absent: older builds). */
+  | { t: 'room'; preset: RoomPresetId; round: number; commitment: string; playing: boolean; stake?: StakeInfo; currency?: Currency }
   /** Host: the reveal that starts a round. Staked rooms carry the escrow's entropy as the client seed. */
   | { t: 'start'; round: number; serverSeed: string; startAt: number; roster: RosterEntry[]; entropy?: string }
   /** Any player in a duel: BINGO on my card `card` with `ball` balls on the table. */
@@ -167,6 +170,10 @@ export function parseMessage(raw: unknown): LiveMessage | null {
         const stake = parseStake(raw.stake);
         if (!stake) return null;
         msg.stake = stake;
+      }
+      if (raw.currency !== undefined) {
+        if (!isCurrency(raw.currency)) return null;
+        msg.currency = raw.currency;
       }
       return msg;
     }

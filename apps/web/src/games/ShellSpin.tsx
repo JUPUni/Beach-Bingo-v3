@@ -21,9 +21,8 @@ const SYMBOL: Record<ReelSymbol['kind'], string> = {
 };
 
 export default function ShellSpin() {
-  const { stake, setStake, placeBet, settle } = useWager('shellSpin', 50);
+  const { stake, setStake, placeBet, settle, covers, buyExtra } = useWager('shellSpin', 50);
   const commitment = useGame((s) => s.fairness.commitment);
-  const spend = useGame((s) => s.spend);
   const { model: state, commit: render, replace } = useModel<SpinState | null>(() => null);
   const fairRef = useRef<FairRound | null>(null);
   const reelRng = useRef<ReturnType<FairRound['rng']> | null>(null);
@@ -85,7 +84,7 @@ export default function ShellSpin() {
     const s = state;
     const offer = s && shellSpin.extraSpinOffer(s);
     if (!s || !offer) return;
-    if (!spend(offer.price, { wager: true })) return toast('Not enough coins for an extra spin', 'warn');
+    if (!buyExtra(offer.price, 'an extra spin')) return;
     shellSpin.buyExtraSpin(s);
     render();
     void doSpin(s);
@@ -119,7 +118,7 @@ export default function ShellSpin() {
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={active} />
           {!active || state!.spinsLeft > 0 || state!.pendingWilds.length ? (
             <GreenButton onClick={() => void doSpin()} disabled={spinning || Boolean(state?.pendingWilds.length && active)} className="casino__go">
-              {active ? `Spin (${state!.spinsLeft} left)` : 'Spin'}
+              {active ? `Spin (${state!.spinsLeft} left)` : covers(stake) ? 'Spin · Free game' : 'Spin'}
             </GreenButton>
           ) : (
             <>

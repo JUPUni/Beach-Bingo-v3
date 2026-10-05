@@ -1,7 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
 import { art } from '../assets/art.ts';
-import { CHEST_KEYS, useGame } from '../state/store.ts';
-import { Counter, RoundButton } from './kit.tsx';
+import { sfx } from '../lib/audio.ts';
+import { CHEST_KEYS, TABLE_NAME, useGame } from '../state/store.ts';
+import { toast } from './toast.ts';
+import { Balances, Counter, CurrencyIcon, RoundButton } from './kit.tsx';
 import './stage.css';
 
 export function Stage({
@@ -31,7 +33,6 @@ export function Stage({
 }
 
 export function TopBar() {
-  const coins = useGame((s) => s.coins);
   const keys = useGame((s) => s.keys);
   const avatar = useGame((s) => s.profile.avatar);
   const openPopup = useGame((s) => s.openPopup);
@@ -41,12 +42,7 @@ export function TopBar() {
       <button type="button" className="topbar__avatar" aria-label="Edit profile" onClick={() => openPopup('profile')}>
         <span>{avatar}</span>
       </button>
-      <button type="button" className="chip chip--plus topbar__coins" aria-label="Coins — get more" onClick={() => openPopup('faucet')}>
-        <img src={art.iconCoin} alt="" className="chip__icon" />
-        <span className="t-outline t-outline--wood">
-          <Counter value={coins} />
-        </span>
-      </button>
+      <Balances className="topbar__balances" />
       <button type="button" className="chip chip--red topbar__keys" aria-label="Golden keys — treasure chest" onClick={() => openPopup('chest')}>
         <img src={art.iconKey} alt="" className="chip__icon" />
         <span className="t-outline t-outline--red">
@@ -73,9 +69,16 @@ export function BottomNav({ onHome }: { onHome?: () => void }) {
   );
 }
 
-/** Compact header for game screens: back button + title + coins. */
+/** Compact header for game screens: back button + title + the active table's balance. */
 export function GameHeader({ title, onBack, right }: { title: string; onBack: () => void; right?: ReactNode }) {
-  const coins = useGame((s) => s.coins);
+  const table = useGame((s) => s.table);
+  const balance = useGame((s) => s[s.table]);
+  const openBalance = () => {
+    sfx.click();
+    const s = useGame.getState();
+    if (s.table === 'sand') return s.openPopup('faucet');
+    if (s.requestCoins('shop') === 'blocked') toast(s.coinsBlockedReason() ?? '', 'warn');
+  };
   return (
     <header className="gamehead wood-bar">
       <button type="button" className="gamehead__back" aria-label="Back" onClick={onBack}>
@@ -83,12 +86,12 @@ export function GameHeader({ title, onBack, right }: { title: string; onBack: ()
       </button>
       <h1 className={`gamehead__title t-outline t-outline--wood ${title.length > 15 ? 'gamehead__title--long' : ''}`}>{title}</h1>
       {right ?? (
-        <div className="chip gamehead__coins">
-          <img src={art.iconCoin} alt="" className="chip__icon" />
+        <button type="button" className={`chip gamehead__coins gamehead__coins--${table}`} aria-label={`${TABLE_NAME[table]} balance`} onClick={openBalance}>
+          <CurrencyIcon table={table} className="chip__icon" />
           <span className="t-outline t-outline--wood">
-            <Counter value={coins} />
+            <Counter value={balance} />
           </span>
-        </div>
+        </button>
       )}
     </header>
   );

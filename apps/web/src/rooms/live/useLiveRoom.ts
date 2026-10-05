@@ -39,16 +39,23 @@ export function useLiveRoom(opts: { code: string; host: boolean; preset?: RoomPr
       const s = store;
       s.listeners.add(listener);
       if (!s.snapshot.machine) {
-        const machine = new LiveRoomMachine({
+        const machine: LiveRoomMachine = new LiveRoomMachine({
           code,
           host,
           preset,
+          // The host's table when the room opens is the room's currency for everyone in it.
+          currency: useGame.getState().table,
           name: useGame.getState().profile.name,
           wallet: {
-            blocked: () => useGame.getState().wagerBlockedReason(),
-            spend: (amount) => useGame.getState().spend(amount, { wager: true }),
-            refund: (amount) => useGame.getState().refund(amount),
-            win: (amount) => useGame.getState().recordWin(amount),
+            blocked: (currency) => {
+              const s = useGame.getState();
+              if (currency === 'coins' && !s.coinsReady()) return s.coinsBlockedReason() ?? 'Confirm you are 18 or older to play a coin room';
+              return s.wagerBlockedReason(currency);
+            },
+            // One card at the hall's price is a coin-table entry a free-game ticket pays for.
+            spend: (amount, currency) => useGame.getState().charge(amount, { wager: true, table: currency, base: machine.config?.cardPrice }),
+            refund: (amount, currency) => useGame.getState().refund(amount, { table: currency }),
+            win: (amount, currency) => useGame.getState().recordWin(amount, { table: currency }),
           },
           connect: connectRoom,
           onEvent: (event) => react(machine, event),

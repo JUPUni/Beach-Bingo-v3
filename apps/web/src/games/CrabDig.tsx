@@ -13,7 +13,7 @@ import { COIN_STAKES, useWager } from './wager.ts';
 const CRABS = [1, 3, 5, 8, 12, 20] as const;
 
 export default function CrabDig() {
-  const { stake, setStake, placeBet, settle } = useWager('crabDig', 50);
+  const { stake, setStake, placeBet, settle, covers } = useWager('crabDig', 50);
   const commitment = useGame((s) => s.fairness.commitment);
   const [crabs, setCrabs] = useState<number>(3);
   const [nonce, setNonce] = useState<number | null>(null);
@@ -83,7 +83,7 @@ export default function CrabDig() {
             </GreenButton>
           ) : (
             <GreenButton onClick={start} className="casino__go">
-              Start digging
+              {covers(stake) ? 'Dig · Free game' : 'Start digging'}
             </GreenButton>
           )}
         </>

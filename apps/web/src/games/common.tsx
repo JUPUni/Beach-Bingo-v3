@@ -2,8 +2,8 @@ import { useEffect, type ReactNode } from 'react';
 import { modeInfo, type ModeId } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
-import { useGame } from '../state/store.ts';
-import { Confetti } from '../ui/kit.tsx';
+import { useGame, type Table } from '../state/store.ts';
+import { Confetti, CurrencyIcon } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { GameHeader, Stage } from '../ui/Stage.tsx';
 import './games.css';
@@ -29,7 +29,9 @@ export function CasinoShell({ mode, children, controls }: { mode: ModeId; childr
   );
 }
 
-export function WinBanner({ amount, multiplier, onDone }: { amount: number; multiplier?: number; onDone(): void }) {
+export function WinBanner({ amount, multiplier, table, onDone }: { amount: number; multiplier?: number; table?: Table; onDone(): void }) {
+  const active = useGame((s) => s.table);
+  const paid = table ?? active;
   useEffect(() => {
     sfx.win();
     const id = window.setTimeout(onDone, 2200);
@@ -41,7 +43,9 @@ export function WinBanner({ amount, multiplier, onDone }: { amount: number; mult
       {big && <Confetti />}
       <div className="win-banner anim-pop" onClick={onDone}>
         <span className="t-outline t-outline--wood">{big ? 'BIG WIN!' : 'WIN!'}</span>
-        <b className="t-outline t-outline--green">+{formatCoins(amount)}</b>
+        <b className="t-outline t-outline--green">
+          <CurrencyIcon table={paid} size={2.6} /> +{formatCoins(amount)}
+        </b>
         {multiplier !== undefined && <small>{multiplier.toLocaleString('en-US', { maximumFractionDigits: 2 })}×</small>}
       </div>
     </>

@@ -109,6 +109,37 @@ describe('a live room', () => {
     vi.useRealTimers();
   });
 
+  it("plays in the host's currency: a coin room charges and pays everyone in coins, an old room message means SAND", async () => {
+    const seen: string[] = [];
+    const ledger = (): Wallet => ({
+      blocked: () => null,
+      spend: (_amount, currency) => (seen.push(`spend:${currency}`), true),
+      refund: (_amount, currency) => void seen.push(`refund:${currency}`),
+      win: (_amount, currency) => void seen.push(`win:${currency}`),
+    });
+    const a = new LiveRoomMachine({ code: CODE, host: true, preset: 'waveRush', currency: 'coins', name: 'Ana', wallet: ledger(), connect: hub.connect });
+    const b = new LiveRoomMachine({ code: CODE, host: false, name: 'Bo', wallet: ledger(), connect: hub.connect });
+    await a.open();
+    await b.open();
+    await tick(100);
+    expect(a.currency).toBe('coins');
+    expect(b.currency).toBe('coins');
+    a.buy(1);
+    b.buy(1);
+    await tick(100);
+    expect(seen).toEqual(['spend:coins', 'spend:coins']);
+    a.start();
+    await tick(START_LEAD_MS + 100);
+    await playUntil(a, () => a.status === 'finished' && b.status === 'finished', 40);
+    expect(seen.filter((x) => x.startsWith('win'))).toEqual(['win:coins', 'win:coins']);
+    // A room message without a currency (a build from before the two tables) reads as SAND.
+    hub.inject(CODE, a.selfId, { t: 'room', preset: 'waveRush', round: 1, commitment: a.commitment, playing: false });
+    await tick(100);
+    expect(b.currency).toBe('sand');
+    a.leave();
+    b.leave();
+  });
+
   it('plays a Wave Rush round that both clients settle identically', async () => {
     const { a, b } = await lobby(hub, 'waveRush');
     expect(b.m.status).toBe('lobby');

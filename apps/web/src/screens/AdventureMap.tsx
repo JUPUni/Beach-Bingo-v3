@@ -93,7 +93,7 @@ function LevelStartPopup({ level, onClose }: { level: LevelDef; onClose(): void 
   const stars = useGame((s) => s.stars[level.id] ?? 0);
   const boosters = useGame((s) => s.boosters);
   const coins = useGame((s) => s.coins);
-  const spend = useGame((s) => s.spend);
+  const charge = useGame((s) => s.charge);
   const addBooster = useGame((s) => s.addBooster);
   const consumeBooster = useGame((s) => s.consumeBooster);
   const go = useGame((s) => s.go);
@@ -105,13 +105,13 @@ function LevelStartPopup({ level, onClose }: { level: LevelDef; onClose(): void 
     if (on) return set(false);
     if (boosters[id] > 0) return set(true);
     const price = adventure.BOOSTERS[id].price;
-    if (coins >= price && spend(price)) {
+    if (coins >= price && charge(price, { table: 'coins' })) {
       addBooster(id, 1);
       sfx.coin();
       toast(`Bought ${adventure.BOOSTERS[id].name}`, 'win');
       set(true);
     } else {
-      toast(`${adventure.BOOSTERS[id].name} costs ${price} coins`, 'warn');
+      toast(`${adventure.BOOSTERS[id].name} costs ${price} coins — earned ones come from tasks, chests and the Seeker perk`, 'warn');
     }
   };
 
@@ -168,7 +168,7 @@ function LevelStartPopup({ level, onClose }: { level: LevelDef; onClose(): void 
           })}
         </div>
         <p className="small-note">
-          Reward: {level.reward}🪙 per star{sun ? ' ×2' : ''}. Crab Pinch and Big Wave can be used during play.
+          Reward: {level.reward} SAND per star{sun ? ' ×2' : ''}. Crab Pinch and Big Wave can be used during play; extra boosters cost coins.
         </p>
       </div>
     </Popup>

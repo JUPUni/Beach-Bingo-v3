@@ -17,7 +17,7 @@ const AUTO = [0, 3, 5, 8, 12] as const;
 const DRAW_MS = 1100;
 
 export default function Riptide() {
-  const { stake, setStake, placeBet, settle } = useWager('riptide', 50);
+  const { stake, setStake, placeBet, settle, covers } = useWager('riptide', 50);
   const commitment = useGame((s) => s.fairness.commitment);
   const [level, setLevel] = useState<RiptideLevel>('choppy');
   const [auto, setAuto] = useState<number>(0);
@@ -105,7 +105,7 @@ export default function Riptide() {
             </GreenButton>
           ) : (
             <GreenButton onClick={start} className="casino__go">
-              Ride the tide
+              {covers(stake) ? 'Ride · Free game' : 'Ride the tide'}
             </GreenButton>
           )}
         </>

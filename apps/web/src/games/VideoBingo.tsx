@@ -7,7 +7,6 @@ import { useGame } from '../state/store.ts';
 import { BingoGrid } from '../ui/BingoGrid.tsx';
 import { Ball, GreenButton, StakePicker } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
-import { toast } from '../ui/toast.ts';
 import { CasinoShell, FairChip, Segmented, WinBanner } from './common.tsx';
 import { COIN_STAKES, sleep, useWager } from './wager.ts';
 
@@ -22,9 +21,8 @@ function MiniPattern({ mask }: { mask: number }) {
 }
 
 export default function VideoBingo() {
-  const { stake, setStake, placeBet, settle } = useWager('videoBingo', 10);
+  const { stake, setStake, placeBet, settle, covers, buyExtra } = useWager('videoBingo', 10);
   const commitment = useGame((s) => s.fairness.commitment);
-  const spend = useGame((s) => s.spend);
   const [cards, setCards] = useState(4);
   const [shown, setShown] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -66,7 +64,7 @@ export default function VideoBingo() {
     const r = round;
     const offer = r && videoBingo.extraBallOffer(r);
     if (!r || !offer) return;
-    if (!spend(offer.price, { wager: true })) return toast('Not enough coins for an extra ball', 'warn');
+    if (!buyExtra(offer.price, 'an extra ball')) return;
     const { ball } = videoBingo.buyExtraBall(r);
     setShown(r.drawnCount);
     sfx.ball();
@@ -98,7 +96,7 @@ export default function VideoBingo() {
             </>
           ) : (
             <GreenButton onClick={play} disabled={busy} className="casino__go">
-              {busy ? '…' : `Play ${stake * cards}`}
+              {busy ? '…' : covers(stake * cards) ? 'Play · Free game' : `Play ${stake * cards}`}
             </GreenButton>
           )}
         </>

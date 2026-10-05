@@ -4,15 +4,15 @@
   z-index: 5;
   flex: none;
   height: calc(7.6rem + var(--safe-top));
-  padding: calc(var(--safe-top) + 1.4rem) 1.6rem 1.6rem;
+  padding: calc(var(--safe-top) + 1.4rem) 1rem 1.6rem;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 2.4rem;
+  gap: 1rem;
 }
 
 .topbar__avatar {
-  width: 6rem;
+  width: 5rem;
   height: 4.4rem;
   border-radius: 1.2rem;
   border: 0.4rem solid var(--c-orange);
@@ -24,13 +24,13 @@
   line-height: 1;
 }
 
-.topbar__coins {
+.topbar__balances {
   justify-self: center;
-  min-width: 12.5rem;
 }
 
 .topbar__keys {
-  min-width: 8.8rem;
+  min-width: 6.4rem;
+  padding-right: 0.8rem;
 }
 
 /* ---------- Bottom nav ---------- */

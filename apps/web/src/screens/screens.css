@@ -340,3 +340,14 @@
 .fair-note b {
   color: var(--c-gold-light);
 }
+
+/* ---------- The table row on the mode lists ---------- */
+.table-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.8rem 1.2rem 1.1rem;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+}

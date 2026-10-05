@@ -26,6 +26,7 @@ import {
   START_LEAD_MS,
   type Claim,
   type Connect,
+  type Currency,
   type LiveMessage,
   type Net,
   type RosterEntry,
@@ -118,12 +119,16 @@ export type LiveEvent =
   | { kind: 'coin' }
   | { kind: 'toast'; text: string; tone: 'info' | 'win' | 'warn' };
 
-/** The coin balance, as the store implements it. Cards are paid for when bought and refunded when a round starts without them. */
+/**
+ * The player's ledgers, as the store implements them. Cards are paid for when bought and
+ * refunded when a round starts without them; every call names the room's currency, so a guest
+ * in a coin room pays and is paid in coins whatever table their own game is on.
+ */
 export interface Wallet {
-  blocked(): string | null;
-  spend(amount: number): boolean;
-  refund(amount: number): void;
-  win(amount: number): void;
+  blocked(currency: Currency): string | null;
+  spend(amount: number, currency: Currency): boolean;
+  refund(amount: number, currency: Currency): void;
+  win(amount: number, currency: Currency): void;
 }
 
 export interface MachineOptions {
@@ -131,6 +136,8 @@ export interface MachineOptions {
   host: boolean;
   /** Which hall; the host chooses, guests learn it from the host. */
   preset?: RoomPresetId;
+  /** Host: what the room's cards cost and its prizes pay (SAND by default). Guests learn it from the host. */
+  currency?: Currency;
   name: string;
   wallet: Wallet;
   connect: Connect;
@@ -151,6 +158,8 @@ export class LiveRoomMachine {
   error = '';
   preset: RoomPresetId | null = null;
   config: RoomConfig | null = null;
+  /** What this room plays with; fixed when the host opened it. */
+  currency: Currency = 'sand';
   hostId: string | null = null;
   hostLeft = false;
   round = 1;
@@ -199,6 +208,7 @@ export class LiveRoomMachine {
       if (!opts.preset) throw new Error('a host needs a preset');
       this.preset = opts.preset;
       this.config = rooms.ROOM_PRESETS[opts.preset];
+      this.currency = opts.currency ?? 'sand';
       this.newSeed();
     }
   }
@@ -343,9 +353,9 @@ export class LiveRoomMachine {
       for (const p of this.peers.values()) if (p.id !== this.selfId && p.cards > 0) others++;
       if (others >= 2) return this.toast('This duel already has two players — wait for the next one', 'warn');
     }
-    const blocked = this.opts.wallet.blocked();
+    const blocked = this.opts.wallet.blocked(this.currency);
     if (blocked) return this.toast(blocked, 'warn');
-    if (!this.opts.wallet.spend(config.cardPrice * count)) return this.toast('Not enough coins', 'warn');
+    if (!this.opts.wallet.spend(config.cardPrice * count, this.currency)) return this.toast(`Not enough ${this.currency === 'sand' ? 'SAND' : 'coins'}`, 'warn');
     this.myCards += count;
     if (me.cards === 0) me.firstCardAt = Date.now();
     me.cards = this.myCards;
@@ -545,6 +555,7 @@ export class LiveRoomMachine {
           if (this.status === 'finished') this.nextRoundReady = true;
         }
         this.playing = msg.playing;
+        this.currency = msg.currency ?? 'sand';
         if (msg.stake) this.stake = msg.stake;
         // The host called the escrow off while we were in the lobby: our seat, if we had one,
         // was refunded on chain with it. (At the results the panel keeps the old stake to settle.)
@@ -615,8 +626,8 @@ export class LiveRoomMachine {
     // The cards I bought are consumed by this round; whatever the host did not seat comes back.
     const seated = msg.roster.find((e) => e.id === this.playerId)?.cards ?? 0;
     if (!this.stake && this.myCards > seated) {
-      this.opts.wallet.refund((this.myCards - seated) * config.cardPrice);
-      if (seated === 0) this.toast('The round started without your cards — coins refunded. Watch this one.', 'warn');
+      this.opts.wallet.refund((this.myCards - seated) * config.cardPrice, this.currency);
+      if (seated === 0) this.toast('The round started without your cards — refunded. Watch this one.', 'warn');
     }
     this.myCards = 0;
     for (const e of msg.roster) {
@@ -731,8 +742,8 @@ export class LiveRoomMachine {
     // Staked rooms settle on chain: the coins ledger is not touched.
     this.myPayout = this.stake ? 0 : payout + refund;
     if (me && !this.stake) {
-      this.opts.wallet.win(payout);
-      if (refund > 0) this.opts.wallet.refund(refund);
+      this.opts.wallet.win(payout, this.currency);
+      if (refund > 0) this.opts.wallet.refund(refund, this.currency);
     }
     this.playing = false;
     this.status = 'finished';
@@ -875,7 +886,7 @@ export class LiveRoomMachine {
   private refundLobbyCards(): void {
     if (this.stake) return; // a deposit is not coins; it is cancelled or settled on chain
     if (this.myCards > 0 && this.config) {
-      this.opts.wallet.refund(this.myCards * this.config.cardPrice);
+      this.opts.wallet.refund(this.myCards * this.config.cardPrice, this.currency);
       this.myCards = 0;
       const me = this.me;
       if (me) me.cards = 0;
@@ -895,7 +906,7 @@ export class LiveRoomMachine {
   }
 
   private roomMsg(): LiveMessage {
-    return { t: 'room', preset: this.preset!, round: this.round, commitment: this.commitment, playing: this.playing, ...(this.stake ? { stake: this.stake } : {}) };
+    return { t: 'room', preset: this.preset!, round: this.round, commitment: this.commitment, playing: this.playing, currency: this.currency, ...(this.stake ? { stake: this.stake } : {}) };
   }
 
   private send(msg: LiveMessage, to: string): void {

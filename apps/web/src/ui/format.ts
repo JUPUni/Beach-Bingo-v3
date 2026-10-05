@@ -1,5 +1,11 @@
 import { letterFor } from '@beach-bingo/engine';
 
+/** For the top bar's chips: whole numbers below 10,000, then 12.5K, 100K, 1.2M. */
+export function formatCompact(n: number): string {
+  if (n >= 10_000 && n < 1_000_000) return `${(n / 1000).toFixed(n >= 100_000 ? 0 : 1).replace(/\.0$/, '')}K`;
+  return formatCoins(n);
+}
+
 export function formatCoins(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
   if (n >= 100_000) return `${Math.floor(n / 1000)}K`;

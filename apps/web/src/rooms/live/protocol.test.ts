@@ -58,6 +58,20 @@ describe('messages', () => {
     expect(parseMessage({ t: 'claim', round: 3, card: 0, ball: 12 })).toEqual({ t: 'claim', round: 3, card: 0, ball: 12 });
   });
 
+  it('reads the room currency when it is one of the two, and rejects anything else', () => {
+    const base = { t: 'room', preset: 'waveRush', round: 1, commitment: commitSeed(createServerSeed()), playing: false };
+    const currencyOf = (currency: unknown) => {
+      const msg = parseMessage({ ...base, currency });
+      return msg?.t === 'room' ? (msg.currency ?? 'absent') : null;
+    };
+    expect(currencyOf(undefined)).toBe('absent'); // older builds: SAND
+    expect(currencyOf('sand')).toBe('sand');
+    expect(currencyOf('coins')).toBe('coins');
+    expect(currencyOf('SOL')).toBeNull();
+    expect(currencyOf(1)).toBeNull();
+    expect(currencyOf(null)).toBeNull();
+  });
+
   it('reads a stake of either kind and rejects a malformed one', () => {
     const base = { t: 'room', preset: 'waveRush', round: 1, commitment: commitSeed(createServerSeed()), playing: false };
     const stakeOf = (stake: unknown) => {

@@ -4,8 +4,8 @@ import { art } from '../assets/art.ts';
 import { callBall, say, sfx } from '../lib/audio.ts';
 import { newRound } from '../lib/fair.ts';
 import { useModel } from '../lib/hooks.ts';
-import { useGame } from '../state/store.ts';
-import { Confetti, GreenButton } from '../ui/kit.tsx';
+import { TABLE_NAME, useGame } from '../state/store.ts';
+import { Confetti, GreenButton, RewardPill } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { Popup } from '../ui/Popup.tsx';
@@ -26,7 +26,10 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
   const config = rooms.ROOM_PRESETS[preset];
   const go = useGame((s) => s.go);
   const profile = useGame((s) => s.profile);
-  const jackpot = useGame((s) => s.jackpot.pool);
+  // The table this room plays on: the one active when the screen opened (the switch lives on the lists, not in here).
+  const [table] = useState(() => useGame.getState().table);
+  const jackpot = useGame((s) => s.jackpots[table].pool);
+  const freeGame = useGame((s) => s.table === 'coins' && s.freeGames > 0);
   const contributeJackpot = useGame((s) => s.contributeJackpot);
   const resetJackpot = useGame((s) => s.resetJackpot);
   const recordWin = useGame((s) => s.recordWin);
@@ -62,9 +65,9 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
   const buy = (count: number) => {
     const cost = config.cardPrice * count;
     const state = useGame.getState();
-    const blocked = state.wagerBlockedReason();
+    const blocked = state.wagerBlockedReason(table);
     if (blocked) return toast(blocked, 'warn');
-    if (!state.spend(cost, { wager: true })) return toast('Not enough coins', 'warn');
+    if (!state.charge(cost, { wager: true, table, base: config.cardPrice })) return toast(`Not enough ${TABLE_NAME[table]}`, 'warn');
     rooms.buyCards(room, ME, count, (i) => fair.rng(`card:${i}`));
     setDaubs(me.cards.map((c) => markedMask(c, [])));
     sfx.coin();
@@ -78,14 +81,14 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
     const id = window.setTimeout(() => {
       if (countdown <= 1) {
         rooms.startDrawing(room, fair.rng('draw'));
-        contributeJackpot(rooms.jackpotContribution(room));
+        contributeJackpot(rooms.jackpotContribution(room), table);
         setPhase('drawing');
         say(isDuel ? 'Duel on!' : 'Eyes down!');
       }
       setCountdown((c) => c - 1);
     }, 1000);
     return () => window.clearTimeout(id);
-  }, [phase, countdown, room, fair, contributeJackpot, isDuel]);
+  }, [phase, countdown, room, fair, contributeJackpot, isDuel, table]);
 
   const announce = (wins: StageWin[]) => {
     for (const win of wins) {
@@ -106,8 +109,8 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
   const finish = () => {
     const s = rooms.settleRoom(room);
     setSettlement(s);
-    recordWin(s.payouts[ME] ?? 0);
-    if (s.jackpotPaid > 0) resetJackpot();
+    recordWin(s.payouts[ME] ?? 0, { table });
+    if (s.jackpotPaid > 0) resetJackpot(table);
     fair.log(`won ${s.payouts[ME] ?? 0} of pool ${s.pool}`);
     setPhase('finished');
   };
@@ -217,14 +220,14 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
             <p className="small-note">
               {room.players.length - 1} labelled bot{room.players.length > 2 ? 's' : ''} 🤖 are playing with you. Pool =
               {' '}
-              {Math.round(config.payoutRate * 100)}% of card sales.
+              {Math.round(config.payoutRate * 100)}% of card sales, in {TABLE_NAME[table]}.
             </p>
             <div className="room__buy">
               {Array.from({ length: maxCardsFor(config) - me.cards.length }, (_, i) => i + 1)
                 .slice(0, 3)
                 .map((n) => (
                   <GreenButton key={n} onClick={() => buy(n)}>
-                    +{n} card{n > 1 ? 's' : ''} · {config.cardPrice * n}
+                    +{n} card{n > 1 ? 's' : ''} · {freeGame && n === 1 && me.cards.length === 0 ? 'Free game' : config.cardPrice * n}
                   </GreenButton>
                 ))}
             </div>
@@ -275,13 +278,7 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
             }
           >
             <div className="popup-center">
-              {myWin > 0 ? (
-                <div className="reward-pill">
-                  <img src={art.iconCoin} alt="" /> +{formatCoins(myWin)}
-                </div>
-              ) : (
-                <p>No prizes for you this time.</p>
-              )}
+              {myWin > 0 ? <RewardPill amount={myWin} table={table} /> : <p>No {TABLE_NAME[table]} for you this time.</p>}
               <Results room={room} settlement={settlement} />
             </div>
           </Popup>

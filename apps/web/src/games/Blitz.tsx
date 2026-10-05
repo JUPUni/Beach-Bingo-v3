@@ -10,7 +10,7 @@ import { CasinoShell, FairChip, WinBanner } from './common.tsx';
 import { COIN_STAKES, sleep, useWager } from './wager.ts';
 
 export default function Blitz() {
-  const { stake, setStake, placeBet, settle } = useWager('blitz', 25);
+  const { stake, setStake, placeBet, settle, covers } = useWager('blitz', 25);
   const commitment = useGame((s) => s.fairness.commitment);
   const [target, setTarget] = useState(22);
   const [result, setResult] = useState<BlitzResult | null>(null);
@@ -56,7 +56,7 @@ export default function Blitz() {
         <>
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={busy} />
           <GreenButton onClick={play} disabled={busy} className="casino__go">
-            {busy ? '…' : `Blitz ${multiplier}×`}
+            {busy ? '…' : covers(stake) ? `Free game · ${multiplier}×` : `Blitz ${multiplier}×`}
           </GreenButton>
         </>
       }

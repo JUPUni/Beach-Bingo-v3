@@ -11,7 +11,7 @@ import { COIN_STAKES, sleep, useWager } from './wager.ts';
 const RISKS: readonly KenoRisk[] = ['low', 'medium', 'high'];
 
 export default function Keno() {
-  const { stake, setStake, placeBet, settle } = useWager('keno', 25);
+  const { stake, setStake, placeBet, settle, covers } = useWager('keno', 25);
   const commitment = useGame((s) => s.fairness.commitment);
   const [risk, setRisk] = useState<KenoRisk>('medium');
   const [picks, setPicks] = useState<number[]>([]);
@@ -70,7 +70,7 @@ export default function Keno() {
         <>
           <StakePicker value={stake} options={COIN_STAKES} onChange={setStake} disabled={busy} />
           <GreenButton onClick={play} disabled={busy} className="casino__go">
-            {busy ? '…' : 'Draw 10'}
+            {busy ? '…' : covers(stake) ? 'Draw 10 · Free game' : 'Draw 10'}
           </GreenButton>
         </>
       }

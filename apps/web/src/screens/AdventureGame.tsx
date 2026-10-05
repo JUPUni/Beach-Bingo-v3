@@ -6,7 +6,7 @@ import { newRound } from '../lib/fair.ts';
 import { clock, useInterval, useModel, useTimeouts } from '../lib/hooks.ts';
 import { unlockedLevel, useGame } from '../state/store.ts';
 import { BingoGrid } from '../ui/BingoGrid.tsx';
-import { Ball, Confetti, GreenButton, RoundButton, Stars, Counter } from '../ui/kit.tsx';
+import { Ball, Confetti, GreenButton, RewardPill, RoundButton, Stars, Counter } from '../ui/kit.tsx';
 import { toast } from '../ui/toast.ts';
 import { PatternPreview } from '../ui/PatternPreview.tsx';
 import { Popup } from '../ui/Popup.tsx';
@@ -24,7 +24,7 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
   const boosters = useGame((s) => s.boosters);
   const consumeBooster = useGame((s) => s.consumeBooster);
   const completeLevel = useGame((s) => s.completeLevel);
-  const spend = useGame((s) => s.spend);
+  const charge = useGame((s) => s.charge);
   const track = useGame((s) => s.track);
   const playedMode = useGame((s) => s.playedMode);
   const later = useTimeouts();
@@ -36,7 +36,7 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
   const [phase, setPhase] = useState<Phase>('ready');
   const [countdown, setCountdown] = useState(3);
   const [crabMode, setCrabMode] = useState(false);
-  const [result, setResult] = useState<{ stars: number; coins: number; newKey: boolean } | null>(null);
+  const [result, setResult] = useState<{ stars: number; sand: number; newKey: boolean } | null>(null);
   const [shakeCard, setShakeCard] = useState(-1);
 
   useEffect(() => playedMode('adventure'), [playedMode]);
@@ -126,9 +126,9 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
       say('Bingo!');
       track('bingo');
       const stars = adventure.starsFor(run);
-      const coins = adventure.coinsFor(run);
-      const { newKey } = completeLevel(level.id, stars, coins);
-      setResult({ stars, coins, newKey });
+      const sand = adventure.coinsFor(run);
+      const { newKey } = completeLevel(level.id, stars, sand);
+      setResult({ stars, sand, newKey });
       setPhase('won');
     } else {
       sfx.miss();
@@ -139,8 +139,9 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
 
   const addWave = () => {
     const owned = boosters.wave > 0 && consumeBooster('wave');
-    if (!owned && !spend(WAVE_PRICE)) {
-      toast(`Big Wave costs ${WAVE_PRICE} coins`, 'warn');
+    // An extra wave is a booster: bought with coins, never with SAND (earned waves come from chests and the perk).
+    if (!owned && !charge(WAVE_PRICE, { table: 'coins' })) {
+      toast(`Big Wave costs ${WAVE_PRICE} coins — earn more from chests`, 'warn');
       return;
     }
     sfx.win();
@@ -270,7 +271,7 @@ export default function AdventureGame({ levelId, seagull, sun }: { levelId: numb
               <p>
                 BINGO on ball <b>{run.ballAtBingo}</b> · Score <b>{run.score.toLocaleString()}</b>
               </p>
-              <div className="reward-pill">+{result.coins}</div>
+              <RewardPill amount={result.sand} table="sand" />
               {result.newKey && <p className="small-note">🗝️ You earned a golden key!</p>}
             </div>
           </Popup>

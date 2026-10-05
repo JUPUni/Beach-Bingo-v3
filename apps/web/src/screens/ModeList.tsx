@@ -5,7 +5,7 @@ import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { isCode, normalizeCode } from '../rooms/live/protocol.ts';
 import { useGame } from '../state/store.ts';
-import { GreenButton } from '../ui/kit.tsx';
+import { Balances, GreenButton } from '../ui/kit.tsx';
 import { GameHeader, Stage } from '../ui/Stage.tsx';
 import './screens.css';
 import '../rooms/rooms.css';
@@ -56,6 +56,10 @@ export default function ModeList({ kind }: { kind: Extract<ModeKind, 'house' | '
             ? 'Instant games against the island bank. Every result is provably fair.'
             : 'Play the same balls as your friends. Open a hall, share the code, or practise with bots.'}
         </p>
+        <div className="panel table-row">
+          <span>Playing with</span>
+          <Balances />
+        </div>
         {kind === 'pvp' && <JoinBox />}
         {modes.map((mode, i) => (
           <button
@@ -82,8 +86,9 @@ export default function ModeList({ kind }: { kind: Extract<ModeKind, 'house' | '
           </button>
         ))}
         <p className="fair-note">
-          <b>Play money only.</b> Coins are free and have no cash value. House games use HMAC-SHA256 commit–reveal seeds you can
-          verify in Settings → Provably fair
+          <b>SAND is free</b> and never bought or sold. Coins come from the Coin Shop, have no cash value and never leave the game.
+          Prices and prizes are the same on either table. House games use HMAC-SHA256 commit–reveal seeds you can verify in
+          Settings → Provably fair
           {kind === 'pvp'
             ? '. Each hall opens as a practice room with labelled bots; "Play with friends" turns it into a live room where every phone checks every ball and every win.'
             : '.'}

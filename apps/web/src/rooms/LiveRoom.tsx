@@ -4,8 +4,8 @@ import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { useNow } from '../lib/hooks.ts';
 import { ONCHAIN_STAKES_ENABLED, shortAddress } from '../solana/config.ts';
-import { useGame } from '../state/store.ts';
-import { Confetti, GreenButton } from '../ui/kit.tsx';
+import { TABLE_NAME, useGame } from '../state/store.ts';
+import { Confetti, GreenButton, RewardPill } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { Popup } from '../ui/Popup.tsx';
@@ -85,6 +85,18 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
   };
 
   const practice = () => go(livePreset ? { name: 'game', mode: livePreset } : { name: 'rooms' });
+  const currency = m?.currency ?? 'sand';
+  const freeGame = useGame((s) => s.freeGames > 0);
+  /** A coin room asks a guest for the age declaration first (SAND rooms never ask). */
+  const buy = (n: number) => {
+    if (!m) return;
+    const s = useGame.getState();
+    if (currency === 'coins' && !s.coinsReady()) {
+      if (s.requestCoins('table') === 'blocked') toast(s.coinsBlockedReason() ?? '', 'warn');
+      return;
+    }
+    m.buy(n);
+  };
   const reopen = () => go({ name: 'live', code: makeCode(), host: true, preset: livePreset ?? preset ?? 'waveRush' });
 
   let body: ReactNode;
@@ -134,6 +146,11 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
             : `Stages: ${config.stages.map((s) => `${s.pattern.name} ${Math.round(s.share * 100)}%`).join(' → ')}. Cards daub themselves.`}{' '}
           Everyone sees the same balls, and every phone checks every win.
         </p>
+        {!m.stake && (
+          <p className="small-note">
+            {currency === 'coins' ? `A coin room: cards are ${config.cardPrice} coins each and prizes pay coins.` : `Cards are ${config.cardPrice} SAND each and prizes pay SAND.`}
+          </p>
+        )}
         <button type="button" className="room__link" onClick={() => (sfx.click(), void share())}>
           🔗 Share the invite link
         </button>
@@ -164,8 +181,8 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
             {Array.from({ length: maxCardsFor(config) - m.myCards }, (_, i) => i + 1)
               .slice(0, 3)
               .map((n) => (
-                <GreenButton key={n} onClick={() => m.buy(n)}>
-                  +{n} card{n > 1 ? 's' : ''} · {config.cardPrice * n}
+                <GreenButton key={n} onClick={() => buy(n)}>
+                  +{n} card{n > 1 ? 's' : ''} · {currency === 'coins' && freeGame && n === 1 ? 'Free game' : config.cardPrice * n}
                 </GreenButton>
               ))}
           </div>
@@ -262,11 +279,9 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
               {m.stake ? (
                 <StakeSide m={m} />
               ) : myWin > 0 ? (
-                <div className="reward-pill">
-                  <img src={art.iconCoin} alt="" /> +{formatCoins(myWin)}
-                </div>
+                <RewardPill amount={myWin} table={currency} />
               ) : (
-                <p>{m.isParticipant ? 'No prizes for you this time.' : 'You watched this one.'}</p>
+                <p>{m.isParticipant ? `No ${TABLE_NAME[currency]} for you this time.` : 'You watched this one.'}</p>
               )}
               <Results
                 room={room}
