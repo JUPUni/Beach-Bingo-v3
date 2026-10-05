@@ -82,7 +82,7 @@ export default function WalletPopup() {
       setSeeker(mint);
       if (claimSeekerPerk(mint)) {
         sfx.bingo();
-        toast(`Seeker verified! +${SEEKER_PERK_COINS} coins and 8 boosters 🌴`, 'win');
+        toast(`Seeker verified! +${SEEKER_PERK_COINS.toLocaleString('en-US')} SAND and 8 boosters 🌴`, 'win');
       } else {
         toast('Seeker verified — perk already claimed on this device');
       }

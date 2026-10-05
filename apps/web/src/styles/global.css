@@ -104,7 +104,10 @@ img {
 }
 
 .app__backdrop {
-  position: absolute;
+  /* Fixed, not absolute: a fixed box adds nothing to its ancestors' scrollable overflow, so the
+     4% overhang that keeps the blur edge-free can no longer let a focus or scroll-into-view nudge
+     the whole stage up inside the fixed .app frame (the QA walkthrough caught Riptide shifted 53px). */
+  position: fixed;
   inset: -4%;
   background-size: cover;
   background-position: center;
