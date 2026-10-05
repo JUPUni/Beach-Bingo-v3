@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitSeed } from '@beach-bingo/engine';
-import { migratePersisted, SPEND_CAP_DELAY_MS, STARTING_SHELLS, useGame, WASHINGTON_MESSAGE } from './store.ts';
+import { ALREADY_CREDITED, migratePersisted, SPEND_CAP_DELAY_MS, STARTING_SHELLS, useGame, WASHINGTON_MESSAGE } from './store.ts';
 
 const reset = () =>
   useGame.setState({
@@ -10,6 +10,7 @@ const reset = () =>
     freeGames: 0,
     freeGameClaims: [],
     purchases: [],
+    credited: {},
     ageGate: null,
     region: null,
     pendingCoins: null,
@@ -260,6 +261,28 @@ describe('the Coin Shop ledger', () => {
     expect(useGame.getState().purchaseBlockedReason(5000)).toMatch(/break/);
     expect(useGame.getState().creditPurchase({ ...p, signature: 'sig-2' })).toBe(false);
     expect(useGame.getState().coins).toBe(5000);
+  });
+
+  it('credits a restore past the cap and during a cool-off, outside today\'s spending; a refused purchase credit names the reason', () => {
+    expect(useGame.getState().setSpendCap(5000)).toBe('now');
+    expect(useGame.getState().creditPurchase({ signature: 's1', pack: 'pack-5k', mint: 'SOL', coins: 5000, at: Date.now() })).toBe(true);
+    const late = { signature: 's2', pack: 'pack-15k', mint: 'SOL', coins: 15000, at: Date.now() };
+    expect(useGame.getState().creditPurchase(late)).toBe(false);
+    expect(useGame.getState().creditBlockedReason(late)).toMatch(/cap of 5,000/);
+    // The coins of a restore were counted when they were bought (on this device or another).
+    const restore = { signature: 'restore-1', pack: 'restore', mint: 'SKR', coins: 15000, at: Date.now(), wallet: 'W' };
+    expect(useGame.getState().creditBlockedReason(restore)).toBeNull();
+    expect(useGame.getState().creditPurchase(restore)).toBe(true);
+    expect(useGame.getState().coins).toBe(20000);
+    expect(useGame.getState().today.bought).toBe(5000);
+    expect(useGame.getState().credited.W).toBe(15000);
+    useGame.getState().setLimits({ coolOffUntil: Date.now() + 3600_000 });
+    expect(useGame.getState().creditPurchase({ ...restore, signature: 'restore-2', coins: 100 })).toBe(true);
+    expect(useGame.getState().creditBlockedReason({ ...late, signature: 's3' })).toMatch(/break/);
+    // Only a signature already held is "already credited".
+    expect(useGame.getState().creditBlockedReason(restore)).toBe(ALREADY_CREDITED);
+    expect(useGame.getState().creditPurchase(restore)).toBe(false);
+    expect(useGame.getState().coins).toBe(20100);
   });
 
   it('lowers the daily spend cap at once and raises it after a day', () => {

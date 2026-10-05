@@ -1,4 +1,4 @@
-import { useGame } from '../state/store.ts';
+import { ALREADY_CREDITED, useGame } from '../state/store.ts';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { PENDING_MESSAGE } from './pendingPurchase.ts';
@@ -37,7 +37,7 @@ async function settle(settlePending: () => Promise<PendingSettlement | null>): P
   const purchase = { ...outcome.purchase, at: Date.now() };
   const s = useGame.getState();
   if (s.creditPurchase(purchase)) return toast(`+${formatCoins(purchase.coins)} coins from your earlier purchase`, 'win');
-  if (s.purchases.some((p) => p.signature === purchase.signature)) return; // credited before its record was cleared
-  const reason = s.purchaseBlockedReason(purchase.coins);
-  if (reason) toast(`${reason} Press Restore purchases to collect them.`, 'warn');
+  // Already held: credited before its record was cleared. Anything else is said, with the way to the coins.
+  const reason = s.creditBlockedReason(purchase);
+  if (reason && reason !== ALREADY_CREDITED) toast(`${reason} Press Restore purchases to collect them.`, 'warn');
 }

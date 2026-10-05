@@ -62,6 +62,10 @@ export const SPEND_CAP_DELAY_MS = 24 * 60 * 60 * 1000;
 export const SPEND_CAP_OPTIONS: readonly (number | null)[] = [null, 5000, 15000, 40000];
 /** The one line a player in Washington State sees instead of the shop or a coin table. */
 export const WASHINGTON_MESSAGE = 'Coin tables and the Coin Shop are not available in Washington State. Free play with shells is open.';
+/** The refusal for a purchase this device already holds. */
+export const ALREADY_CREDITED = 'That purchase was already credited';
+/** A restore records coins the chain already counted (ShopPopup writes `pack: 'restore'`): no cap, no cool-off, not today's spending. */
+export const isRestore = (p: Pick<Purchase, 'pack'>): boolean => p.pack === 'restore';
 export const FOLLOW_URL = 'https://x.com/intent/follow?screen_name=mostlyjola';
 
 interface Settings {
@@ -253,8 +257,10 @@ export interface GameState {
   confirmAge(): void;
   /** Shells always; coins only once the gate is passed. */
   setTable(table: Table): void;
-  /** Credit a confirmed purchase. False when a cool-off is on, the cap would be passed, or it was already credited. */
+  /** Credit a confirmed purchase. False when it was already credited or, for a purchase (not a restore), a cool-off is on or the cap would be passed. */
   creditPurchase(purchase: Purchase): boolean;
+  /** Why `creditPurchase` would refuse: already credited, or for a purchase the cool-off or the cap; null when it would credit. */
+  creditBlockedReason(purchase: Purchase): string | null;
   purchaseBlockedReason(coins: number): string | null;
   setFollow(state: GameState['follow']): void;
   canClaimFreeGame(): boolean;
@@ -636,15 +642,19 @@ export const useGame = create<GameState>()(
         if (cap !== null && todayOf(s).bought + coins > cap) return `That would pass today's cap of ${cap.toLocaleString('en-US')} coins.`;
         return null;
       },
+      creditBlockedReason: (purchase) => {
+        const s = get();
+        if (s.purchases.some((p) => p.signature === purchase.signature)) return ALREADY_CREDITED;
+        return isRestore(purchase) ? null : s.purchaseBlockedReason(purchase.coins);
+      },
       creditPurchase: (purchase) => {
         const s = get();
-        if (s.purchases.some((p) => p.signature === purchase.signature)) return false;
-        if (s.purchaseBlockedReason(purchase.coins)) return false;
+        if (s.creditBlockedReason(purchase)) return false;
         const today = todayOf(s);
         set({
           coins: s.coins + purchase.coins,
           purchases: [purchase, ...s.purchases].slice(0, 50),
-          today: { ...today, bought: today.bought + purchase.coins },
+          today: isRestore(purchase) ? today : { ...today, bought: today.bought + purchase.coins },
           credited: purchase.wallet ? { ...s.credited, [purchase.wallet]: (s.credited[purchase.wallet] ?? 0) + purchase.coins } : s.credited,
         });
         return true;

@@ -102,12 +102,14 @@ export default function ShopPopup() {
     sfx.click();
     try {
       const { signature, coins: got } = await shop.buy(pack.id, mint);
-      if (creditPurchase(stamped({ signature, pack: pack.id, mint, coins: got, ...(shop.wallet ? { wallet: shop.wallet } : {}) }))) {
+      const purchase = stamped({ signature, pack: pack.id, mint, coins: got, ...(shop.wallet ? { wallet: shop.wallet } : {}) });
+      if (creditPurchase(purchase)) {
         sfx.coin();
         setCelebrate(true);
         toast(`+${formatCoins(got)} coins`, 'win');
       } else {
-        toast('That purchase was already credited', 'warn');
+        // Refused after payment: the real reason (the cap, a cool-off), or a signature already held.
+        toast(useGame.getState().creditBlockedReason(purchase) ?? 'Could not credit that purchase', 'warn');
       }
     } catch (e) {
       // Sent but not answered in time: the record stays (shop/pendingPurchase.ts) and the coins follow.
