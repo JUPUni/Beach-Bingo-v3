@@ -338,10 +338,11 @@ export function LimitsPopup() {
   const limits = useGame((s) => s.limits);
   const setLimits = useGame((s) => s.setLimits);
   const setSpendCap = useGame((s) => s.setSpendCap);
-  const cap = useGame((s) => s.spendCap());
   const today = useGame((s) => s.today);
   const close = useGame((s) => s.closePopup);
   const now = useNow(30_000);
+  // The cap in force: a raise that has come due counts (the store applies it on the next event).
+  const cap = limits.spendCapRaise && limits.spendCapRaise.at <= now ? limits.spendCapRaise.value : limits.dailySpendCap;
   const fresh = today.day === new Date(now).toLocaleDateString('en-CA');
   const net = (t: 'sand' | 'coins') => (fresh ? today.won[t] - today.wagered[t] : 0);
   const signed = (n: number) => `${n >= 0 ? '+' : ''}${formatCoins(n)}`;
