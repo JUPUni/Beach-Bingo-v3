@@ -168,6 +168,13 @@ difference between the PDA's total and what the device already gave. A pack pric
 a paused escrow sells nothing, and there is no refund, no sell-back and no transfer of coins
 between players. The legal question purchased coins raise is in docs/plans/2026-10-05-tokens-design.md §6b.
 
+Two things the clients learned on devnet: `buy_pack_token` refuses a buyer that is the treasury
+wallet itself (the buyer's and the treasury's token accounts would be the same mutable account,
+which Anchor rejects), so the operator cannot test a token purchase from the treasury key, only
+from another wallet; and the app's shop (`apps/web/src/shop/chainShop.ts`) credits coins from the
+`CoinsBought` event of the confirmed transaction, with the `Buyer` PDA's delta as the fallback,
+and restores `coins_total` minus what this device already credited for that wallet.
+
 ## Accounts and instructions
 
 Program id `6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` (`declare_id!` in `lib.rs`; Anchor
@@ -404,10 +411,23 @@ enables on `locked`, the three screens finish on the same ball, a guest settles,
 lamports are checked against `splitHallPot` over the engine's replay. The two scripts share
 `scripts/qa/stake-lib.mjs`.
 
+Token proofs from the same key pair: `token-round <mint> [stake]`, `token-hall <mint>
+[stakePerCard] [cards…]`, `prove-seeker [mint]` (opens a room, and a hall when a mint is given,
+proves the deployer's mock Seeker Genesis Token, reads the lowered fee, cancels), `shop-buy
+<sol|mint> <pack> [--seeker]` (a throwaway buyer funded by the key pair; `--seeker` mints it a mock
+member token first) and `faucet <mint> <wallet> <amount>`. In the browser, `stake-token-e2e.mjs`
+plays a room staked in the SKR look-alike through the real lobby (the picker preselects SKR, the
+fee line reads 2.5%, the chain pays the winner's token account exactly the engine's share) and
+`shop-e2e.mjs` buys the smallest pack with SKR through the real popup, checks the `CoinsBought`
+event, the `Buyer` PDA and the credited coins, and restores them in a fresh context. In the lobby
+protocol, `StakeInfo.mint` names the token (absent means SOL, as older builds announce it), and a
+settled token escrow that still holds a credit for the connected wallet shows "Claim your share".
+
 The devnet build at https://beach-bingo-eight.vercel.app/app/ is built with
 `VITE_SOLANA_CLUSTER=devnet`, `VITE_ENABLE_ONCHAIN_STAKES=true`, `VITE_WAVE_DUEL_PROGRAM=<program
-id>` and `VITE_BUILD_LABEL=devnet`. `LiveRoom.tsx` lazy-loads the stake panel only when both flags
-are set, so a build without them ships none of this code.
+id>`, `VITE_SGT_GROUP=<the config's sgt_group; the mock group on devnet>` and
+`VITE_BUILD_LABEL=devnet`. `LiveRoom.tsx` lazy-loads the stake panels only when the flags are set,
+so a build without them ships none of this code.
 
 ## The money rule
 
