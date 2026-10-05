@@ -29,6 +29,7 @@ import {
 import { ASSOCIATED_TOKEN_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
 import { sha256Hex } from '@beach-bingo/engine';
 import { configAddress, NO_KEY, PACKS, program, same, SLOT_HASHES, SYSTEM_PROGRAM, type RoomAccount, type SolanaRpc } from './waveDuel.ts';
+import { KNOWN_MINTS } from './tokens.ts';
 import { hallAddress, setComputeUnitLimitIx, type HallAccount } from './waveHall.ts';
 
 /**
@@ -201,34 +202,28 @@ export async function fetchMintEntry(rpc: SolanaRpc, mint: Address): Promise<Min
   return decodeMintEntry(addr, getBase64Encoder().encode(value.data[0]) as Uint8Array);
 }
 
-/** Every registered mint: the program's accounts of the `MintEntry` size, filtered by discriminator. */
+/**
+ * The registry entries of the mints this build knows for its cluster (tokens.ts), read as their
+ * `["mint", mint]` PDAs in one `getMultipleAccounts`: a PDA that does not exist is a mint not
+ * registered. No `getProgramAccounts`, which public RPCs refuse or rate-limit. The cluster is
+ * config.ts's `CLUSTER`, derived the same way (that file needs Vite's env and the scripts import
+ * this one without it; a script reads every mint the table names, on whichever cluster).
+ */
 export async function fetchMintEntries(rpc: SolanaRpc): Promise<MintEntryAccount[]> {
-  const accounts = await rpc
-    .getProgramAccounts(program(), { encoding: 'base64', filters: [{ memcmp: { offset: 0n, bytes: base58(DISC.mintEntryAccount) as never, encoding: 'base58' } }] })
-    .send();
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  const cluster = env ? (env.VITE_SOLANA_CLUSTER === 'devnet' ? 'devnet' : 'mainnet') : null;
+  const mints = Object.entries(KNOWN_MINTS)
+    .filter(([, known]) => cluster === null || known.cluster === cluster)
+    .map(([mint]) => address(mint));
+  const addrs = await Promise.all(mints.map((mint) => mintEntryAddress(mint)));
+  const { value } = await rpc.getMultipleAccounts(addrs, { encoding: 'base64' }).send();
   const out: MintEntryAccount[] = [];
-  for (const { pubkey, account } of accounts) {
-    const entry = decodeMintEntry(pubkey, getBase64Encoder().encode(account.data[0]) as Uint8Array);
+  value.forEach((account, i) => {
+    const entry = account ? decodeMintEntry(addrs[i]!, getBase64Encoder().encode(account.data[0]) as Uint8Array) : null;
     if (entry) out.push(entry);
-  }
+  });
   return out;
 }
-
-const base58 = (bytes: Uint8Array): string => {
-  const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  let n = 0n;
-  for (const b of bytes) n = n * 256n + BigInt(b);
-  let out = '';
-  while (n > 0n) {
-    out = alphabet[Number(n % 58n)] + out;
-    n /= 58n;
-  }
-  for (const b of bytes) {
-    if (b !== 0) break;
-    out = '1' + out;
-  }
-  return out;
-};
 
 /* ---------- Instructions: registry ---------- */
 
