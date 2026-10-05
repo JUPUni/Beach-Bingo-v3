@@ -16,7 +16,7 @@ steps only the owner can take. Where the store's own docs move, they win:
 | Store art | `packages/brand/kit/store/` | `dapp-store-icon-512.png`, `dapp-store-banner-1200x600.{png,jpg}`, `dapp-store-feature-1200x1200.{png,jpg}`, `screenshots/dapp-store-screenshot-01…06-1080x1920.png` |
 | Notices | `beachbingo.xyz/privacy/`, `beachbingo.xyz/terms/` | Live; the listing's privacy policy and licence URLs. |
 | Wallet | `apps/web/src/solana/` | Wallet Standard + Mobile Wallet Adapter (`@solana-mobile/wallet-standard-mobile` ^0.6, above the 0.5.1 the store asks for); the address and the Seeker check, plus the coin-pack purchase once the chain shop is attached. |
-| The Coin Shop | `apps/web/src/shop/`, `apps/web/src/popups/ShopPopup.tsx` | In-app purchases of coins (no cash value, no refunds) behind a one-time 18+ declaration and the `/api/geo` region check (`apps/site/api/geo.js`, Washington blocked). The popup runs on a dev stub until the chain purchase registers itself. |
+| The Coin Shop | `apps/web/src/shop/`, `apps/web/src/popups/ShopPopup.tsx` | In-app purchases of coins (no cash value, no refunds) behind a one-time 18+ declaration and the `/api/geo` region check (`apps/site/api/geo.js`, Washington blocked). The popup runs on a stub in local dev and the devnet build only; a production build shows the packs greyed ("The Coin Shop opens soon") until the chain purchase registers itself. |
 
 ## 2. Build the shell
 

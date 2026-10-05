@@ -3,7 +3,10 @@
  * holds the interface and a stub that answers after a short delay, so the popup is complete and
  * testable before a chain is attached; the chain implementation (the escrow program's
  * `buy_pack`, see docs/plans/2026-10-05-tokens-design.md §6b) registers itself with
- * `registerShop` and the popup never knows the difference.
+ * `registerShop` and the popup never knows the difference. The stub exists only in local dev and
+ * the devnet build: a production build without a chain shop has no shop at all (`getShop()` is
+ * null and the popup shows the packs greyed), because a stub there would let players credit
+ * themselves coins through a pretend purchase.
  *
  * Coins have no cash value, cannot be sold, transferred or refunded, and never leave the game.
  */
@@ -32,7 +35,8 @@ export interface Shop {
   restore(): Promise<number>;
 }
 
-const PACKS: Pack[] = [
+/** The catalogue, also shown greyed where no shop is open yet. */
+export const PACKS: readonly Pack[] = [
   { id: 'pack-5k', coins: 5_000, prices: { SKR: 120, SOL: 0.04, USDC: 4.99, PYUSD: 4.99, JUP: 12 } },
   { id: 'pack-15k', coins: 15_000, prices: { SKR: 330, SOL: 0.11, USDC: 13.99, PYUSD: 13.99, JUP: 33 } },
   { id: 'pack-40k', coins: 40_000, prices: { SKR: 800, SOL: 0.27, USDC: 34.99, PYUSD: 34.99, JUP: 82 } },
@@ -56,7 +60,7 @@ const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** No chain configured: a purchase "confirms" after a moment with a made-up signature. */
 export const devStub: Shop = {
-  packs: async () => PACKS,
+  packs: async () => [...PACKS],
   buy: async (packId) => {
     const pack = PACKS.find((p) => p.id === packId);
     if (!pack) throw new Error('No such pack');
@@ -76,10 +80,22 @@ export function registerShop(shop: Shop | null): void {
   configured = shop;
 }
 
-export function getShop(): Shop {
-  return configured ?? devStub;
+/** The part of the build environment that decides whether the pretend shop may appear. */
+export interface ShopEnv {
+  DEV?: boolean;
+  VITE_ENABLE_ONCHAIN_STAKES?: string;
 }
 
-export function isDevShop(): boolean {
-  return configured === null;
+/** Local dev and the devnet build only; never a production build. */
+export function stubAllowed(env: ShopEnv = import.meta.env as ShopEnv): boolean {
+  return env.DEV === true || env.VITE_ENABLE_ONCHAIN_STAKES === 'true';
+}
+
+/** The shop to sell through: the chain shop once registered, the stub where it is allowed, otherwise none. */
+export function getShop(env?: ShopEnv): Shop | null {
+  return configured ?? (stubAllowed(env) ? devStub : null);
+}
+
+export function isDevShop(shop: Shop | null): boolean {
+  return shop !== null && shop === devStub;
 }

@@ -49,7 +49,7 @@ after the licence, fiat on-ramps last.
 
 | Built | State on 2026-09-29 |
 |---|---|
-| The game | Live at beachbingo.xyz/app/: the adventure, seven Casino Cove house games, four halls with practice bots, Last Castle Standing. Two currencies: SAND is free (faucet, daily tasks, a Seeker perk); coins come from the Coin Shop (the popup and a dev stub exist; the chain purchase is in progress) behind an 18+ declaration, a header-based region check that blocks Washington, a daily cap and the cool-off. No accounts, cookies or analytics; progress lives in the browser. Privacy and terms pages are live. |
+| The game | Live at beachbingo.xyz/app/: the adventure, seven Casino Cove house games, four halls with practice bots, Last Castle Standing. Two currencies: SAND is free (faucet, daily tasks, a Seeker perk); coins come from the Coin Shop (the popup exists; a stub sells in local dev and the devnet build only, production shows the packs greyed until the chain purchase lands) behind an 18+ declaration, a header-based region check that blocks Washington, a daily cap and the cool-off. No accounts, cookies or analytics; progress lives in the browser. Privacy and terms pages are live. |
 | Provably fair rounds | Commit → HMAC-SHA256 streams → reveal for every mode (docs/FAIRNESS.md). The house games' committed seed lives in the player's browser: fine for play money, not for real money. |
 | Live P2P rooms | The four halls with friends over a room code, browser to browser; every client verifies every ball and win. Play money; 85–95% of sales go to players, no rake. |
 | Wallet layer | Wallet Standard and Mobile Wallet Adapter; Sign-In-With-Solana; Seeker Genesis Token check. Display only in production. |

@@ -10,8 +10,9 @@ Casino Cove and Beach Rooms lists, where a game is chosen):
   sold. Everyone starts on the SAND table with 1,000; a save from before the two currencies keeps
   its old coins as SAND.
 - **Coins** come only from the Coin Shop (packs of 5,000 / 15,000 / 40,000 / 100,000, paid in SOL,
-  USDC, PYUSD, JUP or SKR; SKR 20% off, a verified Seeker a little more) and from promo grants such
-  as the Free Game ticket. They have no cash value, cannot be sold, transferred or refunded, and
+  USDC, PYUSD, JUP or SKR; SKR 20% off, a verified Seeker a little more; until the chain shop is
+  attached a production build shows the packs greyed, and only local dev and the devnet build run
+  the test stub) and from promo grants such as the Free Game ticket. They have no cash value, cannot be sold, transferred or refunded, and
   never leave the game. Boosters in the level popup and an extra Big Wave are bought with coins;
   earned boosters still come from tasks, chests and the perk.
 

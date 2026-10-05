@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Segmented } from '../games/common.tsx';
 import { sfx } from '../lib/audio.ts';
-import { formatPrice, getShop, isDevShop, MINTS, priceFor, SEEKER_DISCOUNT, SKR_DISCOUNT, type Mint, type Pack } from '../shop/shop.ts';
+import { formatPrice, getShop, isDevShop, MINTS, PACKS, priceFor, SEEKER_DISCOUNT, SKR_DISCOUNT, type Mint, type Pack } from '../shop/shop.ts';
 import { useGame, type Purchase } from '../state/store.ts';
 import { formatCoins } from '../ui/format.ts';
 import { CoinIcon, Confetti, GreenButton } from '../ui/kit.tsx';
@@ -15,8 +15,9 @@ const restoreSignature = () => `restore-${Date.now().toString(36)}`;
 
 /**
  * The Coin Shop: four packs, five tokens, SKR first. Opens from the coins balance once the age
- * gate is passed (store.requestCoins). The shop behind it is `shop/shop.ts`: the dev stub until
- * a chain shop registers itself.
+ * gate is passed (store.requestCoins). The shop behind it is `shop/shop.ts`: the chain shop once
+ * it registers itself, the stub in local dev and the devnet build, and none in a production
+ * build until then, where the packs show greyed with no Buy button.
  */
 export default function ShopPopup() {
   const close = useGame((s) => s.closePopup);
@@ -27,13 +28,16 @@ export default function ShopPopup() {
   const creditPurchase = useGame((s) => s.creditPurchase);
   const cap = useGame((s) => s.limits.dailySpendCap);
   const bought = useGame((s) => s.today.bought);
-  const [packs, setPacks] = useState<Pack[]>([]);
   const [mint, setMint] = useState<Mint>(skrReady ? 'SKR' : 'SOL');
   const [busy, setBusy] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(false);
-  const shop = getShop();
+  const [shop] = useState(() => getShop());
+  const open = shop !== null;
+  // No shop: the catalogue shows greyed from the start; a shop lists its own packs.
+  const [packs, setPacks] = useState<Pack[]>(() => (shop ? [] : [...PACKS]));
 
   useEffect(() => {
+    if (!shop) return;
     let on = true;
     void shop.packs().then((p) => on && setPacks(p));
     return () => {
@@ -42,6 +46,7 @@ export default function ShopPopup() {
   }, [shop]);
 
   const buy = async (pack: Pack) => {
+    if (!shop) return;
     const reason = useGame.getState().purchaseBlockedReason(pack.coins);
     if (reason) return toast(reason, 'warn');
     setBusy(pack.id);
@@ -63,6 +68,7 @@ export default function ShopPopup() {
   };
 
   const restore = async () => {
+    if (!shop) return;
     setBusy('restore');
     sfx.click();
     try {
@@ -86,8 +92,9 @@ export default function ShopPopup() {
     <Popup title="Coin Shop" onClose={close} wide>
       {celebrate && <Confetti pieces={40} />}
       <p className="small-note">
-        You have <b>{formatCoins(coins)} coins</b>. Coins play the coin tables; SAND stays free.{isDevShop() ? ' Test shop: nothing is charged.' : ''}
+        You have <b>{formatCoins(coins)} coins</b>. Coins play the coin tables; SAND stays free.{isDevShop(shop) ? ' Test shop: nothing is charged.' : ''}
       </p>
+      {!open && <p className="shop__soon">The Coin Shop opens soon.</p>}
       <h3>Pay with</h3>
       <Segmented options={MINTS} value={mint} onChange={setMint} disabled={busy !== null} />
       <p className="small-note">
@@ -96,7 +103,7 @@ export default function ShopPopup() {
       </p>
       <div className="packs">
         {packs.map((pack) => (
-          <div key={pack.id} className="pack">
+          <div key={pack.id} className={`pack ${open ? '' : 'pack--soon'}`}>
             <CoinIcon size={3.4} />
             <div className="pack__body">
               <b>{formatCoins(pack.coins)} coins</b>
@@ -104,9 +111,11 @@ export default function ShopPopup() {
               {mint !== 'SKR' && <small>{skrLine(pack)}</small>}
               {seekerVerified && <small className="pack__seeker">Seeker saving included</small>}
             </div>
-            <GreenButton tone="gold" className="pack__buy" disabled={busy !== null} onClick={() => void buy(pack)}>
-              {busy === pack.id ? '…' : 'Buy'}
-            </GreenButton>
+            {open && (
+              <GreenButton tone="gold" className="pack__buy" disabled={busy !== null} onClick={() => void buy(pack)}>
+                {busy === pack.id ? '…' : 'Buy'}
+              </GreenButton>
+            )}
           </div>
         ))}
         {packs.length === 0 && <p className="small-note">Loading packs…</p>}
@@ -128,9 +137,11 @@ export default function ShopPopup() {
           </ul>
         </>
       )}
-      <button type="button" className="shop__restore" disabled={busy !== null} onClick={() => void restore()}>
-        {busy === 'restore' ? 'Restoring…' : 'Restore purchases'}
-      </button>
+      {open && (
+        <button type="button" className="shop__restore" disabled={busy !== null} onClick={() => void restore()}>
+          {busy === 'restore' ? 'Restoring…' : 'Restore purchases'}
+        </button>
+      )}
       <p className="small-note">
         Coins have no cash value, cannot be sold, transferred or refunded, and never leave the game. 18+ only; not offered in Washington State.
       </p>

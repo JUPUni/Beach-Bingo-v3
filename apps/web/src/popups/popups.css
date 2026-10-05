@@ -280,3 +280,17 @@
   font-size: 1.1rem;
   line-height: 1.15;
 }
+
+.shop__soon {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--c-ink);
+}
+
+.pack--soon {
+  grid-template-columns: auto 1fr;
+  opacity: 0.55;
+  filter: saturate(0.6);
+}
