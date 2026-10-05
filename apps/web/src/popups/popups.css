@@ -266,6 +266,13 @@
   margin-bottom: 0.2rem;
 }
 
+/* A payment the chain has not answered on: stays on screen until the next purchase. */
+.shop__notice {
+  margin: 0.4rem 0 0;
+  font-weight: 700;
+  color: #8a4b00;
+}
+
 .shop__restore {
   display: block;
   margin: 0.6rem auto 0.2rem;

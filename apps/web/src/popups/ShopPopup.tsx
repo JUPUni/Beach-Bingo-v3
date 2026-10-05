@@ -1,6 +1,8 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Segmented } from '../games/common.tsx';
 import { sfx } from '../lib/audio.ts';
+import { settlePendingPurchase } from '../shop/pendingCredit.ts';
+import { PendingPurchaseError } from '../shop/pendingPurchase.ts';
 import { formatPrice, getShop, isDevShop, MINTS, PACKS, quote, savingPercent, shopNeedsWallet, subscribeShop, type Catalogue, type Mint, type Pack, type Shop } from '../shop/shop.ts';
 import { Badges } from '../solana/Badges.tsx';
 import { useGame, type Purchase } from '../state/store.ts';
@@ -41,6 +43,8 @@ export default function ShopPopup() {
   const [picked, setMint] = useState<Mint>(skrReady ? 'SKR' : 'SOL');
   const [busy, setBusy] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(false);
+  // A purchase the chain has not answered on yet: said in place, since a toast is gone in a moment.
+  const [notice, setNotice] = useState<string | null>(null);
   // The catalogue of the shop that answered; a different shop (the wallet changed) starts over.
   const [loaded, setLoaded] = useState<{ shop: Shop; catalogue: Catalogue } | null>(null);
   const catalogue = loaded && loaded.shop === shop ? loaded.catalogue : null;
@@ -68,11 +72,17 @@ export default function ShopPopup() {
     };
   }, [shop]);
 
+  // A purchase sent earlier and never credited (a closed tab, a slow confirmation) is settled on open.
+  useEffect(() => {
+    if (shop) void settlePendingPurchase(shop);
+  }, [shop]);
+
   const buy = async (pack: Pack) => {
     if (!shop) return;
     const reason = useGame.getState().purchaseBlockedReason(pack.coins);
     if (reason) return toast(reason, 'warn');
     setBusy(pack.id);
+    setNotice(null);
     sfx.click();
     try {
       const { signature, coins: got } = await shop.buy(pack.id, mint);
@@ -84,7 +94,13 @@ export default function ShopPopup() {
         toast('That purchase was already credited', 'warn');
       }
     } catch (e) {
-      toast(e instanceof Error ? e.message.slice(0, 120) : 'The purchase did not go through', 'warn');
+      // Sent but not answered in time: the record stays (shop/pendingPurchase.ts) and the coins follow.
+      if (e instanceof PendingPurchaseError) {
+        setNotice(e.message);
+        toast(e.message, 'warn');
+      } else {
+        toast(e instanceof Error ? e.message.slice(0, 120) : 'The purchase did not go through', 'warn');
+      }
     } finally {
       setBusy(null);
     }
@@ -163,6 +179,7 @@ export default function ShopPopup() {
         })}
         {packs.length === 0 && <p className="small-note">Loading packs…</p>}
       </div>
+      {notice && <p className="small-note shop__notice">{notice}</p>}
       {cap !== null && (
         <p className="small-note">
           Today's cap: {formatCoins(bought)} of {formatCoins(cap)} coins bought (Settings → Responsible play).

@@ -2,17 +2,21 @@ import type { Address, TransactionSendingSigner } from '@solana/kit';
 import { buyPackIx, buyPackTokenIx, fetchBuyer, fetchCoinsBought } from '../solana/shop.ts';
 import { SGT_GROUP } from '../solana/config.ts';
 import { knownSymbol, SOL_DECIMALS } from '../solana/tokens.ts';
-import { fetchConfig, NO_KEY, PACKS, send, type ConfigAccount, type SolanaRpc } from '../solana/waveDuel.ts';
+import { fetchConfig, NO_KEY, PACKS, type ConfigAccount, type SolanaRpc } from '../solana/waveDuel.ts';
 import { fetchMintEntries, type MintEntryAccount, type SeekerProof } from '../solana/waveToken.ts';
-import type { Catalogue, Mint, Offer, Pack, Shop } from './shop.ts';
+import { clearPendingPurchase, PendingPurchaseError, readPendingPurchase } from './pendingPurchase.ts';
+import { pendingPurchaseCoins, pendingStateOf, sendPurchase } from './purchaseFlow.ts';
+import type { Catalogue, Mint, Offer, Pack, PendingSettlement, Shop } from './shop.ts';
 
 /**
  * The Coin Shop sold by the `wave_duel` program (`buy_pack` for SOL, `buy_pack_token` for a
  * registered mint): the catalogue is the config's `pack_coins` priced by `sol_pack_prices` and each
  * mint entry's `pack_prices` / `discount_bps`, only where the price is non-zero; a purchase goes
- * through the connected wallet's sending signer, is confirmed, and the coins come from the
- * `CoinsBought` event of the confirmed transaction (or the `Buyer` PDA's delta when the log cannot
- * be read); "restore" credits `coins_total` less what this device already credited the wallet.
+ * through the connected wallet's sending signer, is recorded before it is confirmed
+ * (purchaseFlow.ts, so a payment the chain answers late is settled on the next open), and the
+ * coins come from the `CoinsBought` event of the confirmed transaction (or the `Buyer` PDA's delta
+ * when the log cannot be read); "restore" credits `coins_total` less what this device already
+ * credited the wallet.
  * The Seeker saving needs no action from the player: when the wallet holds a Seeker Genesis Token
  * of the configured group its accounts travel with the purchase and the program checks them, but
  * only when the chain's group is the build's (`seekerApplies`); otherwise the buyer pays full price
@@ -105,22 +109,44 @@ export function createChainShop(deps: ChainShopDeps): Shop {
           ? await buyPackIx(deps.wallet, config!.treasury, index, proof)
           : await buyPackTokenIx(deps.wallet, cat.mints[mint]!, index, proof, config!.treasury);
       const before = await fetchBuyer(deps.rpc, deps.wallet);
-      const sent = await send(deps.rpc, deps.signer, [ix]);
+      const { signature, pending } = await sendPurchase(deps.rpc, deps.signer, [ix], { wallet: deps.wallet, packId: id, mint, coinsTotalBefore: before?.coinsTotal ?? 0n });
+      // Confirmed: the coins from the event, else the Buyer's growth. If the chain cannot be read
+      // right now the record stays, and the next open credits them.
       let coins: number | null = null;
-      for (let attempt = 0; attempt < 4 && coins === null; attempt++) {
-        const event = await fetchCoinsBought(deps.rpc, sent.signature).catch(() => null);
-        if (event) coins = event.coins;
-        else await new Promise((r) => setTimeout(r, 1500));
+      try {
+        for (let attempt = 0; attempt < 4 && coins === null; attempt++) {
+          const event = await fetchCoinsBought(deps.rpc, signature).catch(() => null);
+          if (event) coins = event.coins;
+          else await new Promise((r) => setTimeout(r, 1500));
+        }
+        if (coins === null) {
+          const after = await fetchBuyer(deps.rpc, deps.wallet);
+          coins = after ? Number(after.coinsTotal - (before?.coinsTotal ?? 0n)) : pack.coins;
+        }
+      } catch {
+        throw new PendingPurchaseError(pending);
       }
-      if (coins === null) {
-        const after = await fetchBuyer(deps.rpc, deps.wallet);
-        coins = after ? Number(after.coinsTotal - (before?.coinsTotal ?? 0n)) : pack.coins;
-      }
-      return { signature: sent.signature, coins };
+      clearPendingPurchase(signature);
+      return { signature, coins };
     },
     restore: async () => {
       const buyer = await fetchBuyer(deps.rpc, deps.wallet);
       return buyer ? restoreAmount(buyer.coinsTotal, deps.credited()) : 0;
+    },
+    settlePending: async (): Promise<PendingSettlement | null> => {
+      const pending = readPendingPurchase(deps.wallet);
+      if (!pending) return null;
+      const state = await pendingStateOf(deps.rpc, pending, true);
+      if (state === 'pending') return { status: 'pending' };
+      if (state !== 'confirmed') {
+        clearPendingPurchase(pending.signature);
+        return { status: 'dropped' };
+      }
+      const coins = await pendingPurchaseCoins(deps.rpc, pending);
+      if (coins === null) return { status: 'pending' };
+      clearPendingPurchase(pending.signature);
+      if (coins === 0) return null;
+      return { status: 'confirmed', purchase: { signature: pending.signature, pack: pending.packId, mint: pending.mint, coins, wallet: pending.wallet } };
     },
   };
 }

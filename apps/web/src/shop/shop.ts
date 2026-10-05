@@ -47,6 +47,12 @@ export interface Catalogue {
   seekerDiscountBps: number;
 }
 
+/** A purchase sent earlier, as the shop settles it on a later open: the purchase to credit (once), still confirming, or gone. */
+export type PendingSettlement =
+  | { status: 'confirmed'; purchase: { signature: string; pack: string; mint: string; coins: number; wallet: string } }
+  | { status: 'pending' }
+  | { status: 'dropped' };
+
 export interface Shop {
   packs(): Promise<Catalogue>;
   /** Pay for a pack; resolves once the transaction is confirmed with the coins to credit. */
@@ -57,6 +63,8 @@ export interface Shop {
   wallet?: string;
   /** The bound wallet holds a Seeker Genesis Token the program accepts, so the Seeker saving applies. */
   seekerVerified?: () => boolean;
+  /** Settle a purchase this device sent and never credited (the chain shop; shop/pendingPurchase.ts); null when there is none. */
+  settlePending?(): Promise<PendingSettlement | null>;
 }
 
 /** The program's price: `base × (10_000 − bps) / 10_000`, floor, never below one base unit. */

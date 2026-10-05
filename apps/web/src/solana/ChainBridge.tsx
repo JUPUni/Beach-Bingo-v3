@@ -3,6 +3,7 @@ import { address } from '@solana/kit';
 import { useConnectedWallet } from '@solana/kit-plugin-wallet/react';
 import { useWalletAccountTransactionSendingSigner } from '@solana/react';
 import { createChainShop } from '../shop/chainShop.ts';
+import { settlePendingPurchase } from '../shop/pendingCredit.ts';
 import { registerShop } from '../shop/shop.ts';
 import { useGame } from '../state/store.ts';
 import { rpc, walletClient } from './client.ts';
@@ -13,8 +14,9 @@ import { refreshWalletStatus } from './walletStatus.ts';
  * The devnet build's link between the wallet layer and the game: while a wallet is connected the
  * chain Coin Shop (`buy_pack` / `buy_pack_token` through its sending signer) is the shop the popup
  * sells through, and the wallet's Seeker Genesis Token and SKR balance are read into the store for
- * the badges, the shop's Seeker saving and the SKR preselection. Disconnecting unplugs the shop
- * and clears the status. Mounted by App.tsx only when `CHAIN_SHOP_ENABLED` (a build that knows the
+ * the badges, the shop's Seeker saving and the SKR preselection; a purchase the wallet sent
+ * earlier and never got credited for is settled at once (shop/pendingCredit.ts). Disconnecting
+ * unplugs the shop and clears the status. Mounted by App.tsx only when `CHAIN_SHOP_ENABLED` (a build that knows the
  * program), so a build without one never loads it and keeps no shop at all.
  */
 type Connected = NonNullable<ReturnType<typeof useConnectedWallet>>;
@@ -34,18 +36,18 @@ function Bound({ account }: { account: Connected['account'] }) {
   const wallet = account.address;
   useEffect(() => {
     const owner = address(wallet);
-    registerShop(
-      createChainShop({
-        rpc,
-        signer,
-        wallet: owner,
-        seeker: () => {
-          const s = useGame.getState().walletStatus;
-          return s && s.address === wallet && s.seeker ? { tokenAccount: address(s.seeker.tokenAccount), mint: address(s.seeker.mint) } : null;
-        },
-        credited: () => useGame.getState().credited[wallet] ?? 0,
-      }),
-    );
+    const shop = createChainShop({
+      rpc,
+      signer,
+      wallet: owner,
+      seeker: () => {
+        const s = useGame.getState().walletStatus;
+        return s && s.address === wallet && s.seeker ? { tokenAccount: address(s.seeker.tokenAccount), mint: address(s.seeker.mint) } : null;
+      },
+      credited: () => useGame.getState().credited[wallet] ?? 0,
+    });
+    registerShop(shop);
+    void settlePendingPurchase(shop);
     void refreshWalletStatus(wallet).catch(() => undefined);
     return () => registerShop(null);
   }, [wallet, signer]);
