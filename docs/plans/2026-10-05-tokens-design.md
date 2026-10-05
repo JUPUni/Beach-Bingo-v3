@@ -182,6 +182,7 @@ its owner nothing outside the game.
 | PYUSD | `CXk2AMBfi3TwaEL2468s6zP8xq9NxTXjp9gjMgzeUynM` | Paxos's devnet PYUSD (Token-2022, the mainnet extension set) |
 | JUP look-alike | `8r9rjzkMoUEJ4pxy38UvXwokiCjRkq9vWhWyJMMF1UCW` | SPL Token, 6 decimals, no freeze authority, deployer mints test balances (1,000,000 minted) |
 | SKR look-alike | `GY3JAeDQskMFYz25VJwdFUg8yDEVNhEfP6vUFDm4RPzz` | SPL Token, 6 decimals, no freeze authority, deployer mints test balances (1,000,000 minted) |
+| PYUSD look-alike | `8ag6aEwVmBNgvSECWartbSJXSgEtYbhbT87hoUPrBApV` | Token-2022 with PYUSD's shape: permanent delegate (deployer), transfer-fee config at 0, transfer hook with no program, metadata, mint close authority; 6 decimals; deployer mints test balances (1,000,000 minted). Lets the Token-2022 path be proved without the Paxos faucet; the real devnet PYUSD stays registered too. |
 | Mock Seeker Genesis group | `GRhL4t47LyWkVtHJ3ierasdcxyjXmzkE6uMJvv38CsHn` | Token-2022 group mint with metadata ("Mock Seeker Genesis Token", MSGT), max 100,000 members |
 | Mock SGT member (deployer) | `DajAyfr9wkxFgUDNeQ1pQBKBAscqdHRjmNFhh2FKJYTz` | Token-2022 member: metadata pointer and group member both point at the mock group; one token, mint authority revoked |
 
