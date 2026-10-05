@@ -305,7 +305,7 @@ describe.skipIf(!existsSync(SO))('wave_duel halls on LiteSVM', () => {
     expect(hostBefore - balance(host)).toBe(4n * TX_FEE);
   });
 
-  it('refunds every seat, without a fee, when the host never reveals', async () => {
+  it('forfeits the host deposit to the guests, without a fee, when the host never reveals', async () => {
     const code = 'TMQUT';
     await ok(host, [await openHallIx(host.address, code, STAKE, 3, 2, commitSeed(createServerSeed()))]);
     let hall = (await readHall(host, code))!;
@@ -319,8 +319,9 @@ describe.skipIf(!existsSync(SO))('wave_duel halls on LiteSVM', () => {
     const before = { host: balance(host), guest: balance(guests[0]!), treasury: balance(treasury) };
     await ok(stranger, [await claimTimeoutHallIx(hall, treasury.address, stranger.address)]);
     expect(await readHall(host, code)).toBeNull();
-    expect(balance(guests[0]!) - before.guest).toBe(4n * STAKE);
-    expect(balance(host) - before.host).toBe(hall.lamports - 4n * STAKE); // its deposit and the rent
-    expect(balance(treasury)).toBe(before.treasury);
+    // The guest's own four cards back, plus the host's two cards: a silent host pays what losing costs.
+    expect(balance(guests[0]!) - before.guest).toBe(6n * STAKE);
+    expect(balance(host) - before.host).toBe(hall.lamports - 6n * STAKE); // only the rent
+    expect(balance(treasury)).toBe(before.treasury); // one guest: no dust, and no fee
   });
 });

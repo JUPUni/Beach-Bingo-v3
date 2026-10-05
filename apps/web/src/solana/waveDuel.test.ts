@@ -127,7 +127,19 @@ describe.skipIf(!existsSync(SO))('wave_duel on LiteSVM', () => {
     const account = svm.getAccount(await configAddress());
     expect(account.exists).toBe(true);
     const config = decodeConfig(new Uint8Array((account as { data: Uint8Array }).data));
-    expect(config).toEqual({ admin: admin.address, treasury: treasury.address, feeBps: FEE_BPS, paused: false });
+    // The fields added for tokens, the Seeker tier and the shop start at their defaults.
+    expect(config).toEqual({
+      admin: admin.address,
+      treasury: treasury.address,
+      feeBps: FEE_BPS,
+      paused: false,
+      pauser: admin.address,
+      sgtGroup: '11111111111111111111111111111111',
+      packCoins: [5_000, 15_000, 40_000, 100_000],
+      seekerDiscountBps: 0,
+      solPackPrices: [0n, 0n, 0n, 0n],
+      solSeekerFeeBps: FEE_BPS,
+    });
   });
 
   it('guards the stake range and the code alphabet', async () => {
