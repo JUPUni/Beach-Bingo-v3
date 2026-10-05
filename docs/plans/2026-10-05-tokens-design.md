@@ -13,6 +13,9 @@ stays on devnet behind the build flags (docs/PRODUCTION.md).
    welcome perk.
 3. **SKR is the main token**: players get more for using it.
 4. **Secure and cannot be gamed.**
+5. (Added 2026-10-05.) The app ships as an **APK on the Solana dApp Store**; gameplay stays
+   **easy**; **coins stay the in-game currency**, players can **buy coin packs** of several sizes
+   with the supported tokens, and **SKR gets a discount** on coin packs.
 
 ## 2. Assumptions (say so if either is wrong)
 
@@ -116,6 +119,49 @@ scale.
   distinct wallets and the settle slot; the app grants boosts from events it read itself.
 - **Hosts cannot re-roll** (hall forfeit) and **nobody can make a round un-settleable** (claim path).
 
+## 6b. Coin packs
+
+Coins remain what every mode plays for. The shop sells packs of coins for the five tokens; the
+faucet, the daily tasks and the Seeker perk keep giving coins for free, so the game stays free to
+play and a purchase is a convenience, never a requirement.
+
+**On chain.** The pack catalogue and the prices live beside the mint registry so that the price a
+player pays is enforced by the program, not by the client: `Config.pack_coins[4]` (coins per
+pack), per mint `pack_prices[4]` in base units and `discount_bps` (SKR 2,000 = 20 % off, the
+others 0), plus `seeker_discount_bps` on top for a buyer who proves the Seeker Genesis Token.
+`buy_pack(pack)` pays the discounted price to the treasury (a token transfer to the registered
+treasury account, or a system transfer for SOL), creates or updates a `Buyer` PDA per wallet
+(`coins_total`, `purchases`, `last_slot`) and emits `CoinsBought`. The PDA is the tamper-evident
+record: the app credits coins from the confirmed transaction, and a "restore purchases" on a new
+device credits the difference between the PDA's `coins_total` and what this device already
+credited. No sell-back, no refund, no transfer of coins between players, no path from coins to
+tokens: a pack is a one-way purchase, and `paused` stops the shop like everything else.
+
+**In the app.** A Coin Shop popup from the coins counter: four packs, the token picker limited to
+the five assets, SKR preselected when the wallet holds SKR, the SKR saving shown on every price
+("Pay with SKR: save 20 %"), one tap to pay through the connected wallet, the coins arriving with
+the usual reward animation. Prices per token are admin values updated as markets move; the client
+only displays what the registry says. Purchase limits join the responsible-play popup (a daily
+spend cap the player can lower, never raise, for 24 hours) and purchases are blocked while a
+cool-off is active.
+
+**What this changes legally (the owner decides).** Today's copy promises that coins are never
+bought or sold. Purchased coins that are then wagered in chance rounds (the halls, Casino Cove) are
+the social-casino model: lawful in most places with no cash-out and no transfers, which is what
+Bingo Blitz and its peers do, but Washington State treats purchased chips as a thing of value
+(*Kater v. Churchill Downs*, the $155M Big Fish settlement), and several US states have seen class
+actions on the same theory. Before the shop opens on mainnet: block purchases for Washington (and
+review Idaho, Kentucky, Tennessee, Alabama with counsel), an 18+ gate on the shop, terms and
+listing text rewritten (coins have no cash value, are non-refundable and non-transferable), and the
+dApp Store questionnaire updated for in-app purchases. On devnet the shop works with test tokens
+and none of this applies yet. If the owner prefers to avoid the question entirely, sell cosmetics
+and boosters instead of coins: the same shop, a different catalogue.
+
+**Not gameable.** Buying coins cannot be farmed (you pay, you get coins); the discount lowers a
+price and pays nothing out; the Seeker discount needs the on-chain token proof; and because coins
+never leave the game or become a stake, a tampered local balance costs the house nothing and buys
+its owner nothing outside the game.
+
 ## 7. Devnet plan
 
 1. Register USDC-devnet and PYUSD-devnet; create JUP and SKR look-alikes with the deployer as
@@ -125,8 +171,8 @@ scale.
 2. Redeploy the program (the data account likely needs `solana program extend`), initialise the
    registry, re-run the SOL proofs (nothing may change) and the new token proofs by script, then
    the browser e2e with a token stake.
-3. The devnet build gets the token picker, the badges and the SKR boosts; production stays
-   play money with none of this code loaded.
+3. The devnet build gets the token picker, the badges, the SKR boosts and the coin shop;
+   production stays play money with none of this code loaded until the owner's go.
 
 ## 8. Tests
 
@@ -140,4 +186,5 @@ scale.
 ## 9. Out of scope here
 
 Mainnet, the licence gate, the audit and the multisig (docs/PRODUCTION.md); the 75- and 90-ball
-halls on chain; token rebates paid by the house.
+halls on chain; token rebates paid by the house; a server-side coin ledger (the step that would make
+purchased balances tamper-proof across devices; listed in docs/PRODUCTION.md).
