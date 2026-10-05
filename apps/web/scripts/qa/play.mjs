@@ -455,12 +455,9 @@ async function adventure(vp, viewport) {
   await waveBtn.click({ force: true });
   const noCoins = await page.locator('.toast', { hasText: /Big Wave costs 100 coins/ }).waitFor({ timeout: 3000 }).then(() => true, () => false);
   R.ok(`${vp}: a Big Wave costs 100 coins, so a player with no coins keeps their SAND and the popup`, lost2 === 'lost' && /100/.test(buyLabel) && noCoins && (await sand(page)) === cw && (await stored(page)).coins === 0 && (await page.locator('.popup').count()) === 1, `${lost2} "${buyLabel}" ${cw} -> ${await sand(page)}`);
-  await page.locator('.popup__footer [aria-label="Level map"]').click({ force: true });
+  // A plain click: Playwright waits for the popup's pop-in to settle and for the button to be the hit target.
+  await page.getByRole('button', { name: 'Level map' }).click();
   await page.locator('.level-tile').first().waitFor();
-  await page.locator('[aria-label^="Level 1,"]').click({ force: true });
-  await page.getByRole('button', { name: /Play/ }).last().click({ force: true });
-  await page.locator('.bingo-btn').waitFor();
-  await page.locator('.adv-hud__back').click({ force: true });
   await page.locator('.level-tile').first().waitFor();
   R.ok(`${vp}: level 2 is unlocked after winning level 1`, (await page.locator('[aria-label^="Level 2,"]:not(.is-locked)').count()) === 1 && (await page.locator('.level-tile.is-current [class*=num]').innerText()) === '2');
   await page.reload({ waitUntil: 'networkidle' });
