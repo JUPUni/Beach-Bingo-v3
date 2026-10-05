@@ -87,6 +87,7 @@ const DISC = {
   setConfig: discriminator('global:set_config'),
   migrateConfig: discriminator('global:migrate_config'),
   pause: discriminator('global:pause'),
+  transferAdmin: discriminator('global:transfer_admin'),
   openRoom: discriminator('global:open_room'),
   joinRoom: discriminator('global:join_room'),
   cancelRoom: discriminator('global:cancel_room'),
@@ -338,6 +339,15 @@ export async function pauseIx(authority: Address): Promise<Instruction> {
     programAddress: program(),
     accounts: [meta(await configAddress(), AccountRole.WRITABLE), meta(authority, AccountRole.READONLY_SIGNER)],
     data: DISC.pause,
+  };
+}
+
+/** The admin hands the role to `newAdmin` (any address; a multisig vault on mainnet). The new admin does not sign: confirm the address twice. */
+export async function transferAdminIx(admin: Address, newAdmin: Address): Promise<Instruction> {
+  return {
+    programAddress: program(),
+    accounts: [meta(await configAddress(), AccountRole.WRITABLE), meta(admin, AccountRole.READONLY_SIGNER), meta(newAdmin, AccountRole.READONLY)],
+    data: DISC.transferAdmin,
   };
 }
 

@@ -30,6 +30,11 @@ describe('the shop behind the popup', () => {
     expect(getShop(devnet)).toBeNull();
     expect(shopNeedsWallet(devnet)).toBe(true);
     expect(shopNeedsWallet({ DEV: true })).toBe(false);
+    // The mainnet build: the program is known, staked rooms stay off; the chain shop sells, nothing stands in.
+    const mainnet = { DEV: false, VITE_WAVE_DUEL_PROGRAM: '6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH' };
+    expect(stubAllowed(mainnet)).toBe(false);
+    expect(getShop(mainnet)).toBeNull();
+    expect(shopNeedsWallet(mainnet)).toBe(true);
     const chain: Shop = { packs: async () => ({ packs: [], seekerDiscountBps: 0 }), buy: async () => ({ signature: 'x', coins: 1 }), restore: async () => 0 };
     let notified = 0;
     const off = subscribeShop(() => notified++);

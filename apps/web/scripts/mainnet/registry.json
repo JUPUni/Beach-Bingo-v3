@@ -1,0 +1,15 @@
+{
+  "program": "6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH",
+  "pricedAt": "2026-10-05",
+  "priceSource": "https://lite-api.jup.ag/price/v3",
+  "packs": { "coins": [5000, 15000, 40000, 100000], "usd": [4.99, 13.99, 34.99, 79.99] },
+  "fees": { "feeBps": 500, "seekerDiscountBps": 500, "solSeekerFeeBps": 400 },
+  "sgtGroup": "GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te",
+  "sol": { "usdPrice": 120.75 },
+  "mints": [
+    { "symbol": "USDC", "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "decimals": 6, "usdPrice": 1, "stable": true, "minStake": 1000000, "maxStake": 100000000, "feeBps": 500, "seekerFeeBps": 400, "discountBps": 0 },
+    { "symbol": "PYUSD", "mint": "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", "decimals": 6, "usdPrice": 1, "stable": true, "minStake": 1000000, "maxStake": 100000000, "feeBps": 500, "seekerFeeBps": 400, "discountBps": 0 },
+    { "symbol": "JUP", "mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", "decimals": 6, "usdPrice": 0.3495, "minStake": 2000000, "maxStake": 500000000, "feeBps": 500, "seekerFeeBps": 400, "discountBps": 0 },
+    { "symbol": "SKR", "mint": "SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3", "decimals": 6, "usdPrice": 0.018114, "minStake": 50000000, "maxStake": 5000000000, "feeBps": 250, "seekerFeeBps": 200, "discountBps": 2000 }
+  ]
+}

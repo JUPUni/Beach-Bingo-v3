@@ -14,8 +14,8 @@ import { refreshWalletStatus } from './walletStatus.ts';
  * chain Coin Shop (`buy_pack` / `buy_pack_token` through its sending signer) is the shop the popup
  * sells through, and the wallet's Seeker Genesis Token and SKR balance are read into the store for
  * the badges, the shop's Seeker saving and the SKR preselection. Disconnecting unplugs the shop
- * and clears the status. Mounted by App.tsx only when `CHAIN_SHOP_ENABLED` (the stakes flag and a
- * program), so production builds never load it and keep no shop at all.
+ * and clears the status. Mounted by App.tsx only when `CHAIN_SHOP_ENABLED` (a build that knows the
+ * program), so a build without one never loads it and keeps no shop at all.
  */
 type Connected = NonNullable<ReturnType<typeof useConnectedWallet>>;
 

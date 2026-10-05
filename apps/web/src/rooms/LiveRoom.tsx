@@ -3,7 +3,7 @@ import { modeInfo, rooms, type RoomPresetId } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { useNow } from '../lib/hooks.ts';
-import { CHAIN_SHOP_ENABLED, shortAddress } from '../solana/config.ts';
+import { shortAddress, ONCHAIN_STAKES_ENABLED } from '../solana/config.ts';
 import { formatStake } from '../solana/tokens.ts';
 import { TABLE_NAME, useGame } from '../state/store.ts';
 import { Confetti, GreenButton, RewardPill } from '../ui/kit.tsx';
@@ -18,7 +18,7 @@ import { Caller, Feed, PlayerCards, Results, RoomStat } from './RoomParts.tsx';
 import './rooms.css';
 
 /** Staked rooms need the flag and a deployed escrow program; the wallet code loads only then. */
-const STAKES = CHAIN_SHOP_ENABLED;
+const STAKES = ONCHAIN_STAKES_ENABLED;
 /** The stake in the info bar: "◎0.01" for SOL as always, "50 SKR" for a token stake. */
 const stakeFigure = (lamports: string, mint: string | undefined): string =>
   mint ? formatStake(BigInt(lamports), mint) : `◎${(Number(lamports) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 3 })}`;

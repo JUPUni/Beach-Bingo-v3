@@ -191,6 +191,19 @@ pub mod wave_duel {
         Ok(())
     }
 
+    /// Hand the admin role to another wallet (a multisig vault on mainnet). Only the admin may call
+    /// it; the new admin need not sign, so the operator's tooling must confirm the address twice
+    /// (there is no way back without the new key). The pauser is unchanged: `set_config` moves it.
+    pub fn transfer_admin(ctx: Context<TransferAdmin>) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        let from = config.admin;
+        let to = ctx.accounts.new_admin.key();
+        require!(to != Pubkey::default() && to != from, DuelError::BadConfig);
+        config.admin = to;
+        emit!(AdminTransferred { from, to });
+        Ok(())
+    }
+
     /* ---------- Mint registry ---------- */
 
     /// Allow a mint for stakes and the shop. Reads the mint's extensions and refuses what an escrow
@@ -1417,6 +1430,15 @@ pub struct Pause<'info> {
 }
 
 #[derive(Accounts)]
+pub struct TransferAdmin<'info> {
+    #[account(mut, seeds = [b"config"], bump = config.bump, has_one = admin @ DuelError::NotAdmin)]
+    pub config: Account<'info, Config>,
+    pub admin: Signer<'info>,
+    /// CHECK: the wallet that becomes admin; any address, including a multisig's vault PDA.
+    pub new_admin: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
 pub struct RegisterMint<'info> {
     #[account(seeds = [b"config"], bump = config.bump, has_one = admin)]
     pub config: Account<'info, Config>,
@@ -2021,6 +2043,12 @@ pub struct CoinsBought {
 #[event]
 pub struct Paused {
     pub by: Pubkey,
+}
+
+#[event]
+pub struct AdminTransferred {
+    pub from: Pubkey,
+    pub to: Pubkey,
 }
 
 /* ---------- Errors ---------- */

@@ -32,6 +32,9 @@ import {
   settleIx,
   TIMEOUT_SLOTS,
   type RoomAccount,
+  setConfigIx,
+  transferAdminIx,
+  type ConfigTerms,
 } from './waveDuel.ts';
 
 /**
@@ -140,6 +143,38 @@ describe.skipIf(!existsSync(SO))('wave_duel on LiteSVM', () => {
       solPackPrices: [0n, 0n, 0n, 0n],
       solSeekerFeeBps: FEE_BPS,
     });
+  });
+
+  it('hands the admin role to another wallet and back; only the admin of the moment may change the config', async () => {
+    const readConfig = async () => {
+      const config = decodeConfig(new Uint8Array((svm.getAccount(await configAddress()) as { data: Uint8Array }).data));
+      if (!config) throw new Error('no config');
+      return config;
+    };
+    const before = await readConfig();
+    const terms: ConfigTerms = {
+      feeBps: before.feeBps,
+      paused: before.paused,
+      pauser: before.pauser,
+      sgtGroup: before.sgtGroup,
+      packCoins: before.packCoins,
+      seekerDiscountBps: before.seekerDiscountBps,
+      solPackPrices: before.solPackPrices,
+      solSeekerFeeBps: before.solSeekerFeeBps,
+    };
+    // A stranger cannot take the role; the admin cannot hand it to itself.
+    await fails(stranger, [await transferAdminIx(stranger.address, stranger.address)], 'NotAdmin');
+    await fails(admin, [await transferAdminIx(admin.address, admin.address)], 'BadConfig');
+    await ok(admin, [await transferAdminIx(admin.address, stranger.address)]);
+    expect((await readConfig()).admin).toBe(stranger.address);
+    // The old admin keeps the pauser role but can no longer write the config (SetConfig's has_one
+    // reports Anchor's generic constraint error); the new one can.
+    expect((await readConfig()).pauser).toBe(admin.address);
+    await fails(admin, [await setConfigIx(admin.address, treasury.address, terms)], 'ConstraintHasOne');
+    await ok(stranger, [await setConfigIx(stranger.address, treasury.address, terms)]);
+    // And back, so the rest of the suite keeps its admin.
+    await ok(stranger, [await transferAdminIx(stranger.address, admin.address)]);
+    expect((await readConfig()).admin).toBe(admin.address);
   });
 
   it('guards the stake range and the code alphabet', async () => {

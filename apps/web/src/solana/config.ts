@@ -22,12 +22,19 @@ export const RPC_URL =
 export const MAINNET_SGT_GROUP = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
 export const SGT_GROUP: string = import.meta.env.VITE_SGT_GROUP || MAINNET_SGT_GROUP;
 
-/** Real-money stakes stay off unless explicitly enabled AND the compliance gate passes. */
-export const ONCHAIN_STAKES_ENABLED = import.meta.env.VITE_ENABLE_ONCHAIN_STAKES === 'true';
-
-/** The escrow program the build knows, when the stakes flag is on: staked rooms, token stakes and the chain Coin Shop (the devnet build). */
-export const WAVE_DUEL_PROGRAM: string | null = ONCHAIN_STAKES_ENABLED ? import.meta.env.VITE_WAVE_DUEL_PROGRAM || null : null;
+/**
+ * The wave_duel program this build knows (`VITE_WAVE_DUEL_PROGRAM`). Knowing the program opens the
+ * chain Coin Shop: packs paid in SOL or a registered token, the Seeker and SKR discounts, restore.
+ * It does not open staked rooms: those need the flag below as well.
+ */
+export const WAVE_DUEL_PROGRAM: string | null = import.meta.env.VITE_WAVE_DUEL_PROGRAM || null;
 export const CHAIN_SHOP_ENABLED = WAVE_DUEL_PROGRAM !== null;
+
+/**
+ * Real-token staked rooms stay off unless `VITE_ENABLE_ONCHAIN_STAKES=true` AND the program is known.
+ * Mainnet runs the shop with this off: wagered bingo is regulated gambling (docs/PRODUCTION.md).
+ */
+export const ONCHAIN_STAKES_ENABLED = import.meta.env.VITE_ENABLE_ONCHAIN_STAKES === 'true' && WAVE_DUEL_PROGRAM !== null;
 
 /** True inside the Solana Mobile dApp Store WebView shell (`npx solana-mobile webshell`). */
 export function isWebShell(): boolean {

@@ -12,6 +12,7 @@
 //   ... wave-duel-admin.mjs set-config key=value ...             fee, paused, pauser, sgt, packs, seekerDiscount, solPrices, solSeekerFee, treasury
 //   ... wave-duel-admin.mjs register-mint <mint> <min> <max> <feeBps> <seekerFeeBps> [discountBps] [packPrices csv]
 //   ... wave-duel-admin.mjs set-mint <mint> key=value ...        min, max, fee, seekerFee, discount, prices, enabled
+//   ... wave-duel-admin.mjs transfer-admin <wallet> --confirm <wallet>   hand the admin role to another wallet (a multisig vault on mainnet); typed twice, no way back
 //   ... wave-duel-admin.mjs show-mints
 //   ... wave-duel-admin.mjs create-devnet-mint <spl|token2022> <decimals> <amount> [wallet] [--freeze] [--pyusd-like]
 //   ... wave-duel-admin.mjs create-devnet-sgt [wallet]
@@ -32,7 +33,7 @@
 // Seeker Genesis Token group and mints one member token to `wallet`; put the group it prints in
 // `set-config sgt=<group>` so `prove_seeker_*` and the Seeker shop discount work on devnet.
 //
-// Environment: RPC_URL (default devnet), KEYPAIR (default .secrets/devnet-deployer.json at the
+// Environment: RPC_URL (default devnet; a mainnet provider URL switches the explorer links too), KEYPAIR (default .secrets/devnet-deployer.json at the
 // repo root, or the main checkout's from a git worktree), WAVE_DUEL_PROGRAM (default the devnet
 // deployment). `round` funds two throwaway wallets from the key pair, plays open → join → settle,
 // and checks the payout against the engine's own replay; `hall` does the same for a multi-seat
@@ -86,6 +87,7 @@ import {
   roomAddress,
   sendSigned,
   setConfigIx,
+  transferAdminIx,
   settleIx,
   SYSTEM_PROGRAM,
 } from '../src/solana/waveDuel.ts';
@@ -139,7 +141,9 @@ function defaultKeypair() {
 
 configureProgram(PROGRAM);
 const rpc = createSolanaRpc(RPC_URL);
-const explorer = (sig) => `https://explorer.solana.com/tx/${sig}?cluster=devnet`;
+// Explorer links follow the RPC: no cluster parameter on mainnet.
+const CLUSTER_QS = /devnet/i.test(RPC_URL) ? '?cluster=devnet' : /testnet/i.test(RPC_URL) ? '?cluster=testnet' : '';
+const explorer = (sig) => `https://explorer.solana.com/tx/${sig}${CLUSTER_QS}`;
 
 const loadWallet = async (path) => {
   const bytes = Uint8Array.from(JSON.parse(readFileSync(path, 'utf8')));
@@ -379,6 +383,17 @@ if (cmd === 'init-config') {
   const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [await setMintIx(payer.address, mint, terms, enabled)]);
   console.log('mint updated', explorer(sent.signature));
   console.log(await fetchMintEntry(rpc, mint));
+} else if (cmd === 'transfer-admin') {
+  // The new admin does not sign, so the address is typed twice: a typo would strand the config.
+  const [newArg, flag, confirmArg] = args;
+  if (!newArg || flag !== '--confirm' || confirmArg !== newArg) throw new Error('transfer-admin <wallet> --confirm <wallet> (the same address twice; there is no way back without the new key)');
+  const newAdmin = address(newArg);
+  const config = await fetchConfig(rpc);
+  if (!config) throw new Error('init-config first');
+  if (config.admin !== payer.address) throw new Error(`the key pair ${payer.address} is not the admin (${config.admin})`);
+  const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [await transferAdminIx(payer.address, newAdmin)]);
+  console.log(`admin handed to ${newAdmin}: ${explorer(sent.signature)}`);
+  console.log('config', await fetchConfig(rpc));
 } else if (cmd === 'show-mints') {
   for (const entry of await fetchMintEntries(rpc)) console.log(entry);
 } else if (cmd === 'create-devnet-mint') {

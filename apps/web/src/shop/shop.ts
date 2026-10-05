@@ -149,9 +149,9 @@ export function stubAllowed(env: ShopEnv = import.meta.env as ShopEnv): boolean 
   return env.DEV === true || (env.VITE_ENABLE_ONCHAIN_STAKES === 'true' && !env.VITE_WAVE_DUEL_PROGRAM);
 }
 
-/** A build with the program and the flag sells through the chain, so the shop opens once a wallet is connected. */
+/** A build that knows the program sells through the chain, so the shop opens once a wallet is connected (stakes may stay off). */
 export function shopNeedsWallet(env: ShopEnv = import.meta.env as ShopEnv): boolean {
-  return env.VITE_ENABLE_ONCHAIN_STAKES === 'true' && Boolean(env.VITE_WAVE_DUEL_PROGRAM);
+  return Boolean(env.VITE_WAVE_DUEL_PROGRAM);
 }
 
 /** The shop to sell through: the chain shop once registered, the stub where it is allowed, otherwise none. */
