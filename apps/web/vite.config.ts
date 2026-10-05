@@ -19,7 +19,7 @@ export default defineConfig({
         id: BASE,
         name: 'Beach Bingo',
         short_name: 'Beach Bingo',
-        description: 'Provably fair island bingo: a 40-level island adventure, bingo halls and quick games. Free to play: coins are play money.',
+        description: 'Provably fair island bingo: a 40-level island adventure, bingo halls and quick games. Free to play with SAND.',
         start_url: BASE,
         scope: BASE,
         display: 'standalone',

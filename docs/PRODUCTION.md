@@ -49,7 +49,7 @@ after the licence, fiat on-ramps last.
 
 | Built | State on 2026-09-29 |
 |---|---|
-| The play-money game | Live at beachbingo.xyz/app/: the adventure, seven Casino Cove house games, four halls with practice bots, Last Castle Standing. Coins are free (faucet, daily tasks, a Seeker perk). No accounts, cookies or analytics; progress lives in the browser. Privacy and terms pages are live. |
+| The game | Live at beachbingo.xyz/app/: the adventure, seven Casino Cove house games, four halls with practice bots, Last Castle Standing. Two currencies: SAND is free (faucet, daily tasks, a Seeker perk); coins come from the Coin Shop (the popup and a dev stub exist; the chain purchase is in progress) behind an 18+ declaration, a header-based region check that blocks Washington, a daily cap and the cool-off. No accounts, cookies or analytics; progress lives in the browser. Privacy and terms pages are live. |
 | Provably fair rounds | Commit → HMAC-SHA256 streams → reveal for every mode (docs/FAIRNESS.md). The house games' committed seed lives in the player's browser: fine for play money, not for real money. |
 | Live P2P rooms | The four halls with friends over a room code, browser to browser; every client verifies every ball and win. Play money; 85–95% of sales go to players, no rake. |
 | Wallet layer | Wallet Standard and Mobile Wallet Adapter; Sign-In-With-Solana; Seeker Genesis Token check. Display only in production. |
@@ -61,8 +61,9 @@ after the licence, fiat on-ramps last.
 Not built: **a licence, or an entity prepared for one** (the terms name the operator of a
 play-money game); **a server** (the only server-side code is one Vercel function gating the beta
 APK; the `@beach-bingo/server` script and `VITE_ROOM_SERVER_URL` point at nothing), so no
-geo-blocking, age or identity checks, self-exclusion, deposit limits or transaction monitoring
-exist anywhere, and the "compliance gate" that `config.ts` says must pass before stakes open is not
+server-side geo-blocking, age or identity checks, self-exclusion, deposit limits or transaction
+monitoring exist anywhere (the coin gate's 18+ declaration, header-based region check and daily
+cap live in the browser), and the "compliance gate" that `config.ts` says must pass before stakes open is not
 written; **house games for money** (the seed is in the browser, there is no bankroll); **the 75- and
 90-ball halls on chain, and a lobby for staked halls** (the hall escrow plays the 30-ball card
 only and has no screen yet); **SPL tokens** (SOL only); **payments**; **operations** (no CI,
@@ -269,6 +270,15 @@ Builder Grant [R11]. Decide whether to open a cosmetics shop and a sponsored fre
 and, if so, revise the terms and listing first. On devnet, ship the future-slot entropy fix and a
 configurable maximum stake, persist the host's seed, add CI, pin the relays and move the authority
 to a multisig. Decide with counsel which entity would hold a licence.
+
+**Before the Coin Shop sells on mainnet.** The popup, the dev stub, the 18+ declaration, the
+header-based region check and the daily cap exist in the app today; still missing are the chain
+purchase itself (`buy_pack`, in progress), a server-side coin ledger (a purchased balance in the
+browser is tamper-evident through the Buyer PDA but not tamper-proof across devices), counsel's
+review of the Washington block and of the other states named in
+docs/plans/2026-10-05-tokens-design.md §6b, and a way to verify the X follow behind the Free Game
+ticket: today the ticket is granted on the player's word, once per device and once per linked
+wallet, because checking a follow needs the X API and a server.
 
 **Next 90 days.** The staked-hall lobby, the other halls' Rust port and the SPL design, and the
 fuzz suite behind the flag on devnet; scope

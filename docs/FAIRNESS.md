@@ -112,7 +112,7 @@ screens and the chain agree card for card. The protocol, its trust model and its
 
 ## What the fairness model does not cover
 
-- Coins are play money and never leave the browser, so nothing here is a financial guarantee. The
+- SAND is free play money and coins never leave the game, so nothing here is a financial guarantee. The
   devnet escrow build is the exception; its own guarantees and their limits are in ESCROW.md.
 - The relays that help peers find each other are public and third-party; they see room codes and
   peer ids, never a seed before its reveal (the host sends the seed directly to peers over WebRTC).

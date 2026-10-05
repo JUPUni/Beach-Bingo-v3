@@ -3,16 +3,20 @@
 Provably fair island bingo, free to play. Live at **[beachbingo.xyz/app/](https://beachbingo.xyz/app/)**;
 the Android app for Solana Seeker phones is on its way to the Solana dApp Store.
 
-Coins are play money: free, no cash value, never bought or sold.
+Two currencies, one switch. **SAND** is the free one: play money from the tide, the daily tasks,
+the adventure and the Seeker perk, never bought or sold, no cash value. **Coins** are bought in the
+Coin Shop (packs paid in SOL, USDC, PYUSD, JUP or SKR; 18+, not offered in Washington State); they
+have no cash value, cannot be sold, transferred or refunded, and never leave the game. Every mode
+plays on either table at the same prices and prizes; the switch in the top bar picks which.
 
 ## What is in the box
 
 | Path | What it is |
 |---|---|
 | `packages/engine` | The game engine, pure TypeScript with no DOM: the provably fair RNG (HMAC-SHA256 commit–reveal), cards and patterns for 75-, 90- and 30-ball bingo, every mode's rules and paytables, the bingo-hall state machine, the battle royale. Tested with vitest; `pnpm rtp` prints every mode's return to player. |
-| `apps/web` | The game: Vite + React 19, installable as a PWA, served at `/app/`. The 40-level adventure, Casino Cove, the Beach Rooms (practice with bots, or live with friends over WebRTC), the wallet layer (Wallet Standard + Mobile Wallet Adapter, display only in production), and, behind a build flag, the staked Wave Rush rooms of the devnet build. |
+| `apps/web` | The game: Vite + React 19, installable as a PWA, served at `/app/`. The 40-level adventure, Casino Cove, the Beach Rooms (practice with bots, or live with friends over WebRTC), the wallet layer (Wallet Standard + Mobile Wallet Adapter), the Coin Shop popup (built against `src/shop/shop.ts`; a dev stub answers until the chain shop registers itself), the 18+ gate and the region check behind the coin tables, and, behind a build flag, the staked Wave Rush rooms of the devnet build. |
 | `programs/wave_duel` | The Solana escrow (Anchor): a trustless 1v1 Wave Rush room or a hall of two to eight players stake SOL, the host's committed seed and the chain's entropy decide the round, and the program replays it with the engine's own RNG and pays the winners. Devnet only. |
-| `apps/site` | beachbingo.xyz: the landing page, the privacy notice and terms, the older `/play` browser rooms, the beta download gate, and the built game under `public/app/`. Static, deployed to Vercel. |
+| `apps/site` | beachbingo.xyz: the landing page, the privacy notice and terms, the older `/play` browser rooms, the beta download gate, the `/api/geo` region check, and the built game under `public/app/`. Static plus two functions, deployed to Vercel. |
 | `android` | The Solana Mobile web shell around `beachbingo.xyz/app/`, for the dApp Store. |
 | `packages/brand` | The brand kit: logo, palette, icons, store art and screenshots, drawn by code. |
 | `docs` | [FAIRNESS.md](docs/FAIRNESS.md) (the RNG and the live-room protocol), [GAME_MODES.md](docs/GAME_MODES.md) (every mode's rules), [DAPP_STORE.md](docs/DAPP_STORE.md) (publishing the Android app), [ESCROW.md](docs/ESCROW.md) (the staked rooms and the program), [PRODUCTION.md](docs/PRODUCTION.md) (what running the game for real money would take: licences, stack, revenue), and the plans under `docs/plans/`. |
@@ -80,9 +84,14 @@ true before it did not.
   committed seed. The game shows the commitment before the round and lets the player reveal and
   recompute afterwards. Live rooms extend this to friends without a server: the host commits, the
   roster hashes into the client seed, every browser rebuilds the same round.
-- **Play money only.** Wager modes take coins. In production nothing on chain moves; the wallet
-  layer reads an address and looks up the Seeker Genesis Token for a welcome perk, nothing more.
-  The devnet build is the one exception, built with the flags above and never at beachbingo.xyz.
+- **SAND is free, coins are bought, nothing is cashed out.** Wager modes take SAND or coins,
+  whichever table is on, through one pair of store actions (`charge`, `credit`). Coins come only
+  from the Coin Shop and promo grants, have no cash value and never leave the game; the shop and
+  the coin tables open after a one-time 18+ declaration and a header-based region check
+  (`apps/site/api/geo.js`) that blocks Washington State and otherwise fails open. In production
+  nothing on chain moves beyond a coin-pack purchase; the wallet layer reads an address and looks up
+  the Seeker Genesis Token for a welcome perk. The devnet build is the one exception, built with the
+  flags above and never at beachbingo.xyz.
 
 See [apps/site/README.md](apps/site/README.md) for the site and its deploy, and
 [android/README.md](android/README.md) for the shell.
