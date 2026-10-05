@@ -18,165 +18,50 @@
 // git worktree), RPC_URL, WAVE_DUEL_PROGRAM, CHROMIUM_PATH, STAKE_E2E_SKIP_BUILD=1 to reuse
 // dist-devnet. Behind an HTTPS_PROXY (the sandbox) Chromium is pointed at it for devnet; loopback
 // stays direct. Each throwaway wallet gets 0.08 SOL and is swept back to the payer at the end.
-import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { createServer } from 'node:http';
-import { dirname, extname, join, normalize, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright-core';
-import {
-  AccountRole,
-  address,
-  createKeyPairFromBytes,
-  createSolanaRpc,
-  getAddressFromPublicKey,
-  getCompiledTransactionMessageDecoder,
-  getStructEncoder,
-  getU32Encoder,
-  getU64Encoder,
-} from '@solana/kit';
+// The setup and page helpers live in scripts/qa/stake-lib.mjs, shared with stake-hall-e2e.mjs.
+import { address, createSolanaRpc, getCompiledTransactionMessageDecoder } from '@solana/kit';
 import { commitSeed, rooms, sha256Hex } from '@beach-bingo/engine';
 import { buildRoom } from '../src/rooms/live/protocol.ts';
 import * as duel from '../src/solana/waveDuel.ts';
 import { startRelay } from './nostr-relay.mjs';
+import {
+  build,
+  coins,
+  connectWallet as connectWalletIn,
+  DEFAULT_PROGRAM,
+  DEFAULT_RPC,
+  explorer,
+  fmt,
+  joinByCode as joinByCodeAt,
+  keypairPath,
+  launchChromium,
+  loadWallet,
+  openWaveRushRoom,
+  press,
+  retry,
+  serve,
+  shortAddress,
+  text,
+  transferIx,
+  TX_FEE,
+  until,
+  ZERO_ENTROPY,
+} from './qa/stake-lib.mjs';
 import { createTestWallet, installTestWallet } from './qa/test-wallet.mjs';
 
-const WEB = fileURLToPath(new URL('../', import.meta.url));
-const ROOT = resolve(WEB, '../..');
-const DIST = join(WEB, 'dist-devnet/');
-const BASE = '/app/';
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon' };
-
-const PROGRAM = process.env.WAVE_DUEL_PROGRAM || '6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH';
-const DEFAULT_RPC = 'https://api.devnet.solana.com';
+const PROGRAM = process.env.WAVE_DUEL_PROGRAM || DEFAULT_PROGRAM;
 const RPC_URL = process.env.RPC_URL || DEFAULT_RPC;
 const STAKE = 10_000_000n; // the smallest lobby preset: 0.01 SOL
 const STAKE_LABEL = duel.formatSol(STAKE);
 const PURSE = 80_000_000n; // per throwaway wallet: the stake, the room's rent, a few fees
-const TX_FEE = 5_000n;
-const ZERO_ENTROPY = '0'.repeat(64);
 
 duel.configureProgram(address(PROGRAM));
 const rpc = createSolanaRpc(RPC_URL);
-const explorer = (signature) => duel.explorerUrl(signature, 'devnet');
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const shortAddress = (a) => `${a.slice(0, 4)}…${a.slice(-4)}`;
-const fmt = (lamports) => `${lamports < 0n ? '-' : ''}${duel.formatSol(lamports < 0n ? -lamports : lamports)}`;
-
-/* ---------- Setup: key pair, build, static server, Chromium ---------- */
-
-function keypairPath() {
-  if (process.env.KEYPAIR) return process.env.KEYPAIR;
-  const candidates = [join(ROOT, '.secrets/devnet-deployer.json')];
-  try {
-    // A git worktree keeps its secrets in the main checkout.
-    const common = execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-    candidates.push(join(dirname(resolve(ROOT, common)), '.secrets/devnet-deployer.json'));
-  } catch {
-    /* not a git checkout */
-  }
-  const found = candidates.find((p) => existsSync(p));
-  if (!found) {
-    console.error(`no funded devnet key pair: set KEYPAIR or put one at ${candidates[0]}`);
-    process.exit(2);
-  }
-  return found;
-}
-
-function build() {
-  if (process.env.STAKE_E2E_SKIP_BUILD && existsSync(join(DIST, 'index.html'))) {
-    console.log('build: reusing dist-devnet (STAKE_E2E_SKIP_BUILD)');
-    return;
-  }
-  const env = { ...process.env, VITE_SOLANA_CLUSTER: 'devnet', VITE_ENABLE_ONCHAIN_STAKES: 'true', VITE_WAVE_DUEL_PROGRAM: PROGRAM };
-  if (RPC_URL !== DEFAULT_RPC) env.VITE_SOLANA_RPC_URL = RPC_URL;
-  const out = execFileSync(join(WEB, 'node_modules/.bin/vite'), ['build', '--outDir', 'dist-devnet'], { cwd: WEB, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-  const built = out.split('\n').find((l) => /built in/.test(l))?.trim() ?? 'built';
-  console.log(`build: ${built} → dist-devnet (cluster devnet, stakes on, program ${PROGRAM})`);
-}
-
-const serve = () =>
-  new Promise((resolveServer) => {
-    const server = createServer((req, res) => {
-      const url = new URL(req.url, 'http://x');
-      const p = decodeURIComponent(url.pathname);
-      if (!p.startsWith(BASE)) return res.writeHead(404).end();
-      let file = normalize(join(DIST, p.slice(BASE.length)));
-      if (!file.startsWith(DIST)) return res.writeHead(400).end();
-      if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
-      if (!existsSync(file)) file = join(DIST, 'index.html');
-      res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
-      res.end(readFileSync(file));
-    });
-    server.listen(0, '127.0.0.1', () => resolveServer({ server, url: `http://127.0.0.1:${server.address().port}${BASE}` }));
-  });
-
-function chromiumPath() {
-  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
-  try {
-    const p = chromium.executablePath();
-    if (p && existsSync(p)) return p;
-  } catch {
-    /* no default install */
-  }
-  // Playwright's browsers folder with another revision than this playwright-core expects.
-  const home = process.env.PLAYWRIGHT_BROWSERS_PATH || join(process.env.HOME || '', '.cache/ms-playwright');
-  try {
-    const dirs = readdirSync(home)
-      .filter((d) => /^chromium-\d+$/.test(d))
-      .sort((a, b) => Number(b.slice(9)) - Number(a.slice(9)));
-    for (const d of dirs) {
-      const p = join(home, d, 'chrome-linux/chrome');
-      if (existsSync(p)) return p;
-    }
-  } catch {
-    /* nothing there */
-  }
-  return undefined;
-}
 
 /* ---------- Chain helpers (the public RPC rate-limits: everything retries gently) ---------- */
 
-async function retry(fn, tries = 8) {
-  let wait = 1500;
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await fn();
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      if (attempt >= tries || /transaction failed/.test(message)) throw e;
-      await sleep(wait);
-      wait = Math.min(wait * 2, 8000);
-    }
-  }
-}
 const balance = (addr) => retry(async () => (await rpc.getBalance(address(addr), { commitment: 'confirmed' }).send()).value);
 const readRoom = (pda) => retry(() => duel.fetchRoom(rpc, pda));
-async function until(what, fn, ok, timeoutMs = 120_000, everyMs = 2500) {
-  const started = Date.now();
-  for (;;) {
-    const value = await fn();
-    if (ok(value)) return value;
-    if (Date.now() - started > timeoutMs) throw new Error(`timed out waiting for ${what}`);
-    await sleep(everyMs);
-  }
-}
-const loadWallet = async (path) => {
-  const bytes = Uint8Array.from(JSON.parse(readFileSync(path, 'utf8')));
-  const keyPair = await createKeyPairFromBytes(bytes);
-  return { keyPair, address: await getAddressFromPublicKey(keyPair.publicKey) };
-};
-const transferIx = (from, to, lamports) => ({
-  programAddress: duel.SYSTEM_PROGRAM,
-  accounts: [
-    { address: address(from), role: AccountRole.WRITABLE_SIGNER },
-    { address: address(to), role: AccountRole.WRITABLE },
-  ],
-  data: getStructEncoder([
-    ['ix', getU32Encoder()],
-    ['lamports', getU64Encoder()],
-  ]).encode({ ix: 2, lamports }),
-});
 const sendFrom = (wallet, instructions) => retry(() => duel.sendSigned(rpc, wallet.address, [wallet.keyPair], instructions), 3);
 
 /** What the engine says about a settled room, exactly as waveDuel.test.ts and the admin script compute it. */
@@ -211,16 +96,11 @@ const check = (ok, what) => {
   console.log(`${ok ? '  ✓' : '  ✗'} ${what}`);
   if (!ok) failures++;
 };
-const text = async (page, sel) => (await page.locator(sel).first().textContent({ timeout: 10_000 }))?.trim() ?? '';
-const coins = async (page) => Number((await text(page, '.gamehead__coins')).replace(/[^\d]/g, ''));
-const clickForce = (page, sel) => page.locator(sel).first().click({ force: true, timeout: 10_000 });
-/** Click a button by its text once it is rendered enabled (a force click on a disabled button does nothing). */
-const press = (page, hasText, scope = '', timeout = 60_000) => page.locator(`${scope} button:not([disabled])`.trim(), { hasText }).first().click({ force: true, timeout });
 
 /* ---------- Go ---------- */
 
 const KEYPAIR = keypairPath();
-build();
+build(PROGRAM, RPC_URL);
 const payer = await loadWallet(KEYPAIR);
 const config = await retry(() => duel.fetchConfig(rpc));
 if (!config) {
@@ -237,17 +117,7 @@ if (payerBefore < PURSE * 2n + 1_000_000n) {
 
 const relay = await startRelay(0);
 const { server, url } = await serve();
-const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
-const browser = await chromium.launch({
-  executablePath: chromiumPath(),
-  args: [
-    // Behind the sandbox's egress proxy the pages reach devnet through it; loopback (the static server,
-    // the relay) is bypassed by default. Elsewhere the pages talk to devnet directly.
-    proxy ? `--proxy-server=${proxy}` : '--no-proxy-server',
-    // Headless Chromium has no mDNS responder: keep host candidates as plain addresses.
-    '--disable-features=WebRtcHideLocalIpsWithMdns',
-  ],
-});
+const browser = await launchChromium();
 
 /** The wallet hook: every transaction a page signs is named here, and a settle is predicted before it is sent. */
 const DISC = Object.fromEntries(['open_room', 'join_room', 'cancel_room', 'settle', 'claim_timeout'].map((n) => [sha256Hex(`global:${n}`).slice(0, 16), n]));
@@ -318,53 +188,9 @@ async function player(name, wallet) {
   return { name, wallet, ctx, page, errors, noise };
 }
 
-async function openRoom(host) {
-  await host.page.goto(url, { waitUntil: 'networkidle' });
-  await clickForce(host.page, '.splash__play');
-  await host.page.locator('.mode-sign').nth(1).click({ force: true });
-  await host.page.locator('.mode-card', { hasText: 'Wave Rush' }).first().click({ force: true });
-  await host.page.getByRole('button', { name: /Play with friends/ }).click({ force: true });
-  await host.page.locator('.room__lobby h2', { hasText: /^Room [A-Z2-9]{5}$/ }).waitFor({ timeout: 20_000 });
-  return (await text(host.page, '.room__lobby h2')).replace('Room ', '');
-}
-
-async function joinByCode(guest, code) {
-  await guest.page.goto(url, { waitUntil: 'networkidle' });
-  await clickForce(guest.page, '.splash__play');
-  await guest.page.locator('.mode-sign').nth(1).click({ force: true });
-  await guest.page.fill('#join-code', code.toLowerCase());
-  await guest.page.getByRole('button', { name: 'Join' }).click({ force: true });
-  await guest.page.locator('.room__lobby h2', { hasText: `Room ${code}` }).waitFor({ timeout: 40_000 });
-}
-
-/**
- * The stake panel's "Connect wallet" opens the wallet popup, which lists the injected wallet; pick it,
- * optionally sign in with Solana (the app verifies the SIWS output itself), and close the popup.
- */
-async function connectWallet(p, { signIn = false } = {}) {
-  await press(p.page, /^Connect wallet$/, '.stake');
-  const popup = p.page.locator('.popup[aria-label="Wallet"]');
-  await popup.waitFor({ timeout: 20_000 });
-  await popup.locator('.wallet-btn', { hasText: p.wallet.name }).waitFor({ timeout: 20_000 });
-  const listed = await popup.locator('.wallet-btn').allTextContents();
-  check(listed.length === 1 && listed[0].trim() === p.wallet.name, `${p.name}'s wallet popup lists the test wallet (${listed.join(', ')})`);
-  const network = await popup.textContent();
-  check(/Network: devnet/.test(network) && /Devnet stakes are enabled/.test(network), `${p.name}'s wallet popup says devnet, stakes enabled`);
-  await popup.locator('.wallet-btn', { hasText: p.wallet.name }).click({ force: true });
-  await popup.locator('.wallet-card b', { hasText: shortAddress(p.wallet.address) }).waitFor({ timeout: 30_000 });
-  await popup.locator('.wallet-card small', { hasText: /\d SOL/ }).waitFor({ timeout: 30_000 });
-  const card = (await popup.locator('.wallet-card').textContent()).trim().replace(/\s+/g, ' ');
-  check(card.includes(`${p.wallet.name} · ${duel.formatSol(PURSE)}`), `${p.name} connected ${shortAddress(p.wallet.address)} and sees its balance (${card})`);
-  const connected = await p.page.evaluate(() => window.__beachBingoTestWallet.connected);
-  check(connected, `${p.name}'s wallet reports connected`);
-  if (signIn) {
-    await popup.locator('button', { hasText: /^Sign in$/ }).click({ force: true });
-    await popup.locator('.wallet-card__ok').waitFor({ timeout: 20_000 });
-    check(true, `${p.name} signed in with Solana and the app verified the signature`);
-  }
-  await popup.locator('.ribbon__close').click({ force: true });
-  await popup.waitFor({ state: 'detached', timeout: 10_000 });
-}
+const openRoom = (host) => openWaveRushRoom(host.page, url);
+const joinByCode = (guest, code) => joinByCodeAt(guest.page, url, code);
+const connectWallet = (p, opts = {}) => connectWalletIn(p, { check, purse: PURSE, ...opts });
 
 async function openEscrow(host) {
   const preset = host.page.locator('.stake .segmented button', { hasText: STAKE_LABEL });
