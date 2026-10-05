@@ -85,11 +85,16 @@ export function savingPercent(pack: Pack, mint: Mint): number {
   return (pack.offers[mint]?.discountBps ?? 0) / 100;
 }
 
-/** "0.040 SOL", "4.99 USDC", "96 SKR": SOL to three places, the dollar coins to two, the rest whole. */
+/**
+ * "0.040 SOL", "4.99 USDC", "96 SKR", "247.5 SKR": SOL to at least three places, the dollar coins
+ * to two, the rest whole, and the fraction a discount leaves shown as the chain charges it (up to
+ * two places from 1 up, four below), so the button carries the price the wallet signs for.
+ */
 export function formatPrice(base: bigint, mint: Mint, decimals: number): string {
-  const digits = mint === 'SOL' ? 3 : mint === 'USDC' || mint === 'PYUSD' ? 2 : 0;
   const value = Number(base) / 10 ** decimals;
-  return `${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: Math.max(digits, 0) })} ${mint}`;
+  const min = mint === 'SOL' ? 3 : mint === 'USDC' || mint === 'PYUSD' ? 2 : 0;
+  const max = Math.max(min, value >= 1 ? 2 : 4);
+  return `${value.toLocaleString('en-US', { minimumFractionDigits: min, maximumFractionDigits: max })} ${mint}`;
 }
 
 const units = (display: number, decimals: number): bigint => BigInt(Math.round(display * 10 ** decimals));

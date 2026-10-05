@@ -87,5 +87,11 @@ describe('the shop behind the popup', () => {
     expect(formatPrice(4_990_000n, 'USDC', 6)).toBe('4.99 USDC');
     expect(formatPrice(4_740_500n, 'PYUSD', 6)).toBe('4.74 PYUSD');
     expect(formatPrice(12_000_000n, 'JUP', 6)).toBe('12 JUP');
+    // The fraction a discount leaves is shown as the chain charges it: 330 SKR at 25% off is 247.5 SKR, not 248.
+    expect(formatPrice(discounted(330_000_000n, 2_500), 'SKR', 6)).toBe('247.5 SKR');
+    expect(formatPrice(discounted(110_000_000n, 500), 'SOL', 9)).toBe('0.1045 SOL');
+    expect(formatPrice(discounted(12_000_000n, 500), 'JUP', 6)).toBe('11.4 JUP');
+    expect(formatPrice(discounted(1_800_000_000n, 2_500), 'SKR', 6)).toBe('1,350 SKR');
+    expect(formatPrice(960_000n, 'SKR', 6)).toBe('0.96 SKR');
   });
 });
