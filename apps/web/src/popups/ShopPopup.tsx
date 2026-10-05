@@ -46,8 +46,9 @@ export default function ShopPopup() {
   const catalogue = loaded && loaded.shop === shop ? loaded.catalogue : null;
   const open = shop !== null;
   const needsWallet = !open && shopNeedsWallet();
-  // The chain shop knows its wallet's token; the stub and the greyed catalogue fall back to the perk's record.
-  const seekerVerified = shop?.wallet ? walletSeeker : perkSeeker;
+  // The chain shop says whether the proof will go with a purchase (its wallet's token, and the
+  // chain's group agreeing with the build's); the stub and the greyed catalogue fall back to the perk's record.
+  const seekerVerified = shop?.seekerVerified ? walletSeeker && shop.seekerVerified() : shop?.wallet ? walletSeeker : perkSeeker;
   // No shop: the catalogue shows greyed from the start; a shop lists its own packs.
   const packs: Pack[] = catalogue?.packs ?? (shop ? [] : [...PACKS]);
   const seekerBps = catalogue?.seekerDiscountBps ?? EMPTY.seekerDiscountBps;

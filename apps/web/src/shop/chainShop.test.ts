@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Address } from '@solana/kit';
 import { TOKEN_2022_PROGRAM, TOKEN_PROGRAM, type MintEntryAccount } from '../solana/waveToken.ts';
 import type { ConfigAccount } from '../solana/waveDuel.ts';
-import { catalogueFrom, packId, packIndex, restoreAmount } from './chainShop.ts';
+import { catalogueFrom, packId, packIndex, restoreAmount, seekerApplies } from './chainShop.ts';
 import { quote } from './shop.ts';
 
 const KEY = '5VcGxKLHDJhPAFSN8VK9qpxkM4gniQtPKwRrMnUcqA8u' as Address;
@@ -84,6 +84,22 @@ describe('the chain shop catalogue', () => {
     expect(quote(first, 'SKR', true, cat.seekerDiscountBps)).toBe(90_000_000n);
     expect(quote(first, 'SOL', true, cat.seekerDiscountBps)).toBe(38_000_000n);
     expect(quote(first, 'PYUSD', false, cat.seekerDiscountBps)).toBe(4_990_000n);
+  });
+
+  it('sends the Seeker proof only when the chain names the group this build knows, and that group is set', () => {
+    const mainnet = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+    const zero = '11111111111111111111111111111111';
+    expect(seekerApplies(mainnet, mainnet)).toBe(true);
+    expect(seekerApplies(config.sgtGroup, config.sgtGroup)).toBe(true);
+    // A devnet config against a mainnet build, or the other way round: full price, no failed purchase.
+    expect(seekerApplies(config.sgtGroup, mainnet)).toBe(false);
+    expect(seekerApplies(mainnet, config.sgtGroup)).toBe(false);
+    // A config whose group was never set agrees with nothing, a build without one included.
+    expect(seekerApplies(zero, zero)).toBe(false);
+    expect(seekerApplies(zero, mainnet)).toBe(false);
+    // The default is the build's group (config.ts): the mainnet group in this test run.
+    expect(seekerApplies(mainnet)).toBe(true);
+    expect(seekerApplies(config.sgtGroup)).toBe(false);
   });
 
   it('round-trips pack ids and restores only the difference to the chain total', () => {

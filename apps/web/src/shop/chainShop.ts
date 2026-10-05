@@ -1,7 +1,8 @@
 import type { Address, TransactionSendingSigner } from '@solana/kit';
 import { buyPackIx, buyPackTokenIx, fetchBuyer, fetchCoinsBought } from '../solana/shop.ts';
+import { SGT_GROUP } from '../solana/config.ts';
 import { knownSymbol, SOL_DECIMALS } from '../solana/tokens.ts';
-import { fetchConfig, PACKS, send, type ConfigAccount, type SolanaRpc } from '../solana/waveDuel.ts';
+import { fetchConfig, NO_KEY, PACKS, send, type ConfigAccount, type SolanaRpc } from '../solana/waveDuel.ts';
 import { fetchMintEntries, type MintEntryAccount, type SeekerProof } from '../solana/waveToken.ts';
 import type { Catalogue, Mint, Offer, Pack, Shop } from './shop.ts';
 
@@ -13,7 +14,9 @@ import type { Catalogue, Mint, Offer, Pack, Shop } from './shop.ts';
  * `CoinsBought` event of the confirmed transaction (or the `Buyer` PDA's delta when the log cannot
  * be read); "restore" credits `coins_total` less what this device already credited the wallet.
  * The Seeker saving needs no action from the player: when the wallet holds a Seeker Genesis Token
- * of the configured group its accounts travel with the purchase and the program checks them.
+ * of the configured group its accounts travel with the purchase and the program checks them, but
+ * only when the chain's group is the build's (`seekerApplies`); otherwise the buyer pays full price
+ * rather than failing.
  */
 export const packId = (index: number): string => `pack-${index}`;
 export const packIndex = (id: string): number | null => {
@@ -48,6 +51,16 @@ export function catalogueFrom(config: ConfigAccount, entries: MintEntryAccount[]
   return { packs, seekerDiscountBps: config.seekerDiscountBps, mints };
 }
 
+/**
+ * Whether the Seeker proof goes with a purchase: only when the config's group is the group this
+ * build looked the token up in, and that group is set. A proof against another group (a devnet
+ * mock, a config not set up yet) would fail the whole purchase (`SeekerGroupUnset`, `NotSeeker`);
+ * without it the buyer pays the full price and the shop still works.
+ */
+export function seekerApplies(chainGroup: string, buildGroup: string = SGT_GROUP): boolean {
+  return chainGroup === buildGroup && chainGroup !== NO_KEY;
+}
+
 /** What a "restore" credits: the chain's running total less what this device already gave the wallet, never negative. */
 export function restoreAmount(coinsTotal: bigint, credited: number): number {
   return Math.max(0, Number(coinsTotal) - credited);
@@ -73,9 +86,11 @@ export function createChainShop(deps: ChainShopDeps): Shop {
     catalogue = catalogueFrom(cfg, await fetchMintEntries(deps.rpc));
     return catalogue;
   };
+  /** The proof to send, if the chain would accept it (known once the config is read). */
+  const proofFor = (cfg: ConfigAccount): SeekerProof | null => (seekerApplies(cfg.sgtGroup) ? deps.seeker() : null);
   return {
     wallet: deps.wallet,
-    seekerVerified: () => deps.seeker() !== null,
+    seekerVerified: () => config !== null && proofFor(config) !== null,
     packs: load,
     buy: async (id, mint) => {
       const index = packIndex(id);
@@ -84,7 +99,7 @@ export function createChainShop(deps: ChainShopDeps): Shop {
       if (config?.paused) throw new Error('The Coin Shop is closed for a moment');
       const pack = cat.packs[index];
       if (!pack?.offers[mint]) throw new Error(`This pack is not sold in ${mint}`);
-      const proof = deps.seeker();
+      const proof = proofFor(config!);
       const ix =
         mint === 'SOL'
           ? await buyPackIx(deps.wallet, config!.treasury, index, proof)
