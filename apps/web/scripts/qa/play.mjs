@@ -528,7 +528,8 @@ async function seededLevels(vp, q, page2) {
   const wavesLeft = (await stored(page2)).boosters.wave;
   if (wavesLeft === 0) {
     const sandBefore = await sand(page2);
-    await page2.getByRole('button', { name: /\+5 balls/ }).click(); // plain: the popup footer's forced clicks miss on the laptop window
+    // The popup's Big Wave button, not the HUD's booster slot of the same name; plain click: the popup footer's forced clicks miss on the laptop window.
+    await page2.locator('.popup-layer').last().getByRole('button', { name: /\+5 balls/ }).click();
     await page2.waitForTimeout(100);
     const st = await stored(page2);
     R.ok(`${vp}: a bought Big Wave costs 100 coins and adds 5 balls`, st.coins === 400 && (await sand(page2)) === sandBefore && (await ballsLeft(page2)) === 5, `coins ${st.coins} balls ${await ballsLeft(page2)}`);
