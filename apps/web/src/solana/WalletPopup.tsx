@@ -13,10 +13,13 @@ import { SEEKER_PERK_COINS, useGame } from '../state/store.ts';
 import { GreenButton } from '../ui/kit.tsx';
 import { Popup } from '../ui/Popup.tsx';
 import { toast } from '../ui/toast.ts';
+import { Badges } from './Badges.tsx';
 import { walletClient } from './client.ts';
-import { CLUSTER, ONCHAIN_STAKES_ENABLED, isAndroid, isSeedVaultDevice, isWebShell, shellDeviceModel, shortAddress } from './config.ts';
+import { CHAIN_SHOP_ENABLED, CLUSTER, ONCHAIN_STAKES_ENABLED, isAndroid, isSeedVaultDevice, isWebShell, shellDeviceModel, shortAddress } from './config.ts';
 import { findSeekerGenesisToken, solBalance } from './seeker.ts';
 import { createSignInInput, verifySignInLocally } from './siws.ts';
+import { formatAmount } from './tokens.ts';
+import { refreshWalletStatus } from './walletStatus.ts';
 import './wallet.css';
 
 type UiWallet = ReturnType<typeof useWallets>[number];
@@ -26,9 +29,10 @@ export default function WalletPopup() {
   const setLinkedWallet = useGame((s) => s.setLinkedWallet);
   const claimSeekerPerk = useGame((s) => s.claimSeekerPerk);
   const linked = useGame((s) => s.linkedWallet);
+  const status = useGame((s) => s.walletStatus);
   const wallets = useWallets(walletClient);
   const connected = useConnectedWallet(walletClient);
-  const status = useWalletStatus(walletClient);
+  const walletStatus = useWalletStatus(walletClient);
   const connect = useConnect(walletClient);
   const disconnect = useDisconnect(walletClient);
   const signIn = useSignIn(walletClient);
@@ -70,11 +74,12 @@ export default function WalletPopup() {
     }
   };
 
-  const checkSeeker = async () => {
+  /** Look for the Seeker Genesis Token (and, in the devnet build, the SKR balance); the perk pays once per token on this device. */
+  const verifySeeker = async () => {
     if (!address) return;
     setSeeker('checking');
     try {
-      const mint = await findSeekerGenesisToken(address);
+      const mint = CHAIN_SHOP_ENABLED ? ((await refreshWalletStatus(address)).seeker?.mint ?? null) : await findSeekerGenesisToken(address);
       if (!mint) {
         setSeeker('none');
         return;
@@ -92,6 +97,8 @@ export default function WalletPopup() {
     }
   };
 
+  const skr = status && status.address === address && status.skrBalance !== null ? BigInt(status.skrBalance) : null;
+
   return (
     <Popup title="Wallet" onClose={close} wide>
       <p className="small-note">
@@ -104,7 +111,7 @@ export default function WalletPopup() {
       {!connected ? (
         <>
           <h3>Connect</h3>
-          {status === 'pending' || status === 'reconnecting' ? <p className="small-note">Looking for wallets…</p> : null}
+          {walletStatus === 'pending' || walletStatus === 'reconnecting' ? <p className="small-note">Looking for wallets…</p> : null}
           <div className="wallet-list">
             {sorted.map((w) => (
               <button
@@ -142,12 +149,14 @@ export default function WalletPopup() {
             </div>
             {linked === connected.account.address && <span className="wallet-card__ok">✓ linked</span>}
           </div>
+          {skr !== null && <p className="small-note wallet-skr">{formatAmount(skr, 6, 'SKR')} in this wallet{skr > 0n ? ' — the shop and the stake picker start on SKR.' : '.'}</p>}
+          <Badges />
           <div className="wallet-actions">
             <GreenButton onClick={doSignIn} disabled={signIn.isRunning}>
               {linked === connected.account.address ? 'Re-sign' : 'Sign in'}
             </GreenButton>
-            <GreenButton tone="gold" onClick={checkSeeker} disabled={seeker === 'checking'}>
-              {seeker === 'checking' ? 'Checking…' : 'Seeker perk'}
+            <GreenButton tone="gold" onClick={verifySeeker} disabled={seeker === 'checking'}>
+              {seeker === 'checking' ? 'Checking…' : 'Verify Seeker'}
             </GreenButton>
           </div>
           {seeker === 'none' && <p className="small-note">No Seeker Genesis Token in this wallet — perks are for Solana Seeker owners.</p>}
@@ -162,7 +171,7 @@ export default function WalletPopup() {
       <h3>SOL, USDC, PYUSD, JUP and SKR</h3>
       <p className="small-note">
         {ONCHAIN_STAKES_ENABLED
-          ? 'This devnet build takes test tokens: staked Wave Rush rooms and halls, and the Coin Shop once its program is live. Pay with SKR for the best price.'
+          ? 'Devnet stakes are enabled: staked Wave Rush rooms and halls in SOL or a test token, and the Coin Shop paid in the same. Pay with SKR for the lowest house fee and the best pack price; a Seeker verified on chain pays less again. Badges describe your wallet and never grant anything by themselves.'
           : 'The Coin Shop takes these five tokens, SKR at the best price. Staked rooms stay switched off on this site: real-money bingo is regulated gambling, so they wait for licensing, geo-checks and age verification. SAND play is free for everyone.'}
       </p>
     </Popup>

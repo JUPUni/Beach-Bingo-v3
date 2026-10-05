@@ -100,14 +100,15 @@ export type RosterEntry = {
 
 /**
  * A staked room: the escrow program's account for this code (programs/wave_duel), as the host
- * announces it. Lamports travel as a decimal string; addresses as base58. `room` is the escrow's
- * address: the `Room` PDA of a 1v1 room, the `Hall` PDA of a hall (2 to 8 players, 1 to 4 cards
- * each). `lamports` is the stake of a room and the stake per card of a hall, so the screen reads
- * one field either way.
+ * announces it. Amounts travel as a decimal string of base units (lamports for SOL, the mint's
+ * base units for a token stake); addresses as base58. `room` is the escrow's address: the `Room`
+ * PDA of a 1v1 room, the `Hall` PDA of a hall (2 to 8 players, 1 to 4 cards each). `lamports` is
+ * the stake of a room and the stake per card of a hall, so the screen reads one field either way.
+ * `mint` names the token the escrow is staked in; absent, the stake is SOL (what older builds send).
  */
 export type StakeInfo =
-  | { kind: 'room'; lamports: string; host: string; program: string; room: string }
-  | { kind: 'hall'; lamports: string; host: string; program: string; room: string; stakePerCard: string; maxPlayers: number };
+  | { kind: 'room'; lamports: string; host: string; program: string; room: string; mint?: string }
+  | { kind: 'hall'; lamports: string; host: string; program: string; room: string; stakePerCard: string; maxPlayers: number; mint?: string };
 /** What cards are bought with: the host's table when the room opened. Guests pay in the same. */
 export type Currency = 'sand' | 'coins';
 const isCurrency = (x: unknown): x is Currency => x === 'sand' || x === 'coins';
@@ -137,7 +138,9 @@ function parseStake(raw: unknown): StakeInfo | null {
   if (!isObject(raw)) return null;
   if (!isLamports(raw.lamports)) return null;
   if (!isAddress(raw.host) || !isAddress(raw.program) || !isAddress(raw.room)) return null;
-  const base = { lamports: raw.lamports, host: raw.host, program: raw.program, room: raw.room };
+  // A token stake names its mint; a stake without one is SOL (the shape the SOL-only builds send).
+  if (raw.mint !== undefined && !isAddress(raw.mint)) return null;
+  const base = { lamports: raw.lamports, host: raw.host, program: raw.program, room: raw.room, ...(raw.mint !== undefined ? { mint: raw.mint } : {}) };
   // A stake without a kind is a 1v1 room: the shape the first staked builds announced.
   const kind = raw.kind ?? 'room';
   if (kind === 'room') return { kind, ...base };

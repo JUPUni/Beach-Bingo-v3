@@ -13,6 +13,8 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_ONCHAIN_STAKES?: string;
   /** The wave_duel escrow program id; with the flag above, staked Wave Rush rooms appear. */
   readonly VITE_WAVE_DUEL_PROGRAM?: string;
+  /** The Seeker Genesis Token group the app checks for (default: mainnet's; the devnet build names the mock group). */
+  readonly VITE_SGT_GROUP?: string;
   /** A label shown on the splash for non-production builds ("devnet"). */
   readonly VITE_BUILD_LABEL?: string;
 }

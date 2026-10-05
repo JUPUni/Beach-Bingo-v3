@@ -91,6 +91,24 @@ describe('messages', () => {
     expect(stakeOf({ ...room, lamports: '1e9' })).toBeNull();
   });
 
+  it('reads a token stake by its mint and keeps a stake without one as SOL', () => {
+    const base = { t: 'room', preset: 'waveRush', round: 1, commitment: commitSeed(createServerSeed()), playing: false };
+    const stakeOf = (stake: unknown) => {
+      const msg = parseMessage({ ...base, stake });
+      return msg?.t === 'room' ? msg.stake : null;
+    };
+    const mint = 'GY3JAeDQskMFYz25VJwdFUg8yDEVNhEfP6vUFDm4RPzz';
+    const room = { kind: 'room', lamports: '50000000', host: '2'.repeat(32), program: '3'.repeat(32), room: '4'.repeat(32) };
+    expect(stakeOf({ ...room, mint })).toEqual({ ...room, mint });
+    expect(stakeOf(room)).not.toHaveProperty('mint'); // older builds: SOL
+    const hall = { ...room, kind: 'hall', stakePerCard: '50000000', maxPlayers: 4, mint };
+    expect(stakeOf(hall)).toEqual(hall);
+    expect(stakeOf({ ...room, mint: 'not-an-address' })).toBeNull();
+    expect(stakeOf({ ...room, mint: 0 })).toBeNull();
+    expect(stakeOf({ ...room, mint: null })).toBeNull();
+    expect(stakeOf({ ...room, mint: '0'.repeat(40) })).toBeNull(); // 0 is not in base58
+  });
+
   it('rejects junk', () => {
     expect(parseMessage(null)).toBeNull();
     expect(parseMessage('me')).toBeNull();

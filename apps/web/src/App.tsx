@@ -3,6 +3,7 @@ import { art } from './assets/art.ts';
 import { setMusic, sfx } from './lib/audio.ts';
 import { lookupRegion } from './lib/geo.ts';
 import { joinCodeFromHash } from './rooms/live/protocol.ts';
+import { CHAIN_SHOP_ENABLED } from './solana/config.ts';
 import { useGame, type Screen } from './state/store.ts';
 import { Toasts } from './ui/kit.tsx';
 import { toast } from './ui/toast.ts';
@@ -23,6 +24,8 @@ const Blitz = lazy(() => import('./games/Blitz.tsx'));
 const RoomGame = lazy(() => import('./rooms/RoomGame.tsx'));
 const LiveRoom = lazy(() => import('./rooms/LiveRoom.tsx'));
 const Royale = lazy(() => import('./rooms/Royale.tsx'));
+/** The devnet build only: binds the chain Coin Shop and the wallet badges to the connected wallet. Production never loads it. */
+const ChainBridge = CHAIN_SHOP_ENABLED ? lazy(() => import('./solana/ChainBridge.tsx')) : null;
 
 /** `visit` is in the keys of the screens a player can open again from themselves (Replay, Play again), so each visit is a fresh round. */
 function ScreenView({ screen, visit }: { screen: Screen; visit: number }) {
@@ -147,6 +150,7 @@ export function App() {
         <ScreenView screen={screen} visit={visit} />
         <PopupHost />
         <Toasts />
+        {ChainBridge && <ChainBridge />}
       </Suspense>
       <div className="rotate-hint">
         <span className="rotate-hint__icon" aria-hidden="true">

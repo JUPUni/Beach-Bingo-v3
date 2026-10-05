@@ -294,3 +294,15 @@
   opacity: 0.55;
   filter: saturate(0.6);
 }
+
+/* The devnet build before a wallet is connected: the chain sells, so the shop asks for one. */
+.shop__connect {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0 0.8rem;
+}
+
+.shop__badges {
+  margin: 0 0 0.6rem;
+}

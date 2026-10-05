@@ -116,6 +116,15 @@ export interface Purchase {
   mint: string;
   coins: number;
   at: number;
+  /** The wallet that paid, when the chain shop sold it: the per-wallet credited total feeds "restore purchases". */
+  wallet?: string;
+}
+
+/** The connected wallet as the chain bridge read it: its Seeker Genesis Token and its SKR (base units as a string). */
+export interface WalletStatus {
+  address: string;
+  seeker: { mint: string; tokenAccount: string } | null;
+  skrBalance: string | null;
 }
 
 /** What `/api/geo` said about this session; both null when it could not tell. */
@@ -164,6 +173,8 @@ export interface GameState {
   /** Who already claimed the follow reward here: 'device', or a linked wallet's address. */
   freeGameClaims: string[];
   purchases: Purchase[];
+  /** Coins this device credited per wallet from the chain shop (purchases and restores): a restore pays only the difference to the chain's total. */
+  credited: Record<string, number>;
 
   // Session (not persisted)
   screen: Screen;
@@ -177,8 +188,10 @@ export interface GameState {
   region: Region | null;
   /** What to do once the age gate is confirmed. */
   pendingCoins: 'shop' | 'table' | null;
-  /** The wallet holds SKR (set by the chain shop); the shop preselects SKR. */
+  /** The wallet holds SKR (set with the wallet status); the shop and the stake picker preselect SKR. */
   skrReady: boolean;
+  /** The connected wallet's Seeker Genesis Token and SKR balance, read by the chain bridge; null when no wallet is connected. */
+  walletStatus: WalletStatus | null;
   /** The follow link was opened this session; the claim unlocks when the page comes back. */
   follow: 'idle' | 'opened' | 'returned';
 
@@ -227,6 +240,8 @@ export interface GameState {
   /* ---------- Coins: the gate, the shop, the free game ---------- */
   setRegion(region: Region): void;
   setSkrReady(ready: boolean): void;
+  /** The chain bridge's read of the connected wallet (null on disconnect); `skrReady` follows its SKR balance. */
+  setWalletStatus(status: WalletStatus | null): void;
   /** The one-line reason coin tables and the shop are closed here, or null. */
   coinsBlockedReason(): string | null;
   /** Age confirmed and the region not blocked: coin tables and the shop may open. */
@@ -342,6 +357,7 @@ export const useGame = create<GameState>()(
       freeGames: 0,
       freeGameClaims: [],
       purchases: [],
+      credited: {},
 
       screen: { name: 'splash' },
       visit: 0,
@@ -351,6 +367,7 @@ export const useGame = create<GameState>()(
       region: null,
       pendingCoins: null,
       skrReady: false,
+      walletStatus: null,
       follow: 'idle',
 
       go: (screen) => set((s) => ({ screen, popup: null, visit: s.visit + 1 })),
@@ -560,6 +577,7 @@ export const useGame = create<GameState>()(
       /* ---------- Coins: the gate, the shop, the free game ---------- */
       setRegion: (region) => set({ region }),
       setSkrReady: (skrReady) => set({ skrReady }),
+      setWalletStatus: (walletStatus) => set({ walletStatus, skrReady: walletStatus?.skrBalance != null && BigInt(walletStatus.skrBalance) > 0n }),
       coinsBlockedReason: () => {
         const r = get().region;
         // Only a positive answer blocks: an unknown region (no Vercel headers in dev, the devnet
@@ -607,6 +625,7 @@ export const useGame = create<GameState>()(
           coins: s.coins + purchase.coins,
           purchases: [purchase, ...s.purchases].slice(0, 50),
           today: { ...today, bought: today.bought + purchase.coins },
+          credited: purchase.wallet ? { ...s.credited, [purchase.wallet]: (s.credited[purchase.wallet] ?? 0) + purchase.coins } : s.credited,
         });
         return true;
       },
@@ -655,6 +674,7 @@ export const useGame = create<GameState>()(
         freeGames: s.freeGames,
         freeGameClaims: s.freeGameClaims,
         purchases: s.purchases,
+        credited: s.credited,
       }),
     },
   ),

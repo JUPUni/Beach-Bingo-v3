@@ -3,7 +3,8 @@ import { modeInfo, rooms, type RoomPresetId } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
 import { useNow } from '../lib/hooks.ts';
-import { ONCHAIN_STAKES_ENABLED, shortAddress } from '../solana/config.ts';
+import { CHAIN_SHOP_ENABLED, shortAddress } from '../solana/config.ts';
+import { formatStake } from '../solana/tokens.ts';
 import { TABLE_NAME, useGame } from '../state/store.ts';
 import { Confetti, GreenButton, RewardPill } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
@@ -17,7 +18,10 @@ import { Caller, Feed, PlayerCards, Results, RoomStat } from './RoomParts.tsx';
 import './rooms.css';
 
 /** Staked rooms need the flag and a deployed escrow program; the wallet code loads only then. */
-const STAKES = ONCHAIN_STAKES_ENABLED && Boolean(import.meta.env.VITE_WAVE_DUEL_PROGRAM);
+const STAKES = CHAIN_SHOP_ENABLED;
+/** The stake in the info bar: "◎0.01" for SOL as always, "50 SKR" for a token stake. */
+const stakeFigure = (lamports: string, mint: string | undefined): string =>
+  mint ? formatStake(BigInt(lamports), mint) : `◎${(Number(lamports) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 3 })}`;
 const StakePanel = lazy(() => import('./live/StakePanel.tsx'));
 const HallStakePanel = lazy(() => import('./live/HallStakePanel.tsx'));
 
@@ -233,7 +237,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
           <div className="room__info">
             <RoomStat
               label={m.stake ? (m.isHall ? 'A card' : 'Stake') : 'Prize pool'}
-              value={m.stake ? `◎${(Number(m.stake.lamports) / 1e9).toLocaleString('en-US', { maximumFractionDigits: 3 })}` : formatCoins(room ? room.pool : m.poolPreview)}
+              value={m.stake ? stakeFigure(m.stake.lamports, m.stake.mint) : formatCoins(room ? room.pool : m.poolPreview)}
             />
             <RoomStat
               label={room ? 'Stage' : m.isHall ? 'Seats' : 'Players'}

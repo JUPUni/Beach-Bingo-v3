@@ -48,14 +48,19 @@ export function keypairPath() {
   return found;
 }
 
-/** The game with the devnet flags, into dist-devnet (the production dist is untouched). */
-export function build(program, rpcUrl) {
+/**
+ * The game with the devnet flags, into dist-devnet (the production dist is untouched). `sgtGroup`
+ * is the Seeker Genesis Token group the build checks for: the program config's (the mock group on
+ * devnet), so the app and the chain agree on what a Seeker is.
+ */
+export function build(program, rpcUrl, { sgtGroup = process.env.SGT_GROUP } = {}) {
   if (process.env.STAKE_E2E_SKIP_BUILD && existsSync(join(DIST, 'index.html'))) {
     console.log('build: reusing dist-devnet (STAKE_E2E_SKIP_BUILD)');
     return;
   }
   const env = { ...process.env, VITE_SOLANA_CLUSTER: 'devnet', VITE_ENABLE_ONCHAIN_STAKES: 'true', VITE_WAVE_DUEL_PROGRAM: program };
   if (rpcUrl !== DEFAULT_RPC) env.VITE_SOLANA_RPC_URL = rpcUrl;
+  if (sgtGroup) env.VITE_SGT_GROUP = sgtGroup;
   const out = execFileSync(join(WEB, 'node_modules/.bin/vite'), ['build', '--outDir', 'dist-devnet'], { cwd: WEB, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
   const built = out.split('\n').find((l) => /built in/.test(l))?.trim() ?? 'built';
   console.log(`build: ${built} → dist-devnet (cluster devnet, stakes on, program ${program})`);

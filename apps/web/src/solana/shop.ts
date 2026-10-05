@@ -5,11 +5,13 @@ import {
   getAddressDecoder,
   getAddressEncoder,
   getBase64Encoder,
+  getBooleanDecoder,
   getBytesDecoder,
   getBytesEncoder,
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
   getU32Decoder,
   getU64Decoder,
   getU8Decoder,
@@ -19,7 +21,7 @@ import {
   type Instruction,
 } from '@solana/kit';
 import { sha256Hex } from '@beach-bingo/engine';
-import { configAddress, program, same, SYSTEM_PROGRAM, type ConfigAccount, type SolanaRpc } from './waveDuel.ts';
+import { configAddress, NO_KEY, program, same, SYSTEM_PROGRAM, type ConfigAccount, type SolanaRpc } from './waveDuel.ts';
 import { ataAddress, type MintEntryAccount, type SeekerProof } from './waveToken.ts';
 
 /**
@@ -39,6 +41,7 @@ const DISC = {
   buyPack: discriminator('global:buy_pack'),
   buyPackToken: discriminator('global:buy_pack_token'),
   buyerAccount: discriminator('account:Buyer'),
+  coinsBoughtEvent: discriminator('event:CoinsBought'),
 };
 
 export interface BuyerAccount {
@@ -94,6 +97,55 @@ export function tokenPackPrice(config: ConfigAccount, entry: MintEntryAccount, p
   const price = entry.packPrices[pack];
   if (!price) return null;
   return packPrice(price, entry.discountBps + (seeker ? config.seekerDiscountBps : 0));
+}
+
+/* ---------- The CoinsBought event, read back from a confirmed purchase ---------- */
+
+export interface CoinsBoughtEvent {
+  wallet: Address;
+  /** null for a SOL purchase. */
+  mint: Address | null;
+  pack: number;
+  coins: number;
+  /** Base units (lamports for SOL) the treasury received. */
+  paid: bigint;
+  discountBps: number;
+  seeker: boolean;
+}
+
+const coinsBoughtDecoder = getStructDecoder([
+  ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
+  ['wallet', getAddressDecoder()],
+  ['mint', getAddressDecoder()],
+  ['pack', getU8Decoder()],
+  ['coins', getU32Decoder()],
+  ['paid', getU64Decoder()],
+  ['discountBps', getU16Decoder()],
+  ['seeker', getBooleanDecoder()],
+]);
+
+/** Anchor events travel as `Program data: <base64>` log lines; this finds the shop's among a transaction's logs. */
+export function decodeCoinsBought(logs: readonly string[]): CoinsBoughtEvent | null {
+  for (const line of logs) {
+    if (!line.startsWith('Program data: ')) continue;
+    let bytes: Uint8Array;
+    try {
+      bytes = getBase64Encoder().encode(line.slice('Program data: '.length)) as Uint8Array;
+    } catch {
+      continue;
+    }
+    if (bytes.length < 8 || !same(bytes.subarray(0, 8), DISC.coinsBoughtEvent)) continue;
+    const e = coinsBoughtDecoder.decode(bytes);
+    return { wallet: e.wallet, mint: e.mint === NO_KEY ? null : e.mint, pack: e.pack, coins: e.coins, paid: e.paid, discountBps: e.discountBps, seeker: e.seeker };
+  }
+  return null;
+}
+
+/** The `CoinsBought` event of a confirmed purchase, or null when the transaction cannot be read (yet). */
+export async function fetchCoinsBought(rpc: SolanaRpc, signature: string): Promise<CoinsBoughtEvent | null> {
+  const tx = await rpc.getTransaction(signature as never, { commitment: 'confirmed', maxSupportedTransactionVersion: 0, encoding: 'json' }).send();
+  const logs = tx?.meta?.logMessages;
+  return logs ? decodeCoinsBought(logs) : null;
 }
 
 const meta = (addr: Address, role: AccountRole) => ({ address: addr, role });

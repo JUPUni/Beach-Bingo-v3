@@ -1,0 +1,33 @@
+/* The wallet and device badges (solana/Badges.tsx): small chips, never buttons. */
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.4rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badge {
+  padding: 0.25rem 0.8rem;
+  border-radius: 99rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: #fff;
+  background: #3a6fd8;
+  border: 0.15rem solid rgb(255 255 255 / 0.5);
+}
+
+.badge--seeker {
+  background: #1f9e6b;
+}
+
+.badge--seedVault {
+  background: #6b4fd8;
+}
+
+.badge--skr {
+  background: #d8891f;
+}

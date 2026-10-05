@@ -14,13 +14,20 @@ export const RPC_URL =
 
 /**
  * Seeker Genesis Token group/metadata address (Token-2022). A wallet holds a Seeker if it owns
- * a mint whose MetadataPointer AND TokenGroupMember point here.
- * Source: docs.solanamobile.com/solana-mobile-stack/seeker-genesis-token (verified 2026-09-29).
+ * a mint whose MetadataPointer AND TokenGroupMember point here. The mainnet group by default
+ * (docs.solanamobile.com/solana-mobile-stack/seeker-genesis-token, verified 2026-09-29); the
+ * devnet build names the admin script's mock group in `VITE_SGT_GROUP`, the same value the
+ * program's config holds, so the app and the chain agree on what a Seeker is.
  */
-export const SGT_GROUP = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+export const MAINNET_SGT_GROUP = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te';
+export const SGT_GROUP: string = import.meta.env.VITE_SGT_GROUP || MAINNET_SGT_GROUP;
 
 /** Real-money stakes stay off unless explicitly enabled AND the compliance gate passes. */
 export const ONCHAIN_STAKES_ENABLED = import.meta.env.VITE_ENABLE_ONCHAIN_STAKES === 'true';
+
+/** The escrow program the build knows, when the stakes flag is on: staked rooms, token stakes and the chain Coin Shop (the devnet build). */
+export const WAVE_DUEL_PROGRAM: string | null = ONCHAIN_STAKES_ENABLED ? import.meta.env.VITE_WAVE_DUEL_PROGRAM || null : null;
+export const CHAIN_SHOP_ENABLED = WAVE_DUEL_PROGRAM !== null;
 
 /** True inside the Solana Mobile dApp Store WebView shell (`npx solana-mobile webshell`). */
 export function isWebShell(): boolean {

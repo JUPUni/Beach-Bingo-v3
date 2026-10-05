@@ -338,7 +338,13 @@
   color: #ffe27a;
 }
 
-/* A labelled picker row (a hall's seats and cards). */
+/* Six tokens do not fit one row on a phone: the pickers wrap. */
+.stake .segmented {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* A labelled picker row (the token, a hall's seats and cards). */
 .stake__row {
   display: flex;
   flex-wrap: wrap;
