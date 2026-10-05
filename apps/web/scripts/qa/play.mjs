@@ -250,7 +250,8 @@ async function popups(vp, viewport) {
   const gated = await stored(page);
   R.ok(`${vp}: confirming flips the table to coins and, with 0 coins, opens the Coin Shop`, gated.table === 'coins' && gated.ageGate?.confirmedAt > 0 && (await page.locator('.pack').count()) === 4, JSON.stringify({ table: gated.table, gate: gated.ageGate }));
   const shopText = await bodyText(page);
-  R.ok(`${vp}: the shop lists SKR first, four packs and the SKR saving on every price`, (await page.locator('.popup .segmented button').first().innerText()) === 'SKR' && (shopText.match(/Pay with SKR: save 20%/g) || []).length === 4 && /5,000 coins/.test(shopText) && /100K coins/.test(shopText) && /no cash value/.test(shopText), shopText.slice(0, 200));
+  // The deals are Seeker deals: without a linked Seeker every pack shows its list price with the SKR deal as an invitation.
+  R.ok(`${vp}: the shop lists SKR first, four packs, the Seeker deal line and the SKR deal under every price`, (await page.locator('.popup .segmented button').first().innerText()) === 'SKR' && /25% off every pack with SKR/.test(shopText) && (shopText.match(/Linked Seekers pay [\d,.]+ SKR/g) || []).length === 4 && /5,000 coins/.test(shopText) && /100K coins/.test(shopText) && /no cash value/.test(shopText), shopText.slice(0, 200));
   await fit(page, 'popup-shop', vp);
   // A production build has no shop until the chain shop is attached: the packs are greyed with
   // one line and no Buy. Local dev and the devnet build (VITE_ENABLE_ONCHAIN_STAKES) run the stub.

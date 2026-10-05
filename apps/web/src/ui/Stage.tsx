@@ -40,10 +40,9 @@ export function TopBar() {
 
   return (
     <header className="topbar wood-bar">
-      {/* The name (the Seeker ID while a Seeker is linked) sits by the avatar where the bar is wide enough; phones keep the avatar alone. */}
-      <button type="button" className="topbar__me" aria-label="Edit profile" title={name} onClick={() => openPopup('profile')}>
-        <span className="topbar__avatar">{avatar}</span>
-        <span className="topbar__name">{name}</span>
+      {/* The stage is phone-shaped at every width, so the bar has no room for the name; it names the button (the Seeker ID while a Seeker is linked) and the profile shows it. */}
+      <button type="button" className="topbar__avatar" aria-label={`Edit profile: ${name}`} title={name} onClick={() => openPopup('profile')}>
+        <span>{avatar}</span>
       </button>
       <Balances className="topbar__balances" />
       <button type="button" className="chip chip--red topbar__keys" aria-label="Golden keys — treasure chest" onClick={() => openPopup('chest')}>
