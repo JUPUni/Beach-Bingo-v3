@@ -47,6 +47,11 @@ export function serveDist() {
     const server = createServer((req, res) => {
       const url = new URL(req.url, 'http://x');
       const p = decodeURIComponent(url.pathname);
+      // The site's region function, as Vercel answers it with no headers to read: unknown, which fails open.
+      if (p === '/api/geo') {
+        res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+        return res.end(JSON.stringify({ country: null, region: null }));
+      }
       if (!p.startsWith(BASE_PATH)) return res.writeHead(404).end();
       let file = normalize(join(DIST, p.slice(BASE_PATH.length)));
       if (!file.startsWith(DIST)) return res.writeHead(400).end();
@@ -71,7 +76,7 @@ export function launch(extraArgs = []) {
  * nothing: the splash is still shown, it only marks the intro seen), `clock: true` installs
  * Playwright's fake clock so long ball timers can be run forward with `page.clock.runFor`.
  */
-export async function player(browser, { viewport = VIEWPORTS.phone, seed = null, clock = false, relayUrl = null, serviceWorkers = 'block' } = {}) {
+export async function player(browser, { viewport = VIEWPORTS.phone, seed = null, seedVersion = 2, clock = false, relayUrl = null, serviceWorkers = 'block' } = {}) {
   const ctx = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 1,
@@ -80,11 +85,12 @@ export async function player(browser, { viewport = VIEWPORTS.phone, seed = null,
     serviceWorkers,
   });
   await ctx.addInitScript(
-    ({ key, relaysKey, seed, relayUrl }) => {
+    ({ key, relaysKey, seed, seedVersion, relayUrl }) => {
       if (relayUrl) localStorage.setItem(relaysKey, relayUrl);
-      if (seed && !localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ state: seed, version: 1 }));
+      // `seedVersion: 1` seeds a save from before the two currencies, to watch the migration run.
+      if (seed && !localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ state: seed, version: seedVersion }));
     },
-    { key: STORE_KEY, relaysKey: RELAYS_KEY, seed, relayUrl },
+    { key: STORE_KEY, relaysKey: RELAYS_KEY, seed, seedVersion, relayUrl },
   );
   const page = await ctx.newPage();
   if (clock) await page.clock.install();
@@ -101,6 +107,8 @@ export async function player(browser, { viewport = VIEWPORTS.phone, seed = null,
 
 /** The persisted store as the game saved it. */
 export const stored = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key) || '{}').state ?? {}, STORE_KEY);
+/** The two ledgers: SAND is the free currency every default flow plays with; coins come from the shop. */
+export const sand = async (page) => (await stored(page)).sand;
 export const coins = async (page) => (await stored(page)).coins;
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
