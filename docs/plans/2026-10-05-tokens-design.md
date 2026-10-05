@@ -1,9 +1,8 @@
 # Token stakes, Seeker detection and SKR rewards: design
 
-Status: draft of 2026-10-05, written from the security review of the escrow
-(`scratchpad/research/escrow-security-report.md`), the mint accounts read from mainnet and devnet,
-the app's existing wallet layer and the two research reports on tokens and on Seeker detection
-(sections marked *pending* fill in when those land). Nothing here is legal advice; staked play
+Status: 2026-10-05, written from the security review of the escrow, the mint accounts read from
+mainnet and devnet, the app's existing wallet layer and the research reports on the five tokens and
+on Seeker detection (all in the session's research folder; the facts that matter are repeated here). Nothing here is legal advice; staked play
 stays on devnet behind the build flags (docs/PRODUCTION.md).
 
 ## 1. What the owner asked for
@@ -34,11 +33,12 @@ stays on devnet behind the build flags (docs/PRODUCTION.md).
 | USDC | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | SPL Token | 6 | Freeze authority present: a frozen player account must not block a settlement (claim path). Devnet twin `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` (Circle faucet). |
 | PYUSD | `2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo` | Token-2022 | 6 | Extensions read on chain: permanent delegate (the issuer can move funds out of any account, the vault included), transfer-fee config at 0 bps / max 0 (allowed while zero; re-checked at every transfer), transfer hook with no program set (allowed while none; re-checked), confidential transfers, metadata, mint close authority. Devnet twin `CXk2AMBfi3TwaEL2468s6zP8xq9NxTXjp9gjMgzeUynM`, same extensions. |
 | JUP | `JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN` | SPL Token | 6 | No authorities at all. No devnet mint: a look-alike is created on devnet by the admin script. |
-| SKR | *pending the tokens report* | *pending* | *pending* | The game's main token: lowest fee tier, the play-money boosts. If the mint is Token-2022 its extension set decides the registry flags like PYUSD's. No devnet mint expected: a look-alike with the same program, decimals and extensions. |
+| SKR | `SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3` | SPL Token | 6 | The game's main token: lowest fee tier, the play-money boosts. Classic SPL mint, no freeze authority, an active mint authority (staking inflation), launched 21 Jan 2026 with the Seeker airdrop; staking lives in program `SKRskrmtL83pcL4YqLWt6iPefDqwXQWHSw9S9vz94BZ` (a wallet's stake is readable from its `UserStake` PDA). No devnet mint: a look-alike with the same shape, created by the admin script. |
 
-Presets per asset (base units; final numbers in the tokens report): SOL as today (0.01–0.25),
-USDC and PYUSD 1 / 5 / 10 / 25 / 50, JUP and SKR sized to a similar value at registration time and
-adjustable with `set_mint`.
+Presets per asset: SOL as today (0.01–0.25); USDC and PYUSD 1 / 5 / 10 / 25 (base units ×10⁶,
+minimum 1, maximum 100); JUP and SKR in whole tokens sized at registration to the same dollar
+range and adjusted with `set_mint` as prices move. Order of shipping on devnet: USDC (official
+devnet mint and faucet), SKR look-alike, PYUSD (the Token-2022 path), JUP look-alike.
 
 ## 4. The program
 
@@ -76,18 +76,27 @@ round 200 bps once the eligibility proof in section 6 exists on chain. All tiers
 
 ## 5. Detecting the Seeker, the Seed Vault and SKR
 
-What the app can know, strongest first (details *pending the Seeker report*):
+Two facts from the research decide the shape. First, Mobile Wallet Adapter never tells a web app
+which wallet answered: the authorize result carries account labels, icons and a cached wallet URI,
+not the wallet's name or package, so the Seed Vault Wallet and Phantom or Solflare running on top of
+the Seed Vault look the same from the page. Second, the Seeker Genesis Token is the device
+identity Solana Mobile documents for exactly this purpose: one per Seeker, minted into the Seed
+Vault Wallet, movable only between the owner's own Seed Vault accounts, with a mint address that
+never changes. So the app detects the Seed Vault through its token, and treats everything else as
+a hint. Strongest first:
 
-| Signal | How | Can it be faked? | What it unlocks |
-|---|---|---|---|
-| Seeker Genesis Token on the connected wallet | Token-2022 account whose mint's metadata pointer and group member both point at the SGT group (already implemented in `seeker.ts`) | Only by controlling a Seeker owner's wallet; soulbound, one per device | Seeker perks and the Seeker fee tier, after a Sign-In-With-Solana proof of wallet control |
-| Seed Vault wallet | The Mobile Wallet Adapter wallet's identity as exposed in the authorize result and the Wallet Standard object; the Android shell's own check, passed to the page in the user agent beside the existing "Solana Mobile Web Shell" marker | A modified client can claim it; treat as a display signal | "Seed Vault wallet ✓" badge, MWA-first wallet list |
-| Android shell / Seeker device | User-agent marker, device model | Trivially | Layout and copy only |
-| SKR balance | Token account balance for the SKR mint | No (it is a balance) but it is borrowable, so never a gate for anything of value | "SKR ready" badge, the SKR preset preselected |
+| Rank | Signal | How | Shown as | May unlock |
+|---|---|---|---|---|
+| 1 | Seeker Genesis Token proved **on chain** | The player passes the SGT token account and mint to the program, which checks owner, balance and the mint's metadata-pointer and group-member extensions against the configured group | "Seeker verified" | The Seeker fee tier on SKR rounds; no server, no database, nothing to spoof |
+| 2 | Seeker Genesis Token seen by the app after Sign-In-With-Solana | `seeker.ts` as today (Token-2022 accounts, both extensions point at `GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te`), after a signed-in wallet | "Seeker verified" | Play-money perks, deduplicated on the SGT mint per device (as today) |
+| 3 | SKR balance and stake | The SKR token account; the `UserStake` PDA of the staking program | "SKR ready", "SKR staker" | The SKR preset preselected; play-money multipliers re-read at grant time; never a gate for value (balances are borrowable) |
+| 4 | Shell and device | The "Solana Mobile Web Shell" user-agent marker the shell already sets, plus a `SeedVault/1 Model/<model>` marker the shell adds after `SeedVault.isAvailable`, plus the client-hints model | "dApp Store app", "Seed Vault device" | Layout, wallet order, copy; nothing of value |
+| 5 | Wallet hints | The MWA account label or icon, if the Seed Vault Wallet labels its accounts recognisably | "Seed Vault wallet" (only if the label says so) | Cosmetic |
 
-The badges live in the wallet popup and in the stake panel. Nothing of value is granted on a
-signal alone: perks that cost the house anything require the SGT check plus a signed-in wallet,
-and are deduplicated on the SGT mint, which is unique per device.
+Perks of real value beyond a fee tier (a Seeker leaderboard with prizes, token grants) would need
+the official recipe in full: a server-issued Sign-In-With-Solana nonce, server-side verification
+and a unique index on the SGT mint. The game has no server today; that stays a listed step in
+docs/PRODUCTION.md and is not needed for anything in this design.
 
 ## 6. Rewards that cannot be farmed
 
@@ -96,7 +105,8 @@ back is worth less than the fee it collected on that round, and rewards are fund
 collected fees.** Then every wash trade costs more than it earns and farming loses money at any
 scale.
 
-- **Fee tiers** (on chain): SKR cheapest. A discount cannot be farmed.
+- **Fee tiers** (on chain): SKR cheapest; the Seeker tier on SKR rounds when the opener proved
+  the Seeker Genesis Token to the program. A discount cannot be farmed.
 - **Play-money boosts** (in the app): coins and task progress for a settled SKR round, with a
   daily cap per wallet, none on cancels or timeouts, and the SGT bonus deduplicated per device.
   Coins are not purchasable and never become a stake, so even an unlimited farm buys nothing.
@@ -109,7 +119,9 @@ scale.
 ## 7. Devnet plan
 
 1. Register USDC-devnet and PYUSD-devnet; create JUP and SKR look-alikes with the deployer as
-   authority, matching program, decimals and extensions; a faucet command mints test amounts.
+   authority, matching program, decimals and extensions; a faucet command mints test amounts. The
+   Seeker Genesis Token exists only on mainnet, so the program's SGT group is a config value: on
+   devnet the admin script creates a mock Token-2022 group and mints one member token per tester.
 2. Redeploy the program (the data account likely needs `solana program extend`), initialise the
    registry, re-run the SOL proofs (nothing may change) and the new token proofs by script, then
    the browser e2e with a token stake.
