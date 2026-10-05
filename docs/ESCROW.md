@@ -454,7 +454,7 @@ money, and in what order, is the subject of docs/PRODUCTION.md.
 | Item | Value |
 |---|---|
 | Program | `6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` |
-| Program data | `BEsKZLmZqiKAkykZB5dZM6ZmwbpVsUADJKraNZjt2u31` (753,048 bytes of space for the 710,680-byte program; first deployed at slot 505607372 with the 1v1 room, upgraded with the halls at slot 505620387 and with tokens, the registry, the claim path, the Seeker proof and the shop at slot 507797285; about 3.83 SOL of rent) |
+| Program data | `BEsKZLmZqiKAkykZB5dZM6ZmwbpVsUADJKraNZjt2u31` (803,048 bytes of space for the 771,256-byte program, sha256 `3eee376c1526262e6374d61d6a1a3d1f2bd7dc834c30e8a96db4ddadfe4d83ec`; first deployed at slot 505607372 with the 1v1 room, upgraded with the halls at slot 505620387, with tokens, the registry, the claim path, the Seeker proof and the shop at slot 507797285, and with the mainnet hardening (`init_config` gated on the upgrade authority, `transfer_admin`, the treasury account derived at purchase, the discount caps) at slot 507871330 after a 50,000-byte extend; about 4.08 SOL of rent) |
 | Config after the upgrade | migrated to the 192-byte layout; pauser = the deployer; `sgt_group` = the mock group `GRhL4t47LyWkVtHJ3ierasdcxyjXmzkE6uMJvv38CsHn`; packs 5,000 / 15,000 / 40,000 / 100,000 coins; SOL pack prices 0.04 / 0.11 / 0.27 / 0.6 SOL; Seeker discount 500 bps; SOL Seeker fee 400 bps |
 | Registry | USDC-devnet, PYUSD-devnet, the PYUSD look-alike (1 to 100 tokens, fee 500 / Seeker 400, packs 4.99 / 13.99 / 34.99 / 79.99), the JUP look-alike (2 to 500, packs 12 / 33 / 82 / 185), the SKR look-alike (50 to 5,000, fee 250 / Seeker 200, discount 2,000 bps, packs 120 / 330 / 800 / 1,800); registration transactions `2zwNoYfd…`, `41uYj13m…`, `WAcsk8Jt…`, `9fd9TwCD…`, `2rwt1GXt…` |
 | Upgrade authority, config admin and treasury (for now) | `5VcGxKLHDJhPAFSN8VK9qpxkM4gniQtPKwRrMnUcqA8u`, the devnet deployer |
@@ -464,6 +464,8 @@ money, and in what order, is the subject of docs/PRODUCTION.md.
 | First room after the hall upgrade | room `N46PM` at `8BGWumEDiBe2r5PZ5W4zGMXy5UvyRUmwooXeANSrFhtQ`, 0.02 SOL each, settled in `4B8ba1hQA5RJLb3NqiEcyVqVSopGDnPbVqmETZscxXLtvuwZqLppT1NGRwZ9unk1KEmjzPH6BqcmRzSLrbGxvJaE`: guest won on ball 28 |
 | First scripted hall | hall `8MB97` at `Gyn3Fh59vTHftpdLsgYeLmtjarbHvcPTswKsH8bNSWvi`, 0.01 SOL a card, seats with 2, 1 and 3 cards, locked by seat 2, settled in `3YEKMj3cCVn5KASoDe1YBbpkFqXmJpYE7XjutbLgPPHaCFDL6acyMxk9ZvRgDDwYcGcC17iWYkoDhAeU4j2kLiqW`: two winning cards on ball 27, 0.0285 SOL each, fee 0.003 SOL |
 | Browser proof | room `MM4RH`, two test wallets through the real lobby, settled in `4GapfY1LxdkNk7f5yFkZbxXnN69xUJPNLkXy8tDnrW7cg5qN57oPAPuvc4UQKHms8CoYBsfb2NPsCHNc3mUmWwrs`: host won on ball 29 |
+| Admin handover proof | the deployer handed the role to a throwaway key (`27J2vRkUAzGH53hYM3nuyzYhwp7BjsSLAJdz1YgMgfhFDe1bU6bvMeySUptbM6JtuYi2nQCZKGTzfymRnBGigKGE`), its own `set_config` then failed the admin constraint, and the throwaway handed it back (`5RrocBtTJaKRhYzNHnD63zFRV4j5UqWbwHXP5sRc5HcHDm63gb2nBcWi2NfAQ78UyDdC3Csdcv8QVDHwMVhB419W`) |
+| First purchase on the hardened program | pack 0 in the SKR look-alike at 96 SKR (120 less the 20% discount), the treasury's account derived at purchase: `3thTuuLLCvHrstv7RY67QHDjPJLjsVmyv9WYT83Sx6v1DnxntBPHE75VxeTJ6X7ALvLNMRu8GCdZLfpc9tMkHJdH` |
 | Devnet build | https://beach-bingo-eight.vercel.app/app/ |
 
 ## Devnet test tokens
