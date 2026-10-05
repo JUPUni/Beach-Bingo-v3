@@ -99,9 +99,7 @@ img {
   inset: 0;
   display: flex;
   justify-content: center;
-  /* clip, not hidden: a scroll container here can be nudged by a focus or a scroll-into-view and
-     drag the whole stage up by the backdrop's overhang (seen in the QA runs on a laptop window). */
-  overflow: clip;
+  overflow: hidden;
   background: #06374f;
 }
 
