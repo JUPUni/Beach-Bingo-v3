@@ -11,7 +11,18 @@
   gap: 1rem;
 }
 
+.topbar__me {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
 .topbar__avatar {
+  flex: none;
   width: 5rem;
   height: 4.4rem;
   border-radius: 1.2rem;
@@ -22,6 +33,26 @@
   place-items: center;
   font-size: 2.4rem;
   line-height: 1;
+}
+
+/* The player's name, a Seeker ID or the picked name, where the wood bar has room (tablets, laptops, phones sideways). */
+.topbar__name {
+  display: none;
+  max-width: 18rem;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0.15rem 0 rgb(0 0 0 / 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 640px) {
+  .topbar__name {
+    display: block;
+  }
 }
 
 .topbar__balances {

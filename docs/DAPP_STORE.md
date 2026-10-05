@@ -90,9 +90,10 @@ have no cash value; never a promise of money.
   islands, 75- and 90-ball halls you can play alone or open for friends, quick games in Casino
   Cove, and rounds you can check yourself. Every draw comes from a seed the game commits to
   before the first ball. Shells are free play money, never bought or sold. Coins, for the coin
-  tables, come from the Coin Shop (SOL, USDC, PYUSD, JUP or SKR; SKR 20% off) and have no cash
-  value: no selling, no transfers, no refunds. The coin tables and the shop are 18+ and not offered
-  in Washington State. Link a Solana wallet on your Seeker for a welcome perk.
+  tables, come from the Coin Shop (SOL, USDC, PYUSD, JUP or SKR; linked Seekers 25% off with
+  SKR) and have no cash value: no selling, no transfers, no refunds. The coin tables and the shop
+  are 18+ and not offered in Washington State. Link your Seeker and play under your Seeker ID
+  (your .skr name), with the Seeker deals and a welcome perk.
 - **What's new (0.1.0):** Season 3: the island adventure, five halls, live rooms with friends,
   and the fairness check.
 - **Category:** Games. **Age rating:** the questionnaire's answers for simulated casino-style play
@@ -125,8 +126,8 @@ have no cash value; never a promise of money.
   declaration and the Washington block (`apps/site/api/geo.js`, header-based, nothing stored; an
   unknown region fails open on the declaration) are described in the terms, and the privacy
   policy says the IP address is not kept. A purchase is one wallet-approved transaction to the
-  escrow program (SOL or a registered token, SKR 20% off, a Seeker Genesis Token proved on chain
-  5% more); the price is enforced by the program, not the app; nothing is bought mid-round, and
+  escrow program (SOL or a registered token at the list price; a Seeker Genesis Token proved on
+  chain takes 5% off, 25% with SKR); the price is enforced by the program, not the app; nothing is bought mid-round, and
   free play never sees a purchase prompt.
 - **Wallet use is honest.** The app reads an address and looks up the Seeker Genesis Token for the
   perk, and asks for a signature only to pay for a coin pack in the shop. Say so in the listing's

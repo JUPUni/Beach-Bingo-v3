@@ -56,6 +56,43 @@
   text-shadow: 0 0.1rem 0 #266005;
 }
 
+/* The Seeker ID as the name: shown, not typed. */
+.profile__seeker {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.8rem 1rem;
+  border-radius: 1.2rem;
+  background: rgb(255 255 255 / 0.6);
+  border: 0.2rem solid rgb(184 121 54 / 0.5);
+}
+
+.profile__seeker-name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--c-ink);
+  overflow-wrap: anywhere;
+}
+
+.profile__seeker-name::before {
+  content: '🌴 ';
+}
+
+.profile__seeker small {
+  font-size: 1.1rem;
+  line-height: 1.35;
+  color: var(--c-ink-soft);
+}
+
+.profile__seeker-link {
+  all: unset;
+  cursor: pointer;
+  font-weight: 700;
+  color: #0d4f79;
+  text-decoration: underline;
+}
+
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -316,4 +353,27 @@
 
 .shop__badges {
   margin: 0 0 0.6rem;
+}
+
+/* The deals line: green once the Seeker is linked; the link button sits in the sentence. */
+.shop__deal--on {
+  color: #2c7a06;
+  font-weight: 700;
+}
+
+.shop__link {
+  all: unset;
+  cursor: pointer;
+  padding: 0 0.6rem;
+  border-radius: 99rem;
+  background: var(--c-green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.9;
+  box-shadow: 0 0.15rem 0 #266005;
+}
+
+.shop__link:focus-visible {
+  outline: 0.25rem solid #fff;
 }

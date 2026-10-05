@@ -802,13 +802,14 @@ describe.skipIf(!existsSync(SO))('wave_duel tokens on LiteSVM', () => {
     expect(balance(treasury) - before).toBe(packPrice(solPrice, 1_000));
     expect(readBuyer()).toMatchObject({ coinsTotal: 2n * BigInt(c.packCoins[0]!), purchases: 2 });
 
-    // SKR: pack 1 at 25 units, 20 % off, 30 % off with the Seeker proof.
+    // SKR: pack 1 at 25 units. The 20% SKR deal and the 10% Seeker discount both need the Seeker
+    // proof: full price without it, 30% off with it.
     const s = await entry(skr);
     const hostAta = await ataAddress(host.address, skr, TOKEN_PROGRAM);
     let tokensBefore = { host: tokens(hostAta)!, treasury: tokens(s.treasuryAta)! };
     await ok(host, [await buyPackTokenIx(host.address, s, 1, null, treasury.address)]);
-    expect(tokensBefore.host - tokens(hostAta)!).toBe(packPrice(25n * UNIT, 2_000));
-    expect(tokens(s.treasuryAta)! - tokensBefore.treasury).toBe(packPrice(25n * UNIT, 2_000));
+    expect(tokensBefore.host - tokens(hostAta)!).toBe(25n * UNIT);
+    expect(tokens(s.treasuryAta)! - tokensBefore.treasury).toBe(25n * UNIT);
     tokensBefore = { host: tokens(hostAta)!, treasury: tokens(s.treasuryAta)! };
     await ok(host, [await buyPackTokenIx(host.address, s, 1, { tokenAccount: sgtAccount, mint: sgtMint }, treasury.address)]);
     expect(tokensBefore.host - tokens(hostAta)!).toBe(packPrice(25n * UNIT, 3_000));
@@ -829,7 +830,7 @@ describe.skipIf(!existsSync(SO))('wave_duel tokens on LiteSVM', () => {
     await setConfig({}, moved.address);
     const before = tokens(movedAta) ?? 0n;
     await ok(host, [await buyPackTokenIx(host.address, s, 1, null, moved.address)]);
-    expect(tokens(movedAta)! - before).toBe(packPrice(25n * UNIT, 2_000));
+    expect(tokens(movedAta)! - before).toBe(25n * UNIT);
     // The account recorded at registration is no longer the destination.
     await fails(host, [await buyPackTokenIx(host.address, s, 1, null, treasury.address)], 'TreasuryMismatch');
     await setConfig({}, treasury.address);

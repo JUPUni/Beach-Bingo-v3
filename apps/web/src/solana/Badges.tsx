@@ -6,7 +6,9 @@ import './badges.css';
 /** The wallet and device badges (badges.ts), from the store's wallet status and the shell's user agent. */
 export function Badges({ provedThisRound = false, className = '' }: { provedThisRound?: boolean; className?: string }) {
   const status = useGame((s) => s.walletStatus);
+  const seekerId = useGame((s) => (s.seekerLink && s.seekerLink.wallet === s.linkedWallet && (!status || status.address === s.seekerLink.wallet) ? s.seekerLink.name : null));
   const list = badges({
+    seekerId,
     seekerToken: status?.seeker?.mint ?? null,
     provedThisRound,
     seedVaultDevice: isSeedVaultDevice(),

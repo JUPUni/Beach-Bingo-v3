@@ -1,8 +1,9 @@
 # Mainnet launch: the Coin Shop
 
 What goes live on mainnet is the **chain Coin Shop**: coin packs paid in SOL, USDC, PYUSD, JUP or
-SKR through the `wave_duel` program, SKR 20% cheaper, a Seeker Genesis Token proved on chain 5%
-cheaper again. **Staked rooms stay off** on mainnet (wagered bingo is regulated gambling;
+SKR through the `wave_duel` program at the list price, with the Seeker deals for a buyer whose
+Seeker Genesis Token is proved on chain: 25% off with SKR, 5% off with the rest. **Staked rooms
+stay off** on mainnet (wagered bingo is regulated gambling;
 docs/PRODUCTION.md). Shells stay free, coins stay in the game, the 18+ gate and the Washington
 block stay in front of the shop. This file is the runbook: what is ready, what only the owner can
 supply, and the exact steps in order.

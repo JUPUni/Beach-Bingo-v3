@@ -697,7 +697,8 @@ if (cmd === 'init-config') {
     const entry = await needEntry(address(what));
     const list = entry.packPrices[pack];
     if (!list) throw new Error(`pack ${pack} is not sold in ${symbol(entry)}`);
-    expectedPaid = packPrice(list, entry.discountBps + (seeker ? config.seekerDiscountBps : 0));
+    // The program's rule since the Seeker-deal upgrade: the mint's saving and the Seeker's come together, only with the proof.
+    expectedPaid = packPrice(list, seeker ? entry.discountBps + config.seekerDiscountBps : 0);
     buyer = await newWallet();
     console.log(`  buyer ${buyer.address} (a throwaway funded from the key pair)`);
     const funded = await sendSigned(rpc, payer.address, [payer.keyPair], [transferIx(payer.address, buyer.address, TOKEN_PURSE)]);
@@ -715,7 +716,7 @@ if (cmd === 'init-config') {
     sent = await sendSigned(rpc, buyer.address, [buyer.keyPair], [await buyPackTokenIx(buyer.address, entry, pack, buyerProof, config.treasury)]);
     const after = { buyer: await tokenBalance(rpc, buyerAta), treasury: await tokenBalance(rpc, entry.treasuryAta) };
     moved = { buyer: before.buyer - after.buyer, treasury: after.treasury - before.treasury };
-    console.log(`  list ${fmtUnits(list, entry, symbol(entry))} · discount ${entry.discountBps}${seeker ? ` + Seeker ${config.seekerDiscountBps}` : ''} bps → ${expectedPaid} base units (${fmtUnits(expectedPaid, entry, symbol(entry))})`);
+    console.log(`  list ${fmtUnits(list, entry, symbol(entry))} · ${seeker ? `Seeker deal ${entry.discountBps} + ${config.seekerDiscountBps} bps` : 'no Seeker proof, list price'} → ${expectedPaid} base units (${fmtUnits(expectedPaid, entry, symbol(entry))})`);
     console.log(`  buyer account −${moved.buyer} · treasury account +${moved.treasury} base units`);
     sweep = () => sweepAll([buyer], entry);
   }

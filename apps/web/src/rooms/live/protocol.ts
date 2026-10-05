@@ -41,7 +41,8 @@ export const CLAIM_WINDOW_BALLS = 2;
 export const CLAIM_LEAD_BALLS = 2;
 /** Cards shown per player in the UI (the engine allows more, the screen does not). */
 export const UI_MAX_CARDS: Record<string, number> = { '75': 4, '90': 3, '30': 4 };
-export const MAX_NAME = 18;
+/** A picked name is at most 18 characters; a Seeker ID (`label.skr`, labels run to 18) a few more. */
+export const MAX_NAME = 24;
 const HEX_64 = /^[0-9a-f]{64}$/;
 
 export function makeCode(rng = mathRng): string {

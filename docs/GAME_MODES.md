@@ -11,7 +11,8 @@ Casino Cove and Beach Rooms lists, where a game is chosen):
   its old coins as shells, and a save from when they were called SAND keeps them under the new name
   (the store's persisted-state migration, versions 2 and 3).
 - **Coins** come only from the Coin Shop (packs of 5,000 / 15,000 / 40,000 / 100,000, paid in SOL,
-  USDC, PYUSD, JUP or SKR; SKR 20% off, a Seeker Genesis Token proved on chain 5% more; a build
+  USDC, PYUSD, JUP or SKR, at the list price; a linked Seeker, its Genesis Token proved on chain,
+  gets the deals: 25% off every pack with SKR, 5% off with the rest; a build
   with the escrow program sells through it once a wallet is connected, local dev runs a test stub,
   and a production build shows the packs greyed until the program ships there) and from promo
   grants such as the Free Game ticket. They have no cash value, cannot be sold, transferred or refunded, and

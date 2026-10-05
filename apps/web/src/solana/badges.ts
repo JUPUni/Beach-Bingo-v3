@@ -5,6 +5,8 @@
  * same accounts passed with the purchase, and the SKR preselection costs nothing.
  */
 export interface BadgeInput {
+  /** The wallet's Seeker ID (its `.skr` name on mainnet), when the link found one. */
+  seekerId?: string | null;
   /** The wallet's Seeker Genesis Token mint, when the app found one of the configured group. */
   seekerToken: string | null;
   /** The host proved that token to the program for the round on screen. */
@@ -18,7 +20,7 @@ export interface BadgeInput {
   stakesEnabled?: boolean;
 }
 
-export type BadgeId = 'seeker' | 'seedVault' | 'skr';
+export type BadgeId = 'seekerId' | 'seeker' | 'seedVault' | 'skr';
 
 export interface Badge {
   id: BadgeId;
@@ -29,6 +31,13 @@ export interface Badge {
 
 export function badges(input: BadgeInput): Badge[] {
   const out: Badge[] = [];
+  if (input.seekerId) {
+    out.push({
+      id: 'seekerId',
+      label: input.seekerId,
+      detail: 'Your Seeker ID, the .skr name of this wallet on Solana mainnet: your player name while the Seeker is linked. Names can be transferred, so the deals hang on the Genesis Token, not on the name.',
+    });
+  }
   if (input.seekerToken) {
     out.push({
       id: 'seeker',
@@ -37,7 +46,7 @@ export function badges(input: BadgeInput): Badge[] {
         ? 'The program checked your Seeker Genesis Token for this round: the Seeker fee tier applies.'
         : input.stakesEnabled
           ? 'A Seeker Genesis Token of the configured group is in this wallet. Prove it to the program for the Seeker fee tier.'
-          : 'A Seeker Genesis Token of the configured group is in this wallet: the Coin Shop takes the Seeker discount off every pack.',
+          : 'A Seeker Genesis Token of the configured group is in this wallet: it unlocks the Coin Shop\'s Seeker deals, SKR at the best price.',
     });
   }
   if (input.seedVaultDevice) {

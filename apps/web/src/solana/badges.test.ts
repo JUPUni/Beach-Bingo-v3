@@ -16,6 +16,13 @@ describe('wallet and device badges', () => {
     expect(all.map((b) => b.label)).toEqual(['Seeker verified', 'Seed Vault device (Seeker)', 'SKR ready']);
   });
 
+  it('puts the Seeker ID first, as the name itself', () => {
+    const list = badges({ ...none, seekerId: 'poseid0n.skr', seekerToken: 'x' });
+    expect(list.map((b) => b.id)).toEqual(['seekerId', 'seeker']);
+    expect(list[0]!.label).toBe('poseid0n.skr');
+    expect(badges({ ...none, seekerId: null })).toEqual([]);
+  });
+
   it('marks the proof once the instruction landed, and a Seed Vault without a model', () => {
     expect(badges({ ...none, seekerToken: 'x', provedThisRound: true })[0]!.label).toBe('Seeker verified · proved this round');
     expect(badges({ ...none, seedVaultDevice: true })[0]!.label).toBe('Seed Vault device');

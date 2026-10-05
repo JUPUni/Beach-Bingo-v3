@@ -1,23 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { packPrice } from '../solana/shop.ts';
-import {
-  buyBlockedReason,
-  devStub,
-  discounted,
-  formatPrice,
-  getShop,
-  isDevShop,
-  MIN_SOL_FOR_FEES,
-  PACKS,
-  quote,
-  registerShop,
-  SEEKER_DISCOUNT_BPS,
-  shopNeedsWallet,
-  SKR_DISCOUNT_BPS,
-  stubAllowed,
-  subscribeShop,
-  type Shop,
-} from './shop.ts';
+import { buyBlockedReason, devStub, discounted, formatPrice, getShop, isDevShop, MIN_SOL_FOR_FEES, PACKS, quote, registerShop, savingPercent, SEEKER_DISCOUNT_BPS, shopNeedsWallet, SKR_DISCOUNT_BPS, stubAllowed, subscribeShop, type Shop } from './shop.ts';
 
 describe('the shop behind the popup', () => {
   it('offers the pretend shop only in local dev and a devnet build without a program; a build with the program waits for a wallet; production has none until a chain shop registers', () => {
@@ -91,12 +74,16 @@ describe('the shop behind the popup', () => {
     expect(discounted(120_000_000n, SKR_DISCOUNT_BPS)).toBe(96_000_000n);
   });
 
-  it('quotes 20% off with SKR, 5% more for a verified Seeker, and nothing where a pack is not sold', () => {
+  it('quotes the list price without the Seeker proof, 25% off with SKR and 5% off the rest for a linked Seeker, and nothing where a pack is not sold', () => {
     const pack = PACKS[0]!;
     expect(quote(pack, 'SOL', false, SEEKER_DISCOUNT_BPS)).toBe(40_000_000n);
-    expect(quote(pack, 'SKR', false, SEEKER_DISCOUNT_BPS)).toBe(96_000_000n);
+    // The SKR deal is a Seeker deal: no proof, no saving — the program's rule since the 2026-10-05 upgrade.
+    expect(quote(pack, 'SKR', false, SEEKER_DISCOUNT_BPS)).toBe(120_000_000n);
     expect(quote(pack, 'SKR', true, SEEKER_DISCOUNT_BPS)).toBe(90_000_000n);
+    expect(quote(pack, 'SOL', true, SEEKER_DISCOUNT_BPS)).toBe(38_000_000n);
     expect(quote(pack, 'USDC', true, SEEKER_DISCOUNT_BPS)).toBe(4_740_500n);
+    expect(savingPercent(pack, 'SKR', SEEKER_DISCOUNT_BPS)).toBe(25);
+    expect(savingPercent(pack, 'USDC', SEEKER_DISCOUNT_BPS)).toBe(5);
     expect(quote({ id: 'x', coins: 1, offers: { SKR: pack.offers.SKR } }, 'SOL', false, 0)).toBeNull();
     expect(formatPrice(40_000_000n, 'SOL', 9)).toBe('0.040 SOL');
     expect(formatPrice(96_000_000n, 'SKR', 6)).toBe('96 SKR');

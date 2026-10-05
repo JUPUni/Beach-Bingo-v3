@@ -4,7 +4,7 @@ import { art } from '../assets/art.ts';
 import { say, sfx } from '../lib/audio.ts';
 import { newRound, type FairRound } from '../lib/fair.ts';
 import { useModel } from '../lib/hooks.ts';
-import { TABLE_NAME, useGame, type Table } from '../state/store.ts';
+import { playerName, TABLE_NAME, useGame, type Table } from '../state/store.ts';
 import { BingoGrid } from '../ui/BingoGrid.tsx';
 import { Ball, Confetti, GreenButton, RewardPill } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
@@ -21,7 +21,7 @@ const SIZES = [16, 32, 64] as const;
 
 export default function Royale() {
   const go = useGame((s) => s.go);
-  const profile = useGame((s) => s.profile);
+  const name = useGame(playerName);
   const recordWin = useGame((s) => s.recordWin);
   const playedMode = useGame((s) => s.playedMode);
   const activeTable = useGame((s) => s.table);
@@ -44,7 +44,7 @@ export default function Royale() {
     setGameTable(s.table);
     const fair = newRound('lastCastle');
     fairRef.current = fair;
-    const entrants = [{ id: 'me', name: profile.name }, ...botRoster(size - 1)];
+    const entrants = [{ id: 'me', name }, ...botRoster(size - 1)];
     replace(royale.createRoyale(entrants, BUY_IN, fair.rng('cards'), fair.rng('draw')));
     setWave(null);
     setRevealed(0);

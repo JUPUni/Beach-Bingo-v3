@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   /** Solana RPC used for balance / Seeker Genesis Token lookups. */
   readonly VITE_SOLANA_RPC_URL?: string;
+  /** Mainnet RPC for the Seeker ID (.skr) lookup, whatever cluster the build plays on. */
+  readonly VITE_SOLANA_MAINNET_RPC_URL?: string;
   /** `mainnet` | `devnet`. */
   readonly VITE_SOLANA_CLUSTER?: string;
   /** Live room server (WebSocket). Empty = practice rooms simulated locally. */

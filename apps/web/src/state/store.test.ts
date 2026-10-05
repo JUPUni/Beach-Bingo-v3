@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitSeed } from '@beach-bingo/engine';
-import { ALREADY_CREDITED, migratePersisted, SPEND_CAP_DELAY_MS, STARTING_SHELLS, useGame, WASHINGTON_MESSAGE } from './store.ts';
+import { ALREADY_CREDITED, migratePersisted, playerName, SPEND_CAP_DELAY_MS, STARTING_SHELLS, useGame, WASHINGTON_MESSAGE } from './store.ts';
 
 const reset = () =>
   useGame.setState({
@@ -305,5 +305,44 @@ describe('the Coin Shop ledger', () => {
     // Off is the highest value: a raise too.
     expect(useGame.getState().setSpendCap(null)).toBe('later');
     expect(useGame.getState().spendCap()).toBe(40000);
+  });
+});
+
+describe('Seeker identity', () => {
+  const WALLET = 'WaLLet1111111111111111111111111111111111111';
+  const OTHER = 'WaLLet2222222222222222222222222222222222222';
+  const link = (wallet: string, name: string | null) => ({ wallet, name, main: false, names: name ? [name] : [], genesis: null, at: Date.now() });
+  beforeEach(() => useGame.setState({ linkedWallet: null, seekerLink: null, profile: { name: 'Beachcomber', avatar: '🦀' } }));
+
+  it('is the player name while its wallet is linked, and the picked name otherwise', () => {
+    expect(playerName(useGame.getState())).toBe('Beachcomber');
+    // A link for a wallet that is not signed in is refused.
+    useGame.getState().setSeekerLink(link(WALLET, 'poseid0n.skr'));
+    expect(useGame.getState().seekerLink).toBeNull();
+    useGame.getState().setLinkedWallet(WALLET);
+    useGame.getState().setSeekerLink(link(WALLET, 'poseid0n.skr'));
+    expect(playerName(useGame.getState())).toBe('poseid0n.skr');
+    // The picked name waits underneath and comes back on unlink.
+    useGame.getState().setProfile({ name: 'Sandy' });
+    expect(playerName(useGame.getState())).toBe('poseid0n.skr');
+    useGame.getState().setLinkedWallet(null);
+    expect(useGame.getState().seekerLink).toBeNull();
+    expect(playerName(useGame.getState())).toBe('Sandy');
+  });
+
+  it('drops the link when another wallet signs in, and a wallet without a .skr name keeps the picked name', () => {
+    useGame.getState().setLinkedWallet(WALLET);
+    useGame.getState().setSeekerLink(link(WALLET, 'poseid0n.skr'));
+    useGame.getState().setLinkedWallet(OTHER);
+    expect(useGame.getState().seekerLink).toBeNull();
+    expect(playerName(useGame.getState())).toBe('Beachcomber');
+    useGame.getState().setSeekerLink(link(OTHER, null));
+    expect(useGame.getState().seekerLink?.wallet).toBe(OTHER);
+    expect(playerName(useGame.getState())).toBe('Beachcomber');
+    // Signing the same wallet in again keeps what was read.
+    useGame.getState().setLinkedWallet(WALLET);
+    useGame.getState().setSeekerLink(link(WALLET, 'poseid0n.skr'));
+    useGame.getState().setLinkedWallet(WALLET);
+    expect(playerName(useGame.getState())).toBe('poseid0n.skr');
   });
 });

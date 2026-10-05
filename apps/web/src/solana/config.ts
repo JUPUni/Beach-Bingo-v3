@@ -13,6 +13,14 @@ export const RPC_URL =
   (CLUSTER === 'devnet' ? 'https://api.devnet.solana.com' : 'https://api.mainnet-beta.solana.com');
 
 /**
+ * Where the Seeker ID (`.skr`) lookup reads: always mainnet, whatever cluster the build plays on,
+ * because the names exist nowhere else. `VITE_SOLANA_MAINNET_RPC_URL` names a provider (the
+ * lookup needs `getProgramAccounts`, which some providers rate-limit); a mainnet build falls back
+ * to its own RPC, a devnet build to the public endpoint.
+ */
+export const MAINNET_RPC_URL: string = import.meta.env.VITE_SOLANA_MAINNET_RPC_URL || (CLUSTER === 'mainnet' ? RPC_URL : 'https://api.mainnet-beta.solana.com');
+
+/**
  * Seeker Genesis Token group/metadata address (Token-2022). A wallet holds a Seeker if it owns
  * a mint whose MetadataPointer AND TokenGroupMember point here. The mainnet group by default
  * (docs.solanamobile.com/solana-mobile-stack/seeker-genesis-token, verified 2026-09-29); the

@@ -4,7 +4,7 @@ import { art } from '../assets/art.ts';
 import { callBall, say, sfx } from '../lib/audio.ts';
 import { newRound } from '../lib/fair.ts';
 import { useModel } from '../lib/hooks.ts';
-import { TABLE_NAME, useGame } from '../state/store.ts';
+import { playerName, TABLE_NAME, useGame } from '../state/store.ts';
 import { Confetti, GreenButton, RewardPill } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
@@ -25,7 +25,7 @@ type Phase = 'lobby' | 'countdown' | 'drawing' | 'finished';
 export default function RoomGame({ preset }: { preset: RoomPresetId }) {
   const config = rooms.ROOM_PRESETS[preset];
   const go = useGame((s) => s.go);
-  const profile = useGame((s) => s.profile);
+  const name = useGame(playerName);
   // The table this room plays on: the one active when the screen opened (the switch lives on the lists, not in here).
   const [table] = useState(() => useGame.getState().table);
   const jackpot = useGame((s) => s.jackpots[table].pool);
@@ -43,7 +43,7 @@ export default function RoomGame({ preset }: { preset: RoomPresetId }) {
   } = useModel(() => {
     const fair = newRound(preset);
     const room = rooms.createRoom(config, fair.commitment, 'jackpot' in config ? jackpot : 0);
-    rooms.joinRoom(room, { id: ME, name: profile.name });
+    rooms.joinRoom(room, { id: ME, name });
     const bots = botRoster(isDuel ? 1 : 6 + mathRng.int(14));
     for (const bot of bots) {
       rooms.joinRoom(room, bot);

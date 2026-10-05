@@ -8,6 +8,7 @@ import { registerShop } from '../shop/shop.ts';
 import { useGame } from '../state/store.ts';
 import { rpc, walletClient } from './client.ts';
 import { CHAIN } from './config.ts';
+import { refreshSeekerLink } from './seekerLink.ts';
 import { refreshWalletStatus } from './walletStatus.ts';
 
 /**
@@ -49,6 +50,8 @@ function Bound({ account }: { account: Connected['account'] }) {
     registerShop(shop);
     void settlePendingPurchase(shop);
     void refreshWalletStatus(wallet).catch(() => undefined);
+    // The signed-in wallet's Seeker link (its .skr name, its Genesis Token) is read again when it is older than an hour.
+    void refreshSeekerLink(wallet);
     return () => registerShop(null);
   }, [wallet, signer]);
   return null;

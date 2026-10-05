@@ -163,7 +163,9 @@ which the settle events carry. `sgt_group` is a config value because devnet uses
 ### Coin shop
 
 `buy_pack(pack)` (SOL) and `buy_pack_token(pack)`: price = `pack_prices[pack] × (10_000 −
-discount_bps − (seeker ? seeker_discount_bps : 0)) / 10_000` (floor, never below one base unit),
+discount) / 10_000` with `discount = seeker ? discount_bps + seeker_discount_bps : 0` (the mint's
+saving is part of the Seeker deal, so a buyer without the proof pays the list price in every token;
+`buy_pack` has no mint saving, so `discount = seeker ? seeker_discount_bps : 0`; floor, never below one base unit),
 paid to the treasury (a system transfer to `config.treasury`, or `transfer_checked` to the
 registered treasury ATA); `seeker` is true when the buyer passes a valid SGT token account and
 mint as the two trailing optional accounts (both or neither; the program id stands for "none"; a

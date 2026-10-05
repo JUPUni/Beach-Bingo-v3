@@ -3,7 +3,7 @@ import { Segmented } from '../games/common.tsx';
 import { sfx } from '../lib/audio.ts';
 import { settlePendingPurchase } from '../shop/pendingCredit.ts';
 import { PendingPurchaseError } from '../shop/pendingPurchase.ts';
-import { buyBlockedReason, formatPrice, getShop, isDevShop, MINTS, PACKS, quote, savingPercent, shopNeedsWallet, subscribeShop, type Balances, type Catalogue, type Mint, type Pack, type Shop } from '../shop/shop.ts';
+import { buyBlockedReason, formatPrice, getShop, isDevShop, MINTS, PACKS, quote, savingPercent, SEEKER_DISCOUNT_BPS, shopNeedsWallet, subscribeShop, type Balances, type Catalogue, type Mint, type Pack, type Shop } from '../shop/shop.ts';
 import { Badges } from '../solana/Badges.tsx';
 import { useGame, type Purchase } from '../state/store.ts';
 import { formatCoins } from '../ui/format.ts';
@@ -15,7 +15,7 @@ import './popups.css';
 /** The record of a purchase, stamped now (kept out of the component for the compiler's purity rule). */
 const stamped = (p: Omit<Purchase, 'at'>): Purchase => ({ ...p, at: Date.now() });
 const restoreSignature = () => `restore-${Date.now().toString(36)}`;
-const EMPTY: Catalogue = { packs: [], seekerDiscountBps: 0 };
+const EMPTY: Catalogue = { packs: [], seekerDiscountBps: SEEKER_DISCOUNT_BPS };
 /** The shop registered right now (the chain shop follows the wallet; the popup follows the shop). */
 const useShop = () => useSyncExternalStore(subscribeShop, () => getShop(), () => getShop());
 
@@ -25,8 +25,9 @@ const useShop = () => useSyncExternalStore(subscribeShop, () => getShop(), () =>
  * a wallet is connected in the devnet build, the stub in local dev, and none in a production
  * build until then, where the packs show greyed with no Buy button. Prices come from the shop in
  * base units and are discounted with the program's own arithmetic, so the number on the button is
- * the number the chain charges; the Seeker saving applies when the connected wallet holds a
- * Seeker Genesis Token the program accepts (its accounts travel with the purchase).
+ * the number the chain charges. The deals are Seeker deals: they apply when the connected wallet
+ * holds a Seeker Genesis Token the program accepts (its accounts travel with the purchase), SKR
+ * at the best price; everyone else sees and pays the list price, with a line to link a Seeker.
  */
 export default function ShopPopup() {
   const close = useGame((s) => s.closePopup);
@@ -144,15 +145,25 @@ export default function ShopPopup() {
     }
   };
 
-  const price = (pack: Pack, m: Mint) => {
-    const q = quote(pack, m, seekerVerified, seekerBps);
+  const price = (pack: Pack, m: Mint, verified = seekerVerified) => {
+    const q = quote(pack, m, verified, seekerBps);
     return q === null ? null : formatPrice(q, m, pack.offers[m]!.decimals);
   };
-  const skrSaving = packs[0] ? savingPercent(packs[0], 'SKR') : 20;
+  // The deals as a linked Seeker gets them: SKR's own saving plus the Seeker's (25%), the Seeker's alone with the rest (5%).
+  const skrSaving = packs[0] ? savingPercent(packs[0], 'SKR', seekerBps) : (SEEKER_DISCOUNT_BPS + 2_000) / 100;
+  const otherSaving = seekerBps / 100;
+  const sellsSkr = offered.includes('SKR') || !offered.length;
+  // Under a pack priced in another token: what the same pack costs in SKR with the deal, as an invitation or as the deal in hand.
   const skrLine = (pack: Pack) => {
-    const p = price(pack, 'SKR');
-    return p ? `Pay with SKR: save ${skrSaving}% · ${p}` : null;
+    const deal = price(pack, 'SKR', true);
+    if (!deal) return null;
+    return seekerVerified ? `Seeker deal: ${deal}` : `Linked Seekers pay ${deal}`;
   };
+  const dealNote = seekerVerified
+    ? `Seeker linked: ${sellsSkr ? `${skrSaving}% off every pack with SKR, ` : ''}${otherSaving}% off with ${sellsSkr ? 'the rest' : 'every token'}.`
+    : shop?.wallet
+      ? `Link a Seeker to unlock the deals: ${sellsSkr ? `${skrSaving}% off every pack with SKR and ` : ''}${otherSaving}% off with ${sellsSkr ? 'the rest' : 'every token'}.`
+      : `Seeker owners who link their Seeker get the deals: ${sellsSkr ? `${skrSaving}% off every pack with SKR, ` : ''}${otherSaving}% off with ${sellsSkr ? 'the rest' : 'every token'}.`;
 
   return (
     <Popup title="Coin Shop" onClose={close} wide>
@@ -171,9 +182,16 @@ export default function ShopPopup() {
       )}
       <h3>Pay with</h3>
       <Segmented options={offered.length ? offered : MINTS} value={mint} onChange={setMint} disabled={busy !== null} />
-      <p className="small-note">
-        {mint === 'SKR' ? `SKR saves ${skrSaving}% on every pack` : `Pay with SKR to save ${skrSaving}%`}
-        {seekerVerified ? `; your Seeker saves another ${seekerBps / 100}%` : shop?.wallet ? `; a verified Seeker saves another ${seekerBps / 100}%` : ''}.
+      <p className={`small-note ${seekerVerified ? 'shop__deal shop__deal--on' : 'shop__deal'}`}>
+        {dealNote}
+        {!seekerVerified && shop?.wallet && (
+          <>
+            {' '}
+            <button type="button" className="shop__link" onClick={() => (sfx.click(), openPopup('wallet'))}>
+              Link Seeker
+            </button>
+          </>
+        )}
       </p>
       {shop?.wallet && <Badges className="shop__badges" />}
       <div className="packs">
@@ -188,7 +206,7 @@ export default function ShopPopup() {
                 <b>{formatCoins(pack.coins)} coins</b>
                 <span>{shown ?? `Not sold in ${mint}`}</span>
                 {mint !== 'SKR' && skrLine(pack) && <small>{skrLine(pack)}</small>}
-                {seekerVerified && shown && <small className="pack__seeker">Seeker saving included</small>}
+                {seekerVerified && shown && <small className="pack__seeker">Seeker deal: {savingPercent(pack, mint, seekerBps)}% off</small>}
                 {short && <small className="pack__short">{short}</small>}
               </div>
               {open && (

@@ -122,6 +122,24 @@ export interface Purchase {
   wallet?: string;
 }
 
+/**
+ * The signed-in wallet's Seeker identity as the app last read it (solana/seekerLink.ts): its
+ * Seeker ID, the `.skr` name read on mainnet, which is the player's name while the wallet stays
+ * linked; and its Seeker Genesis Token on the build's cluster, the proof behind the SKR deal.
+ */
+export interface SeekerLink {
+  wallet: string;
+  /** "alice.skr", or null when the wallet holds no `.skr` name. */
+  name: string | null;
+  /** The name is the wallet's own main-domain choice rather than the first of its names sorted. */
+  main: boolean;
+  /** Every `.skr` name found, sorted, at most ten. */
+  names: string[];
+  /** The Seeker Genesis Token mint of the configured group, or null. */
+  genesis: string | null;
+  at: number;
+}
+
 /** The connected wallet as the chain bridge read it: its Seeker Genesis Token and its SKR (base units as a string). */
 export interface WalletStatus {
   address: string;
@@ -168,6 +186,8 @@ export interface GameState {
   linkedWallet: string | null;
   /** Seeker Genesis Token mints that already claimed the Seeker perk on this device. */
   seekerPerkMints: string[];
+  /** What the linked wallet is as a Seeker (its `.skr` name, its Genesis Token); null until read, cleared when the wallet unlinks. */
+  seekerLink: SeekerLink | null;
   /** The 18+ and not-in-Washington declaration that opens coin tables and the shop; shells never ask. */
   ageGate: { confirmedAt: number } | null;
   /** Free Game tickets held: each pays one coin-table entry at the mode's base price. */
@@ -236,7 +256,10 @@ export interface GameState {
   wagerBlockedReason(table?: Table): string | null;
   contributeJackpot(amount: number, table?: Table): void;
   resetJackpot(table?: Table): void;
+  /** The wallet signed in with SIWS; changing it drops a Seeker link read for another wallet. */
   setLinkedWallet(address: string | null): void;
+  /** Keep the Seeker read for the linked wallet (a link for any other wallet is ignored); null forgets it. */
+  setSeekerLink(link: SeekerLink | null): void;
   claimSeekerPerk(mint: string): boolean;
 
   /* ---------- Coins: the gate, the shop, the free game ---------- */
@@ -379,6 +402,7 @@ export const useGame = create<GameState>()(
       onboarded: false,
       linkedWallet: null,
       seekerPerkMints: [],
+      seekerLink: null,
       ageGate: null,
       freeGames: 0,
       freeGameClaims: [],
@@ -575,7 +599,8 @@ export const useGame = create<GameState>()(
           return { jackpots: { ...s.jackpots, [t]: { ...s.jackpots[t], pool: s.jackpots[t].pool + Math.max(0, amount) } } };
         }),
       resetJackpot: (table) => set((s) => ({ jackpots: { ...s.jackpots, [table ?? s.table]: freshJackpot() } })),
-      setLinkedWallet: (linkedWallet) => set({ linkedWallet }),
+      setLinkedWallet: (linkedWallet) => set((s) => ({ linkedWallet, seekerLink: linkedWallet !== null && s.seekerLink?.wallet === linkedWallet ? s.seekerLink : null })),
+      setSeekerLink: (link) => set((s) => (link === null || link.wallet === s.linkedWallet ? { seekerLink: link } : {})),
       claimSeekerPerk: (mint) => {
         const s = get();
         if (s.seekerPerkMints.includes(mint)) return false;
@@ -700,6 +725,7 @@ export const useGame = create<GameState>()(
         onboarded: s.onboarded,
         linkedWallet: s.linkedWallet,
         seekerPerkMints: s.seekerPerkMints,
+        seekerLink: s.seekerLink,
         ageGate: s.ageGate,
         freeGames: s.freeGames,
         freeGameClaims: s.freeGameClaims,
@@ -716,3 +742,11 @@ export function unlockedLevel(stars: Record<number, number>): number {
   while ((stars[level] ?? 0) > 0) level++;
   return level;
 }
+
+/**
+ * The name the player goes by: the Seeker ID of the linked wallet while one is linked and has a
+ * `.skr` name, otherwise the name picked in the profile. Rooms, rosters and the profile all read
+ * this, so the Seeker name travels everywhere the chosen name did.
+ */
+export const playerName = (s: Pick<GameState, 'profile' | 'linkedWallet' | 'seekerLink'>): string =>
+  s.seekerLink?.name && s.linkedWallet !== null && s.seekerLink.wallet === s.linkedWallet ? s.seekerLink.name : s.profile.name;

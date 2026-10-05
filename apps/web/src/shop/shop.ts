@@ -20,9 +20,13 @@ export type Mint = TokenSymbol;
 /** SKR first: it is the game's main token and the one the shop preselects when the wallet holds it. */
 export const MINTS: readonly Mint[] = TOKEN_SYMBOLS;
 
-/** Pay with SKR: 20% off every pack (the registry's `discount_bps` for SKR, and the stub's). */
+/**
+ * The SKR deal: a linked Seeker paying in SKR saves 20% on every pack (the registry's
+ * `discount_bps` for SKR, and the stub's) on top of the Seeker saving below. Without the Seeker
+ * proof the program charges the list price in every token, SKR included (`buy_pack_token`).
+ */
 export const SKR_DISCOUNT_BPS = 2_000;
-/** A verified Seeker owner saves a little more, on top (the config's `seeker_discount_bps`). */
+/** What a linked Seeker saves in any token (the config's `seeker_discount_bps`); with SKR the two add up. */
 export const SEEKER_DISCOUNT_BPS = 500;
 
 /** How a pack is sold in one token. */
@@ -30,7 +34,7 @@ export interface Offer {
   /** List price in base units of the token, before any discount. */
   base: bigint;
   decimals: number;
-  /** The token's own saving in bps (SKR 2,000; the others 0). */
+  /** The token's own saving in bps for a linked Seeker (SKR 2,000; the others 0); nothing without the proof. */
   discountBps: number;
 }
 
@@ -75,16 +79,21 @@ export function discounted(base: bigint, bps: number): bigint {
   return paid > 0n ? paid : 1n;
 }
 
-/** What the player pays for `pack` in `mint`, in base units, or null when the pack is not sold in it. */
+/**
+ * What the player pays for `pack` in `mint`, in base units, or null when the pack is not sold in it.
+ * The program's rule: the token's own saving and the Seeker saving come together, and only with the
+ * Seeker proof (`discount_bps = seeker ? mint.discount_bps + seeker_discount_bps : 0`); everyone
+ * else pays the list price.
+ */
 export function quote(pack: Pack, mint: Mint, seekerVerified: boolean, seekerDiscountBps: number): bigint | null {
   const offer = pack.offers[mint];
   if (!offer) return null;
-  return discounted(offer.base, offer.discountBps + (seekerVerified ? seekerDiscountBps : 0));
+  return discounted(offer.base, seekerVerified ? offer.discountBps + seekerDiscountBps : 0);
 }
 
-/** The saving on a pack with `mint` as a whole percentage ("20"), from its offer. */
-export function savingPercent(pack: Pack, mint: Mint): number {
-  return (pack.offers[mint]?.discountBps ?? 0) / 100;
+/** What a linked Seeker saves on a pack with `mint`, as a whole percentage ("25" with SKR, "5" with the rest). */
+export function savingPercent(pack: Pack, mint: Mint, seekerDiscountBps: number): number {
+  return ((pack.offers[mint]?.discountBps ?? 0) + seekerDiscountBps) / 100;
 }
 
 /** What the wallet holds for a purchase: its lamports, and its base units of the token (null when unknown; the lamports again for SOL). */

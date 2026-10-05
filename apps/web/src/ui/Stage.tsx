@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
-import { CHEST_KEYS, TABLE_NAME, useGame } from '../state/store.ts';
+import { CHEST_KEYS, playerName, TABLE_NAME, useGame } from '../state/store.ts';
 import { toast } from './toast.ts';
 import { Balances, Counter, CurrencyIcon, RoundButton } from './kit.tsx';
 import './stage.css';
@@ -35,12 +35,15 @@ export function Stage({
 export function TopBar() {
   const keys = useGame((s) => s.keys);
   const avatar = useGame((s) => s.profile.avatar);
+  const name = useGame(playerName);
   const openPopup = useGame((s) => s.openPopup);
 
   return (
     <header className="topbar wood-bar">
-      <button type="button" className="topbar__avatar" aria-label="Edit profile" onClick={() => openPopup('profile')}>
-        <span>{avatar}</span>
+      {/* The name (the Seeker ID while a Seeker is linked) sits by the avatar where the bar is wide enough; phones keep the avatar alone. */}
+      <button type="button" className="topbar__me" aria-label="Edit profile" title={name} onClick={() => openPopup('profile')}>
+        <span className="topbar__avatar">{avatar}</span>
+        <span className="topbar__name">{name}</span>
       </button>
       <Balances className="topbar__balances" />
       <button type="button" className="chip chip--red topbar__keys" aria-label="Golden keys — treasure chest" onClick={() => openPopup('chest')}>
@@ -60,11 +63,11 @@ export function BottomNav({ onHome }: { onHome?: () => void }) {
   return (
     <nav className="bottomnav">
       <div className="bottomnav__wood" />
-      <RoundButton img={art.navBtnSettings} label="Settings" onClick={() => openPopup('settings')} />
+      <RoundButton img={art.navBtnHome} label="Home" onClick={() => (onHome ? onHome() : go({ name: 'home' }))} />
       <RoundButton img={art.navBtnList} label="Daily tasks" onClick={() => openPopup('tasks')}>
         {taskReady && <span className="bottomnav__dot" />}
       </RoundButton>
-      <RoundButton img={art.navBtnHome} label="Home" onClick={() => (onHome ? onHome() : go({ name: 'home' }))} />
+      <RoundButton img={art.navBtnSettings} label="Settings" onClick={() => openPopup('settings')} />
     </nav>
   );
 }

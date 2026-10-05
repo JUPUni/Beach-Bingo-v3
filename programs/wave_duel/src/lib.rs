@@ -827,7 +827,8 @@ pub mod wave_duel {
         require!(entry.enabled, DuelError::MintDisabled);
         let (price, coins) = pack_terms(config, entry.pack_prices, pack)?;
         let seeker = seeker_buyer(config, ctx.accounts.sgt_token_account.as_ref(), ctx.accounts.sgt_mint.as_ref(), &ctx.accounts.wallet.key())?;
-        let discount_bps = entry.discount_bps + if seeker { config.seeker_discount_bps } else { 0 };
+        // The mint's discount (SKR's deal) is for linked Seekers: it needs the proof, as the Seeker discount does.
+        let discount_bps = if seeker { entry.discount_bps + config.seeker_discount_bps } else { 0 };
         let paid = discounted(price, discount_bps)?;
         let mint_info = ctx.accounts.mint.to_account_info();
         token::require_mint_live(&mint_info)?;

@@ -78,9 +78,10 @@ describe('the chain shop catalogue', () => {
     expect(cat.mints.USDC).toBeUndefined();
   });
 
-  it('quotes the program price: SKR 20% off, 25% off with the Seeker proof, SOL with the Seeker saving only', () => {
+  it('quotes the program price: the list price without the Seeker proof, 25% off with SKR and 5% off SOL with it', () => {
     const first = cat.packs[0]!;
-    expect(quote(first, 'SKR', false, cat.seekerDiscountBps)).toBe(96_000_000n);
+    // The SKR deal is a Seeker deal: without the proof the program charges the list price (the 2026-10-05 rule).
+    expect(quote(first, 'SKR', false, cat.seekerDiscountBps)).toBe(120_000_000n);
     expect(quote(first, 'SKR', true, cat.seekerDiscountBps)).toBe(90_000_000n);
     expect(quote(first, 'SOL', true, cat.seekerDiscountBps)).toBe(38_000_000n);
     expect(quote(first, 'PYUSD', false, cat.seekerDiscountBps)).toBe(4_990_000n);

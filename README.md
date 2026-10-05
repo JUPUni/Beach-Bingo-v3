@@ -60,7 +60,8 @@ program's registry (the SKR, JUP and PYUSD look-alikes the admin script created,
 USDC, Paxos's devnet PYUSD; `show-mints` lists them), everyone stakes the same, and the program
 `6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` pays the winners from the revealed seed. The Coin
 Shop in that build sells its packs through the same program (`buy_pack`, `buy_pack_token`) for SOL
-or any of those tokens, SKR 20% off, once a wallet is connected. To try it, switch a wallet
+or any of those tokens once a wallet is connected; a linked Seeker gets the deals (25% off every
+pack with SKR, 5% off with the rest), everyone else the list price. To try it, switch a wallet
 (Phantom, Solflare, or the Seeker's) to devnet, fund it with SOL from a devnet faucet and with test
 tokens from the admin script's `faucet`, open Rooms → Wave Rush → Play with friends, connect the
 wallet, pick the token and open the escrow; a friend joins by the invite link, deposits, and the
@@ -71,8 +72,18 @@ The Seeker Genesis Token exists only on mainnet, so devnet uses a **mock group**
 script's `create-devnet-sgt <wallet>` mints one member token to a wallet, the program's
 `sgt_group` and the build's `VITE_SGT_GROUP` both name that group (mainnet's is the default), and
 a wallet holding one shows "Seeker verified", can prove it to the program from the stake panel
-("Verify Seeker", the Seeker fee tier for that round) and pays the Seeker saving in the shop.
+("Verify Seeker", the Seeker fee tier for that round) and gets the Coin Shop's Seeker deals.
 Badges describe; the program checks the token itself every time.
+
+**Seeker identity.** Linking a wallet (Settings → Solana wallet → Link wallet: Sign in with
+Solana, then one read) looks up its **Seeker ID**, the `.skr` name every Seeker comes with, on
+mainnet whatever cluster the build plays on (`apps/web/src/solana/seekerId.ts`, a `@solana/kit`
+port of the AllDomains reads: the wallet's main domain when it set one it still owns, else the
+first of its `.skr` names sorted), and its Seeker Genesis Token. The Seeker ID is the player's
+name while the wallet stays linked (profile, rooms, rosters; the picked name waits underneath),
+the Genesis Token unlocks the deals. `VITE_SOLANA_MAINNET_RPC_URL` names the mainnet RPC for the
+lookup (it needs `getProgramAccounts`); `scripts/seeker-id.mjs <wallet>` answers what a wallet
+would show.
 
 ```bash
 cd programs/wave_duel && cargo test --release && cargo build-sbf   # the program and its engine vectors

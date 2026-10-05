@@ -96,7 +96,10 @@ const AVATARS = ['🦀', '🐠', '🐬', '🦈', '🐙', '🐢', '🦩', '🐚',
 export function ProfilePopup() {
   const profile = useGame((s) => s.profile);
   const setProfile = useGame((s) => s.setProfile);
+  const openPopup = useGame((s) => s.openPopup);
   const close = useGame((s) => s.closePopup);
+  // The Seeker ID stands in for the name while its wallet is linked; the picked name waits underneath for when it is not.
+  const seekerId = useGame((s) => (s.seekerLink?.name && s.linkedWallet !== null && s.seekerLink.wallet === s.linkedWallet ? s.seekerLink.name : null));
   const [name, setName] = useState(profile.name);
   const [avatar, setAvatar] = useState(profile.avatar);
   return (
@@ -115,8 +118,26 @@ export function ProfilePopup() {
         </GreenButton>
       }
     >
-      <h3>Change name</h3>
-      <input className="field" value={name} maxLength={18} onChange={(e) => setName(e.target.value)} aria-label="Player name" />
+      {seekerId ? (
+        <>
+          <h3>Your name</h3>
+          <div className="profile__seeker">
+            <b className="profile__seeker-name">{seekerId}</b>
+            <small>
+              Your Seeker ID is your name while the Seeker is linked. To play under another name, unlink the wallet in{' '}
+              <button type="button" className="profile__seeker-link" onClick={() => openPopup('wallet')}>
+                Settings → Solana wallet
+              </button>
+              .
+            </small>
+          </div>
+        </>
+      ) : (
+        <>
+          <h3>Change name</h3>
+          <input className="field" value={name} maxLength={18} onChange={(e) => setName(e.target.value)} aria-label="Player name" />
+        </>
+      )}
       <h3>Change picture</h3>
       <div className="avatar-grid">
         {AVATARS.map((a) => (
