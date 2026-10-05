@@ -246,7 +246,7 @@ try {
   check((await ana.page.getByRole('button', { name: /\+\d card/ }).count()) === 0, 'no cards are for sale in a staked room');
 
   /* ---------- Guest joins and deposits the token ---------- */
-  await joinByCode(bo.page, url, code);
+  await joinByCodeAt(bo.page, url, code);
   await ana.page.locator('.room__players li', { hasText: 'Bo' }).waitFor({ timeout: 30_000 });
   await bo.page.locator('.stake__title', { hasText: `Staked room · ${STAKE_LABEL} each` }).waitFor({ timeout: 30_000 });
   check(true, `guest's lobby shows the token stake (${await text(bo.page, '.stake__title')})`);
