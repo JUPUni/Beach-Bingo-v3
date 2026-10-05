@@ -53,9 +53,10 @@ after the licence, fiat on-ramps last.
 | Provably fair rounds | Commit → HMAC-SHA256 streams → reveal for every mode (docs/FAIRNESS.md). The house games' committed seed lives in the player's browser: fine for play money, not for real money. |
 | Live P2P rooms | The four halls with friends over a room code, browser to browser; every client verifies every ball and win. Play money; 85–95% of sales go to players, no rake. |
 | Wallet layer | Wallet Standard and Mobile Wallet Adapter; Sign-In-With-Solana; Seeker Genesis Token check. Display only in production. |
-| Devnet escrow | `wave_duel`: a trustless Wave Rush escrow in SOL on devnet, 1v1 rooms and halls of two to eight players with up to four cards each (30-ball only), with a 5% fee, vectors, LiteSVM suites, an admin script, a two-browser proof and a devnet build, behind two build flags; the lobby stakes 1v1 rooms only so far (docs/ESCROW.md). |
+| Devnet escrow | `wave_duel`: a trustless Wave Rush escrow in SOL on devnet, 1v1 rooms and halls of two to eight players with up to four cards each (30-ball only), with a 5% fee, vectors, LiteSVM suites, an admin script, two-browser and three-browser proofs and a devnet build, behind two build flags; the lobby stakes rooms and halls (docs/ESCROW.md). Token stakes (USDC, PYUSD, JUP, SKR), a mint registry, a claim path, a host forfeit on hall timeouts, an on-chain Seeker proof and the coin-shop instructions are being built to docs/plans/2026-10-05-tokens-design.md. |
+| Economy (decided 2026-10-05) | SAND is the free currency (faucet, tasks, level rewards, the Seeker perk) and every mode plays for it; coins are the paid currency, bought in the Coin Shop with SOL, USDC, PYUSD, JUP or SKR (20% off with SKR, more for a proved Seeker), played at coin tables with coin prizes and spent on boosters; no sell-back, no transfers, no refunds. The shop and coin tables sit behind an 18+ confirmation and a region check that blocks Washington State. A free coin-table game for following @mostlyjola on X (honour system until an X API integration exists). Being built. |
 | Android shell and store kit | The web shell builds (unsigned); listing copy and art exist; owner steps in docs/DAPP_STORE.md. |
-| Responsible play | Reminder, daily coin-loss limit and cool-off, enforced in the browser only. |
+| Responsible play | Reminder, daily loss limit and cool-off, a daily spend cap on the shop, enforced in the browser only. |
 
 Not built: **a licence, or an entity prepared for one** (the terms name the operator of a
 play-money game); **a server** (the only server-side code is one Vercel function gating the beta
@@ -136,7 +137,7 @@ with DAU/MAU assumed at 22% [R5].
 | Line | Low | Base | High | Assumptions [R] |
 |---|---|---|---|---|
 | Duel rake, 5% (the program's fee; the code caps it at 10%) | $0.06 | $0.60 | $3.00 per MAU per month | stakers 3% / 6% / 10% of MAU; 10 / 20 / 30 duels a month; pots $4 / $10 / $20 |
-| Play-money purchases | $0.13 | $0.40 | $1.00 | ARPDAU $0.02 / $0.06 / $0.15 × 22% × 30 days; Playtika's $0.93 is the ceiling [R1] |
+| Coin packs (play-money purchases) | $0.13 | $0.40 | $1.00 | ARPDAU $0.02 / $0.06 / $0.15 × 22% × 30 days; Playtika's $0.93 is the ceiling [R1]; the SKR discount lowers the take per pack and should lift conversion among Seeker users |
 | Rewarded video | $0.04 | $0.10 | $0.30 | 2 / 3 / 4 views per DAU per day × net eCPM $3 / $5 / $11 [R23] |
 | House games (this document's assumption; not in the report) | $0.08 | $0.40 | $2.25 | 5% / 10% / 15% of MAU × $50 / $100 / $300 monthly handle × 3% / 4% / 5% edge (the engine's paytables return 96–97%, Shell Spin about 90%) |
 | Also | | | | sponsored free-entry tournaments ($500 a month at 10,000 MAU); grants $10,000–30,000 in year one [R11][R12][R14]; B2B licensing of the engine (speculative) |
@@ -158,11 +159,15 @@ volume [R7]; no Solana P2P duel product with audited volume; 200,000+ Seekers sh
 dApps [R8][R9] (earlier pass: 150,000+ and 1,561, on other dates and definitions); a
 Seeker-exclusive launch reaching 12,800 installs in weeks [R8]; UK remote bingo yield £147.8M [R26].
 
-What the play-money line may sell without a licence: cosmetics, story passes and convenience,
-priced $2.99–9.99 in SOL, USDC or SKR by direct transfer; never coins to keep playing chance
-rounds, never anything stakeable [R]. That is a product decision with consequences: the listing
-copy and terms currently say coins are never bought or sold and nothing moves on chain, and the
-store's wallet-permission notes would change with it (docs/DAPP_STORE.md).
+The research's conservative line was to sell only cosmetics, story passes and convenience, never
+coins to keep playing chance rounds [R]. The owner decided otherwise on 2026-10-05: coins are sold
+in packs (the social-casino model that Bingo Blitz runs), SAND stays free for everyone, and the
+consequences are taken on: purchases are final, coins have no cash value and never leave the game,
+the shop and the coin tables are gated to 18+ and closed to Washington State (*Kater v. Churchill
+Downs*), the listing, terms and store questionnaire change accordingly (docs/DAPP_STORE.md), and
+counsel reviews the other US states with social-casino suits (Idaho, Kentucky, Tennessee, Alabama)
+before a mainnet shop. Prices are set per token in the on-chain registry and enforced by the
+program; the SKR discount is a price cut, not a payout, so it cannot be farmed.
 
 ## 5. The technical roadmap to mainnet
 
