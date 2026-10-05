@@ -61,10 +61,15 @@ to the treasury. A host that goes quiet after the lock has every deposit refunde
 after the timeout, with no fee (a hall has no single counterparty to award the host's stake to).
 The host may cancel while the hall is open; every deposit goes back.
 
-The program, its client (`apps/web/src/solana/waveHall.ts`) and the LiteSVM suite exist and are
-proven on devnet (see the addresses below); the live-room lobby stakes 1v1 rooms only for now, so a
-staked hall has no screen yet. `programs/wave_duel/README.md` has the account and instruction
-detail and the compute figures (about 19k CU to settle 2 cards, 97k for the worst case of 32).
+The program, its client (`apps/web/src/solana/waveHall.ts`) and the LiteSVM suite are proven on
+devnet (see the addresses below), and the live-room lobby stakes halls too: the host's stake panel
+has a "Hall" mode (seats, its own cards, the stake per card), guests buy seats from their lobby,
+which lists the seats as the chain holds them, a seated guest locks the table, the host's Start
+enables once the chain reads `locked`, every screen builds the round from the chain's seats and
+entropy and refuses a start that is not the table it read itself, and anyone settles from the
+results (`apps/web/src/rooms/live/HallStakePanel.tsx`, `machine.ts`). `programs/wave_duel/README.md`
+has the account and instruction detail and the compute figures (about 19k CU to settle 2 cards,
+97k for the worst case of 32).
 
 ## Accounts and instructions
 
@@ -174,14 +179,14 @@ players the engine names.
   but the surface is not zero.
 - **The host's seed lives in memory.** The machine keeps `serverSeed` in the tab and never stores
   it. A reload between the guest's join and `start` loses it; the host cannot reveal and the guest
-  takes the pot after 20 minutes. After `start` both players hold the seed.
+  takes the pot after 20 minutes (in a hall, every seat is refunded; a guest whose host left an open
+  table can lock it to start that clock). After `start` every player holds the seed.
 
 For mainnet the list is known: the upgrade authority and the config admin moved from one hot key to
 a multisig (or the program frozen after review); an independent audit; SPL tokens (USDC, SKR)
 alongside SOL; a second source of entropy or a delayed entropy step to close the leader surface;
-monitoring that can use the existing `paused` switch quickly; a lobby for staked halls; and the
-75- and 90-ball halls, whose card builders and patterns are not ported (the hall escrow plays Wave
-Rush's 30-ball card only).
+monitoring that can use the existing `paused` switch quickly; and the 75- and 90-ball halls, whose
+card builders and patterns are not ported (the hall escrow plays Wave Rush's 30-ball card only).
 
 ## Build, test and operate
 
@@ -220,7 +225,12 @@ against the engine.
 Wallet Standard test wallet (`scripts/qa/test-wallet.mjs`) play a staked room through the real
 lobby on devnet (open, cancel, reopen, join, ready-gated start, the same round on both screens,
 settle, the other screen seeing it settled), and the chain's payout is checked against the
-engine's replay to the lamport.
+engine's replay to the lamport. `apps/web/scripts/stake-hall-e2e.mjs` does the same for a hall
+with three contexts: the host opens a table of four seats with two cards, two guests buy one and
+three cards, every lobby lists the seats as the chain holds them, a guest locks, the host's Start
+enables on `locked`, the three screens finish on the same ball, a guest settles, and each seat's
+lamports are checked against `splitHallPot` over the engine's replay. The two scripts share
+`scripts/qa/stake-lib.mjs`.
 
 The devnet build at https://beach-bingo-eight.vercel.app/app/ is built with
 `VITE_SOLANA_CLUSTER=devnet`, `VITE_ENABLE_ONCHAIN_STAKES=true`, `VITE_WAVE_DUEL_PROGRAM=<program

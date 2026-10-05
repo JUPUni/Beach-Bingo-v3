@@ -63,6 +63,7 @@ pnpm --filter @beach-bingo/web test                                  # includes 
 pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs round 0.02   # a scripted room on devnet
 pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs hall 0.01 2 1 3   # a scripted hall
 node apps/web/scripts/stake-e2e.mjs                                  # two browsers play a staked room on devnet
+node apps/web/scripts/stake-hall-e2e.mjs                             # three browsers play a staked hall (2/1/3 cards) on devnet
 ```
 
 The scripts need a funded devnet key pair at `.secrets/devnet-deployer.json` (never committed).
