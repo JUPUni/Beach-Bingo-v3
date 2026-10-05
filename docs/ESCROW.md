@@ -423,7 +423,9 @@ money, and in what order, is the subject of docs/PRODUCTION.md.
 | Item | Value |
 |---|---|
 | Program | `6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` |
-| Program data | `BEsKZLmZqiKAkykZB5dZM6ZmwbpVsUADJKraNZjt2u31` (303,048 bytes; first deployed at slot 505607372 with the 1v1 room, upgraded with the halls at slot 505620387) |
+| Program data | `BEsKZLmZqiKAkykZB5dZM6ZmwbpVsUADJKraNZjt2u31` (753,048 bytes of space for the 710,680-byte program; first deployed at slot 505607372 with the 1v1 room, upgraded with the halls at slot 505620387 and with tokens, the registry, the claim path, the Seeker proof and the shop at slot 507797285; about 3.83 SOL of rent) |
+| Config after the upgrade | migrated to the 192-byte layout; pauser = the deployer; `sgt_group` = the mock group `GRhL4t47LyWkVtHJ3ierasdcxyjXmzkE6uMJvv38CsHn`; packs 5,000 / 15,000 / 40,000 / 100,000 coins; SOL pack prices 0.04 / 0.11 / 0.27 / 0.6 SOL; Seeker discount 500 bps; SOL Seeker fee 400 bps |
+| Registry | USDC-devnet, PYUSD-devnet, the PYUSD look-alike (1 to 100 tokens, fee 500 / Seeker 400, packs 4.99 / 13.99 / 34.99 / 79.99), the JUP look-alike (2 to 500, packs 12 / 33 / 82 / 185), the SKR look-alike (50 to 5,000, fee 250 / Seeker 200, discount 2,000 bps, packs 120 / 330 / 800 / 1,800); registration transactions `2zwNoYfd…`, `41uYj13m…`, `WAcsk8Jt…`, `9fd9TwCD…`, `2rwt1GXt…` |
 | Upgrade authority, config admin and treasury (for now) | `5VcGxKLHDJhPAFSN8VK9qpxkM4gniQtPKwRrMnUcqA8u`, the devnet deployer |
 | Config PDA | `5HpFPh9dusDzH1uRU4HoAsH5xnaw8dpTPrEuupfoqKL`: fee 500 bps, not paused |
 | `init_config` transaction | `3aJvmoWFqLvZAshSfkVMY2Vow532NwYxQSrjzuaSpSvtNW2AjStazMWH9amsaZnycJnK3YYPkTYHzwQGXN1Xq4Nw` |
