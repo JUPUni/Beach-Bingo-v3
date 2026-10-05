@@ -16,7 +16,7 @@ steps only the owner can take. Where the store's own docs move, they win:
 | Store art | `packages/brand/kit/store/` | `dapp-store-icon-512.png`, `dapp-store-banner-1200x600.{png,jpg}`, `dapp-store-feature-1200x1200.{png,jpg}`, `screenshots/dapp-store-screenshot-01…06-1080x1920.png` |
 | Notices | `beachbingo.xyz/privacy/`, `beachbingo.xyz/terms/` | Live; the listing's privacy policy and licence URLs. |
 | Wallet | `apps/web/src/solana/` | Wallet Standard + Mobile Wallet Adapter (`@solana-mobile/wallet-standard-mobile` ^0.6, above the 0.5.1 the store asks for); the address and the Seeker check, plus the coin-pack purchase once the chain shop is attached. |
-| The Coin Shop | `apps/web/src/shop/`, `apps/web/src/popups/ShopPopup.tsx` | In-app purchases of coins (no cash value, no refunds) behind a one-time 18+ declaration and the `/api/geo` region check (`apps/site/api/geo.js`, Washington blocked). The popup runs on a stub in local dev and the devnet build only; a production build shows the packs greyed ("The Coin Shop opens soon") until the chain purchase registers itself. |
+| The Coin Shop | `apps/web/src/shop/`, `apps/web/src/popups/ShopPopup.tsx` | In-app purchases of coins (no cash value, no refunds) behind a one-time 18+ declaration and the `/api/geo` region check (`apps/site/api/geo.js`, Washington blocked). A build with the escrow program (`VITE_WAVE_DUEL_PROGRAM`, today the devnet build) sells through its `buy_pack` / `buy_pack_token` (`shop/chainShop.ts`): the wallet approves one transaction per pack, the program enforces the price and the discounts, a `Buyer` account per wallet is the record, and "Restore purchases" on another device credits what that device has not yet. Local dev runs a stub; a production build shows the packs greyed ("The Coin Shop opens soon") until the program ships there. |
 
 ## 2. Build the shell
 
@@ -124,7 +124,10 @@ have no cash value; never a promise of money.
 - **In-app purchases and age.** The coin packs are declared as in-app purchases. The 18+
   declaration and the Washington block (`apps/site/api/geo.js`, header-based, nothing stored; an
   unknown region fails open on the declaration) are described in the terms, and the privacy
-  policy says the IP address is not kept.
+  policy says the IP address is not kept. A purchase is one wallet-approved transaction to the
+  escrow program (SOL or a registered token, SKR 20% off, a Seeker Genesis Token proved on chain
+  5% more); the price is enforced by the program, not the app; nothing is bought mid-round, and
+  free play never sees a purchase prompt.
 - **Wallet use is honest.** The app reads an address and looks up the Seeker Genesis Token for the
   perk, and asks for a signature only to pay for a coin pack in the shop. Say so in the listing's
   wallet-permissions notes.

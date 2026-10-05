@@ -54,23 +54,47 @@ an inset band (the site has the same sweep in `apps/site/scripts/safe-areas.mjs`
 ## Staked rooms on devnet
 
 The devnet build at **[beach-bingo-eight.vercel.app/app/](https://beach-bingo-eight.vercel.app/app/)**
-is the same game with two flags on: a Wave Rush live room can be opened as an escrow, both
-players stake SOL, and the program `6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` pays the winner
-from the revealed seed. To try it, switch a wallet (Phantom, Solflare, or the Seeker's) to devnet,
-fund it from a devnet faucet, open Rooms → Wave Rush → Play with friends, connect the wallet and
-open the escrow; a friend joins by the invite link, deposits, and the host starts when the chain
-says both deposits are in. Coins never move in a staked room.
+is the same game with two flags on (`VITE_ENABLE_ONCHAIN_STAKES`, `VITE_WAVE_DUEL_PROGRAM`): a
+Wave Rush live room or hall can be opened as an escrow staked in SOL or in a token of the
+program's registry (the SKR, JUP and PYUSD look-alikes the admin script created, Circle's devnet
+USDC, Paxos's devnet PYUSD; `show-mints` lists them), everyone stakes the same, and the program
+`6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` pays the winners from the revealed seed. The Coin
+Shop in that build sells its packs through the same program (`buy_pack`, `buy_pack_token`) for SOL
+or any of those tokens, SKR 20% off, once a wallet is connected. To try it, switch a wallet
+(Phantom, Solflare, or the Seeker's) to devnet, fund it with SOL from a devnet faucet and with test
+tokens from the admin script's `faucet`, open Rooms → Wave Rush → Play with friends, connect the
+wallet, pick the token and open the escrow; a friend joins by the invite link, deposits, and the
+host starts when the chain says every deposit is in. Coins never move in a staked room; a token
+payout the program could not deliver waits as a credit the panel offers to claim.
+
+The Seeker Genesis Token exists only on mainnet, so devnet uses a **mock group**: the admin
+script's `create-devnet-sgt <wallet>` mints one member token to a wallet, the program's
+`sgt_group` and the build's `VITE_SGT_GROUP` both name that group (mainnet's is the default), and
+a wallet holding one shows "Seeker verified", can prove it to the program from the stake panel
+("Verify Seeker", the Seeker fee tier for that round) and pays the Seeker saving in the shop.
+Badges describe; the program checks the token itself every time.
 
 ```bash
 cd programs/wave_duel && cargo test --release && cargo build-sbf   # the program and its engine vectors
 pnpm --filter @beach-bingo/web test                                  # includes the LiteSVM suites when the .so exists
-pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs round 0.02   # a scripted room on devnet
-pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs hall 0.01 2 1 3   # a scripted hall
-node apps/web/scripts/stake-e2e.mjs                                  # two browsers play a staked room on devnet
-node apps/web/scripts/stake-hall-e2e.mjs                             # three browsers play a staked hall (2/1/3 cards) on devnet
+ADMIN="pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs"
+$ADMIN round 0.02                                                    # a scripted SOL room on devnet
+$ADMIN hall 0.01 2 1 3                                               # a scripted SOL hall
+$ADMIN show-mints                                                    # the registry: mints, bounds, fees, pack prices
+$ADMIN token-round GY3JAeDQskMFYz25VJwdFUg8yDEVNhEfP6vUFDm4RPzz 50    # a room staked in the SKR look-alike, checked to the base unit
+$ADMIN token-hall GY3JAeDQskMFYz25VJwdFUg8yDEVNhEfP6vUFDm4RPzz 50 2 1 3   # a token hall, a guest locks, settle_hall_token
+$ADMIN prove-seeker [mint]                                           # the key pair's mock SGT lowers an open room's fee
+$ADMIN shop-buy sol 0 --seeker                                       # buy_pack with the Seeker discount; `shop-buy <mint> 0` for buy_pack_token
+$ADMIN faucet <mint> <wallet> 100                                    # test tokens for a wallet
+node apps/web/scripts/stake-e2e.mjs                                  # two browsers play a staked SOL room on devnet
+node apps/web/scripts/stake-hall-e2e.mjs                             # three browsers play a staked SOL hall (2/1/3 cards)
+node apps/web/scripts/stake-token-e2e.mjs                            # two browsers play a room staked in SKR through the real lobby
+node apps/web/scripts/shop-e2e.mjs                                   # a browser buys the smallest pack with SKR; a fresh context restores it
 ```
 
-The scripts need a funded devnet key pair at `.secrets/devnet-deployer.json` (never committed).
+The scripts need a funded devnet key pair at `.secrets/devnet-deployer.json` (never committed; a
+git worktree finds the main checkout's). The browser runs build the game into
+`apps/web/dist-devnet` with the devnet flags and the program config's SGT group.
 [docs/ESCROW.md](docs/ESCROW.md) explains the protocol, the trust model and the addresses;
 [docs/PRODUCTION.md](docs/PRODUCTION.md) explains why it stays on devnet and what would have to be
 true before it did not.

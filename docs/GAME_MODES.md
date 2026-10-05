@@ -10,9 +10,10 @@ Casino Cove and Beach Rooms lists, where a game is chosen):
   sold. Everyone starts on the SAND table with 1,000; a save from before the two currencies keeps
   its old coins as SAND.
 - **Coins** come only from the Coin Shop (packs of 5,000 / 15,000 / 40,000 / 100,000, paid in SOL,
-  USDC, PYUSD, JUP or SKR; SKR 20% off, a verified Seeker a little more; until the chain shop is
-  attached a production build shows the packs greyed, and only local dev and the devnet build run
-  the test stub) and from promo grants such as the Free Game ticket. They have no cash value, cannot be sold, transferred or refunded, and
+  USDC, PYUSD, JUP or SKR; SKR 20% off, a Seeker Genesis Token proved on chain 5% more; a build
+  with the escrow program sells through it once a wallet is connected, local dev runs a test stub,
+  and a production build shows the packs greyed until the program ships there) and from promo
+  grants such as the Free Game ticket. They have no cash value, cannot be sold, transferred or refunded, and
   never leave the game. Boosters in the level popup and an extra Big Wave are bought with coins;
   earned boosters still come from tasks, chests and the perk.
 
@@ -88,7 +89,10 @@ public Nostr relays and play browser to browser over WebRTC. The host commits to
 anyone buys a card, the roster's hash is the client seed, and every client rebuilds the same round
 and verifies every win (docs/FAIRNESS.md, "Live rooms"). Live rooms take no rake beyond the hall's
 pool share and pay no progressive jackpot; prize money nobody won is returned in proportion to
-cards bought. A player who joins during a round watches it and buys in for the next one.
+cards bought. A player who joins during a round watches it and buys in for the next one. The
+devnet build can also open a Wave Rush room or hall as an escrow staked in SOL or a token of the
+program's registry (SKR first, the lowest house fee; the amounts show in that token's units); the
+escrow's entropy is the client seed and the program pays the winners (docs/ESCROW.md).
 
 **Last Castle Standing** (`lastCastle`) is a separate engine (`modes/royale.ts`): everyone gets one
 card, balls arrive in waves of five, and after each wave the half with the fewest squares marked is
