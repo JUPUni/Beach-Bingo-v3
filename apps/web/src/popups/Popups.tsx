@@ -3,8 +3,8 @@ import { useNow } from '../lib/hooks.ts';
 import { adventure } from '@beach-bingo/engine';
 import { art } from '../assets/art.ts';
 import { sfx } from '../lib/audio.ts';
-import { CHEST_KEYS, DAILY_TASKS, FAUCET_COINS, FAUCET_COOLDOWN_MS, useGame } from '../state/store.ts';
-import { Confetti, GreenButton, RoundButton } from '../ui/kit.tsx';
+import { CHEST_KEYS, DAILY_TASKS, FAUCET_COOLDOWN_MS, FAUCET_SAND, FOLLOW_URL, SPEND_CAP_OPTIONS, TABLES, TABLE_NAME, useGame } from '../state/store.ts';
+import { Confetti, GreenButton, RoundButton, SandIcon } from '../ui/kit.tsx';
 import { formatCoins } from '../ui/format.ts';
 import { toast } from '../ui/toast.ts';
 import { Popup } from '../ui/Popup.tsx';
@@ -180,7 +180,7 @@ export function TasksPopup() {
               onClick={() => {
                 if (claimTask(t.id)) {
                   sfx.coin();
-                  toast(`+${t.reward} coins`, 'win');
+                  toast(`+${t.reward} SAND`, 'win');
                 }
               }}
             >
@@ -189,8 +189,61 @@ export function TasksPopup() {
           </div>
         );
       })}
-      <p className="small-note">Tasks reset every day at midnight.</p>
+      <p className="small-note">Tasks pay SAND and reset every day at midnight.</p>
+      <div className="divider" />
+      <h3>Rewards</h3>
+      <FollowReward />
     </Popup>
+  );
+}
+
+/**
+ * Follow @mostlyjola on X for one Free Game ticket (a coin-table entry at the mode's base
+ * price). The follow link opens in a new tab (the Android shell hands it to the X app); when the
+ * page comes back the claim unlocks. Whether the follow happened cannot be checked without the
+ * X API and a server (docs/PRODUCTION.md), so the claim is on the player's word, once per device
+ * and once per linked wallet.
+ */
+function FollowReward() {
+  const follow = useGame((s) => s.follow);
+  const setFollow = useGame((s) => s.setFollow);
+  const canClaim = useGame((s) => s.canClaimFreeGame());
+  const claimFreeGame = useGame((s) => s.claimFreeGame);
+  const freeGames = useGame((s) => s.freeGames);
+  const open = () => {
+    sfx.click();
+    setFollow('opened');
+    window.open(FOLLOW_URL, '_blank', 'noopener,noreferrer');
+  };
+  const claim = () => {
+    if (claimFreeGame()) {
+      sfx.bingo();
+      toast('Free game ticket added 🎟️', 'win');
+    }
+  };
+  return (
+    <div className="task task--follow">
+      <div>
+        <b>Follow @mostlyjola on X</b>
+        <span className="small-note">
+          {!canClaim ? 'Claimed on this device. Thanks for following!' : follow === 'returned' ? 'Welcome back — claim your free game.' : 'One Free Game ticket: an entry on a coin table, on the house.'}
+          {freeGames > 0 ? ` You hold ${freeGames} ticket${freeGames > 1 ? 's' : ''}.` : ''}
+        </span>
+      </div>
+      {!canClaim ? (
+        <button type="button" className="task__claim" disabled>
+          ✓
+        </button>
+      ) : follow === 'returned' ? (
+        <button type="button" className="task__claim is-ready anim-pulse" onClick={claim}>
+          Claim your free game
+        </button>
+      ) : (
+        <button type="button" className="task__claim is-ready" onClick={open}>
+          {follow === 'opened' ? 'Open again' : 'Follow'}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -207,7 +260,7 @@ export function FaucetPopup() {
   };
   return (
     <Popup
-      title="Free Coins"
+      title="Free SAND"
       onClose={close}
       footer={
         <GreenButton
@@ -216,21 +269,21 @@ export function FaucetPopup() {
             if (claimFaucet()) {
               sfx.coin();
               setCelebrate(true);
-              toast(`+${formatCoins(FAUCET_COINS)} coins!`, 'win');
+              toast(`+${formatCoins(FAUCET_SAND)} SAND!`, 'win');
             }
           }}
         >
-          {wait > 0 ? fmt(wait) : `Collect ${FAUCET_COINS}`}
+          {wait > 0 ? fmt(wait) : `Collect ${FAUCET_SAND}`}
         </GreenButton>
       }
     >
       {celebrate && <Confetti pieces={40} />}
       <div className="popup-center">
-        <img src={art.iconCoin} alt="" className="faucet-coin anim-float" />
+        <SandIcon size={8} className="faucet-coin anim-float" />
         <p>
-          The tide brings <b>{FAUCET_COINS} free coins</b> every 4 hours.
+          The tide brings <b>{FAUCET_SAND} free SAND</b> every 4 hours.
         </p>
-        <p className="small-note">Coins are play money for fun only — they can't be bought, sold or cashed out.</p>
+        <p className="small-note">SAND is free play money: never bought or sold, no cash value. Every game plays with it. Coins come from the Coin Shop.</p>
       </div>
     </Popup>
   );
@@ -240,7 +293,7 @@ export function ChestPopup() {
   const keys = useGame((s) => s.keys);
   const openChest = useGame((s) => s.openChest);
   const close = useGame((s) => s.closePopup);
-  const [reward, setReward] = useState<{ coins: number; booster: string } | null>(null);
+  const [reward, setReward] = useState<{ sand: number; booster: string } | null>(null);
   return (
     <Popup
       title="Golden Key"
@@ -252,7 +305,7 @@ export function ChestPopup() {
             const r = openChest();
             if (r) {
               sfx.bingo();
-              setReward({ coins: r.coins, booster: adventure.BOOSTERS[r.booster].name });
+              setReward({ sand: r.sand, booster: adventure.BOOSTERS[r.booster].name });
             }
           }}
         >
@@ -269,7 +322,7 @@ export function ChestPopup() {
         </div>
         {reward ? (
           <p>
-            You found <b>{reward.coins} coins</b> and a <b>{reward.booster}</b>!
+            You found <b>{reward.sand} SAND</b> and a <b>{reward.booster}</b>!
           </p>
         ) : (
           <p>
@@ -284,10 +337,14 @@ export function ChestPopup() {
 export function LimitsPopup() {
   const limits = useGame((s) => s.limits);
   const setLimits = useGame((s) => s.setLimits);
+  const setSpendCap = useGame((s) => s.setSpendCap);
+  const cap = useGame((s) => s.spendCap());
   const today = useGame((s) => s.today);
   const close = useGame((s) => s.closePopup);
   const now = useNow(30_000);
-  const net = today.day === new Date(now).toLocaleDateString('en-CA') ? today.won - today.wagered : 0;
+  const fresh = today.day === new Date(now).toLocaleDateString('en-CA');
+  const net = (t: 'sand' | 'coins') => (fresh ? today.won[t] - today.wagered[t] : 0);
+  const signed = (n: number) => `${n >= 0 ? '+' : ''}${formatCoins(n)}`;
   const option = (value: number | null, current: number | null, set: (v: number | null) => void, label: string) => (
     <button key={label} type="button" className={`chip-opt ${value === current ? 'is-on' : ''}`} onClick={() => (sfx.click(), set(value))}>
       {label}
@@ -296,7 +353,15 @@ export function LimitsPopup() {
   return (
     <Popup title="Play Safe" onClose={close}>
       <p>
-        Today's net result: <b className={net >= 0 ? 'pos' : 'neg'}>{net >= 0 ? '+' : ''}{formatCoins(net)} coins</b>
+        Today's net result:{' '}
+        {TABLES.map((t, i) => (
+          <span key={t}>
+            {i > 0 ? ' · ' : ''}
+            <b className={net(t) >= 0 ? 'pos' : 'neg'}>
+              {signed(net(t))} {TABLE_NAME[t]}
+            </b>
+          </span>
+        ))}
       </p>
       <h3>Playtime reminder</h3>
       <div className="chip-opts">
@@ -308,8 +373,27 @@ export function LimitsPopup() {
           option(m, limits.dailyLossLimit, (v) => setLimits({ dailyLossLimit: v }), m ? formatCoins(m) : 'Off'),
         )}
       </div>
+      <h3>Coin Shop daily cap</h3>
+      <p className="small-note">Coins the shop may sell you in a day. Lowering it applies now; raising it applies after 24 hours.</p>
+      <div className="chip-opts">
+        {SPEND_CAP_OPTIONS.map((m) =>
+          option(
+            m,
+            cap,
+            (v) => {
+              if (setSpendCap(v) === 'later') toast(`${v === null ? 'No cap' : formatCoins(v)} applies in 24 hours`, 'warn');
+            },
+            m ? formatCoins(m) : 'Off',
+          ),
+        )}
+      </div>
+      {limits.spendCapRaise && limits.spendCapRaise.at > now && (
+        <p className="small-note">
+          {limits.spendCapRaise.value === null ? 'No cap' : formatCoins(limits.spendCapRaise.value)} applies from {new Date(limits.spendCapRaise.at).toLocaleString()}.
+        </p>
+      )}
       <h3>Take a break</h3>
-      <p className="small-note">Locks every wager game (Adventure stays open).</p>
+      <p className="small-note">Locks every wager game and the Coin Shop (Adventure stays open).</p>
       <div className="chip-opts">
         {[
           ['24 hours', 24],
@@ -351,10 +435,11 @@ export function CreditsPopup() {
         Every house game is provably fair: results come from HMAC-SHA256 of a committed server seed, your client seed and a nonce.
         You can rotate seeds and verify past rounds in Settings → Provably fair.
       </p>
-      <h3>Play money</h3>
+      <h3>SAND and coins</h3>
       <p className="small-note">
-        Coins are free, have no cash value and can't be bought, sold or exchanged for anything. Nothing of value is staked or won.
-        18+ recommended for casino-style modes.
+        SAND is free play money: it is never bought or sold and has no cash value. Coins are bought in the Coin Shop; they have no
+        cash value, cannot be sold, transferred or refunded, and never leave the game. Coin tables and the shop are for players
+        aged 18 and over and are not offered in Washington State.
       </p>
       <h3>Live rooms</h3>
       <p className="small-note">
@@ -369,6 +454,39 @@ export function CreditsPopup() {
         <a href="https://beachbingo.xyz/terms/" target="_blank" rel="noopener noreferrer">
           Terms of play
         </a>
+      </p>
+    </Popup>
+  );
+}
+
+/** The one-time declaration before coin tables and the Coin Shop open. SAND play never sees it. */
+export function AgeGatePopup() {
+  const confirmAge = useGame((s) => s.confirmAge);
+  const [adult, setAdult] = useState(false);
+  const [notWashington, setNotWashington] = useState(false);
+  const dismiss = () => useGame.setState({ pendingCoins: null, popup: null });
+  return (
+    <Popup
+      title="Coins are 18+"
+      onClose={dismiss}
+      footer={
+        <GreenButton disabled={!adult || !notWashington} onClick={confirmAge}>
+          Confirm
+        </GreenButton>
+      }
+    >
+      <p>Coin tables and the Coin Shop are for adults. SAND play is open to everyone and never asks.</p>
+      <label className="check">
+        <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
+        <span>I am 18 or older</span>
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={notWashington} onChange={(e) => setNotWashington(e.target.checked)} />
+        <span>I am not a resident of Washington State</span>
+      </label>
+      <p className="small-note">
+        Coins have no cash value, cannot be sold, transferred or refunded, and never leave the game. Your answer is kept on this
+        device with the date.
       </p>
     </Popup>
   );

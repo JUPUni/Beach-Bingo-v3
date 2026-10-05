@@ -192,3 +192,91 @@
 .neg {
   color: #b01520;
 }
+
+/* ---------- The age gate ---------- */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.6rem 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--c-ink);
+}
+
+.check input {
+  flex: none;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin: 0;
+  accent-color: var(--c-green);
+}
+
+/* ---------- The Coin Shop ---------- */
+.packs {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.4rem 0;
+}
+
+.pack {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 1.2rem;
+  background: rgb(255 255 255 / 0.55);
+  border: 0.2rem solid rgb(184 121 54 / 0.5);
+}
+
+.pack__body {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.pack__body b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.45rem;
+}
+
+.pack__body span {
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.pack__body small {
+  font-size: 1.05rem;
+  line-height: 1.3;
+  color: var(--c-ink-soft);
+}
+
+.pack__seeker {
+  color: #2c7a06;
+}
+
+.pack__buy {
+  min-width: 6.6rem;
+  font-size: 1.4rem;
+}
+
+.shop__history li {
+  margin-bottom: 0.2rem;
+}
+
+.shop__restore {
+  display: block;
+  margin: 0.6rem auto 0.2rem;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--c-ink-soft);
+  text-decoration: underline;
+}
+
+.task--follow .task__claim {
+  min-width: 7rem;
+  font-size: 1.1rem;
+  line-height: 1.15;
+}

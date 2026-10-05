@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { art } from './assets/art.ts';
 import { setMusic, sfx } from './lib/audio.ts';
+import { lookupRegion } from './lib/geo.ts';
 import { joinCodeFromHash } from './rooms/live/protocol.ts';
 import { useGame, type Screen } from './state/store.ts';
 import { Toasts } from './ui/kit.tsx';
@@ -103,6 +104,29 @@ export function App() {
     check();
     window.addEventListener('hashchange', check);
     return () => window.removeEventListener('hashchange', check);
+  }, []);
+
+  // The region behind the coin gate, asked once per session; unknown fails open (lib/geo.ts).
+  useEffect(() => {
+    let on = true;
+    void lookupRegion().then((region) => on && useGame.getState().setRegion(region));
+    return () => {
+      on = false;
+    };
+  }, []);
+
+  // Back from the follow link: the claim in the tasks popup unlocks.
+  useEffect(() => {
+    const back = () => {
+      const s = useGame.getState();
+      if (document.visibilityState === 'visible' && s.follow === 'opened') s.setFollow('returned');
+    };
+    document.addEventListener('visibilitychange', back);
+    window.addEventListener('focus', back);
+    return () => {
+      document.removeEventListener('visibilitychange', back);
+      window.removeEventListener('focus', back);
+    };
   }, []);
 
   // Responsible-play reality check.

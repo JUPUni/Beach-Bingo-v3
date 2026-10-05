@@ -1,9 +1,10 @@
 import { lazy } from 'react';
 import { useGame } from '../state/store.ts';
-import { SettingsPopup, ProfilePopup, TasksPopup, FaucetPopup, ChestPopup, LimitsPopup, CreditsPopup } from './Popups.tsx';
+import { SettingsPopup, ProfilePopup, TasksPopup, FaucetPopup, ChestPopup, LimitsPopup, CreditsPopup, AgeGatePopup } from './Popups.tsx';
 
 const FairnessPopup = lazy(() => import('./FairnessPopup.tsx'));
 const WalletPopup = lazy(() => import('../solana/WalletPopup.tsx'));
+const ShopPopup = lazy(() => import('./ShopPopup.tsx'));
 
 export function PopupHost() {
   const popup = useGame((s) => s.popup);
@@ -26,6 +27,10 @@ export function PopupHost() {
       return <FairnessPopup />;
     case 'wallet':
       return <WalletPopup />;
+    case 'shop':
+      return <ShopPopup />;
+    case 'age':
+      return <AgeGatePopup />;
     default:
       return null;
   }
