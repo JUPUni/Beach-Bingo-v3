@@ -55,11 +55,12 @@ export const MAX_MINT_STAKE = (2n ** 64n - 1n) / 32n;
 /**
  * Compute units a token hall settlement is sent with. Measured in LiteSVM (waveToken.test.ts prints
  * it and asserts the 1.5× headroom): an 8 × 4 PYUSD-like Token-2022 hall, eight `transfer_checked`
- * payouts, the treasury's and the vault close included, settles in about 118k CU (the SOL hall
- * replays in 98k; a USDC-like room settles in 28k, a six-card Token-2022 hall in 50k). The limit
- * is the measured worst case × 1.5, so a priority fee is priced on the real need.
+ * payouts, the treasury's and the vault close included, settles in 118–124k CU depending on the
+ * cards drawn (the SOL hall replays in 98k; a USDC-like room settles in 28k, a six-card Token-2022
+ * hall in 50k). The limit keeps a 1.5× margin over the worst case seen, so a priority fee is priced
+ * on the real need and a heavy draw never fails.
  */
-export const SETTLE_HALL_TOKEN_COMPUTE_UNITS = 180_000;
+export const SETTLE_HALL_TOKEN_COMPUTE_UNITS = 250_000;
 
 const utf8 = getUtf8Encoder();
 const hexBytes = (hex: string): Uint8Array => Uint8Array.from(hex.match(/../g)!.map((h) => parseInt(h, 16)));

@@ -183,7 +183,7 @@ Measured in LiteSVM (the suites print them): `settle_hall` costs about 20k CU fo
 for 6 and 98k for the worst case of 32 (8 × 4), inside the 150k the SOL client requests. Token
 rounds add the transfer CPIs: `settle_token` on a USDC-like SPL Token mint 28k, a six-card
 PYUSD-like Token-2022 hall 50k, the 8 × 4 PYUSD-like hall with eight payouts, the treasury's and
-the vault close **118k CU**; the token hall client sends a `SetComputeUnitLimit` of 180k, the
+the vault close **118k CU**; the token hall client sends a `SetComputeUnitLimit` of 250k (the measured worst case varies with the cards drawn, 118–124k across runs, and the test keeps a 1.5× margin under the limit), the
 measured worst case × 1.5, and `waveToken.test.ts` asserts that headroom. The replay stays cheap
 for the reasons the SOL version had: HMAC block messages and card domains written byte by byte,
 the HMAC pads computed once per round, and a card's completion ball read off the drum.
