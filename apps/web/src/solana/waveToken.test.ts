@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { grantUpgradeAuthority } from './litesvmSupport.ts';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import {
   AccountRole,
@@ -314,6 +315,7 @@ describe.skipIf(!existsSync(SO))('wave_duel tokens on LiteSVM', () => {
     svm.setSlotHashes([{ slot: svm.getClock().slot, hash: getBase58Decoder().decode(SLOT_HASH) }]);
     [admin, treasury, pauser, freezer, delegate, host, stranger, ...guests] = await Promise.all(Array.from({ length: 14 }, wallet));
     for (const w of [admin, treasury, pauser, freezer, delegate, host, stranger, ...guests]) svm.airdrop(w.address, lamports(100n * SOL));
+    await grantUpgradeAuthority(svm, PROGRAM, admin.address);
     await ok(admin, [await initConfigIx(admin.address, treasury.address, FEE_BPS)]);
 
     const zeroFee = { epoch: 0n, maximumFee: 0n, transferFeeBasisPoints: 0 };
@@ -817,6 +819,20 @@ describe.skipIf(!existsSync(SO))('wave_duel tokens on LiteSVM', () => {
     await ok(guests[0]!, [await buyPackIx(guests[0]!.address, treasury.address, 0)]);
     const other = await buyerAddress(guests[0]!.address);
     expect(decodeBuyer(other, new Uint8Array(must(other).data))).toMatchObject({ wallet: guests[0]!.address, purchases: 1 });
+  });
+
+  it('token purchases pay the treasury the config names at the time of purchase', async () => {
+    const s = await entry(skr);
+    const moved = guests[1]!;
+    const movedAta = await ataAddress(moved.address, skr, TOKEN_PROGRAM);
+    await ok(admin, [getCreateAssociatedTokenIdempotentInstruction({ payer: signer(admin), ata: movedAta, owner: moved.address, mint: skr, tokenProgram: TOKEN_PROGRAM })]);
+    await setConfig({}, moved.address);
+    const before = tokens(movedAta) ?? 0n;
+    await ok(host, [await buyPackTokenIx(host.address, s, 1, null, moved.address)]);
+    expect(tokens(movedAta)! - before).toBe(packPrice(25n * UNIT, 2_000));
+    // The account recorded at registration is no longer the destination.
+    await fails(host, [await buyPackTokenIx(host.address, s, 1, null, treasury.address)], 'TreasuryMismatch');
+    await setConfig({}, treasury.address);
   });
 
   it('a paused mint fails cleanly and settles once resumed', async () => {

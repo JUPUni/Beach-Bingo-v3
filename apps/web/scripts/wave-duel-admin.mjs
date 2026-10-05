@@ -170,10 +170,23 @@ const balance = async (addr) => (await rpc.getBalance(addr, { commitment: 'confi
 
 const payer = await loadWallet(KEYPAIR);
 const [cmd = 'show', ...args] = process.argv.slice(2);
-console.log(`program ${PROGRAM} · rpc ${RPC_URL} · payer ${payer.address} (${formatSol(await balance(payer.address))})`);
+// The cluster, proven by the genesis hash rather than guessed from the URL: on mainnet the devnet
+// key pair, the mock mints and every command that moves funds through throwaway wallets are refused.
+const GENESIS = { mainnet: '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d', devnet: 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG' };
+const genesis = await rpc.getGenesisHash().send();
+const MAINNET = genesis === GENESIS.mainnet;
+if (CLUSTER_QS === '' && !MAINNET && genesis !== GENESIS.devnet) console.warn(`warning: unknown cluster (genesis ${genesis}); explorer links assume mainnet`);
+if (CLUSTER_QS !== '' && MAINNET) throw new Error(`RPC_URL looks like devnet but the genesis hash is mainnet's; refusing to guess`);
+if (MAINNET) {
+  if (/devnet-deployer/.test(KEYPAIR)) throw new Error('refusing to use the devnet deployer key pair on mainnet (set KEYPAIR)');
+  const devnetOnly = ['round', 'hall', 'create-devnet-mint', 'create-devnet-sgt', 'faucet', 'token-round', 'token-hall', 'prove-seeker'];
+  if (devnetOnly.includes(cmd)) throw new Error(`${cmd} plays with throwaway wallets and test mints; it does not run on mainnet`);
+}
+console.log(`${MAINNET ? 'MAINNET' : 'devnet'} · program ${PROGRAM} · rpc ${RPC_URL} · payer ${payer.address} (${formatSol(await balance(payer.address))})`);
 
 if (cmd === 'init-config') {
   const feeBps = Number(args[0] || 500);
+  if (MAINNET && !args[1]) throw new Error('init-config <feeBps> <treasury>: name the treasury on mainnet (every fee and pack payment goes there)');
   const treasury = address(args[1] || payer.address);
   const existing = await fetchConfig(rpc);
   if (existing) {
@@ -342,6 +355,18 @@ if (cmd === 'init-config') {
     solSeekerFeeBps: kv.solSeekerFee !== undefined ? Number(kv.solSeekerFee) : current.solSeekerFeeBps,
   };
   const treasury = kv.treasury ? address(kv.treasury) : current.treasury;
+  if (treasury !== current.treasury) {
+    // Token purchases pay the treasury's associated token account for each mint, derived at purchase time: create them first.
+    for (const entry of await fetchMintEntries(rpc)) {
+      const ata = await ataAddress(treasury, entry.mint, entry.tokenProgram);
+      if (!(await rpc.getAccountInfo(ata, { encoding: 'base64' }).send()).value) {
+        const created = await sendSigned(rpc, payer.address, [payer.keyPair], [
+          getCreateAssociatedTokenIdempotentInstruction({ payer: createNoopSigner(payer.address), ata, owner: treasury, mint: entry.mint, tokenProgram: entry.tokenProgram }),
+        ]);
+        console.log(`  treasury token account for ${knownSymbol(entry.mint) ?? shortAddr(entry.mint)} created: ${explorer(created.signature)}`);
+      }
+    }
+  }
   const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [await setConfigIx(payer.address, treasury, terms)]);
   console.log('config set', explorer(sent.signature));
   console.log('config', await fetchConfig(rpc));
@@ -349,6 +374,8 @@ if (cmd === 'init-config') {
   const [mintArg, min, max, feeBps, seekerFeeBps, discountBps = '0', prices = '0,0,0,0'] = args;
   if (!mintArg || !min || !max || feeBps === undefined || seekerFeeBps === undefined) throw new Error('register-mint <mint> <min> <max> <feeBps> <seekerFeeBps> [discountBps] [packPrices csv]');
   const mint = address(mintArg);
+  if (MAINNET && !knownSymbol(mint) && !args.includes('--any-mint')) throw new Error(`${mint} is not one of the app's mainnet mints (apps/web/src/solana/tokens.ts); pass --any-mint to register it anyway`);
+  if (await fetchMintEntry(rpc, mint)) throw new Error(`${mint} is already registered (set-mint changes its terms)`);
   const config = await fetchConfig(rpc);
   if (!config) throw new Error('init-config first');
   const tokenProgram = await tokenProgramOf(mint);
@@ -633,8 +660,6 @@ if (cmd === 'init-config') {
   }
   if (!ok) process.exit(1);
 } else if (cmd === 'shop-buy') {
-  const config = await fetchConfig(rpc);
-  if (!config) throw new Error('init-config first');
   // buy_pack (sol) or buy_pack_token (<mint>) by the key pair; `--seeker` passes its mock SGT. The
   // Buyer PDA before and after, the CoinsBought event of the confirmed transaction and the token
   // account deltas are checked against the registry's price arithmetic.

@@ -218,3 +218,17 @@ derivation) and `shop.ts` (coin packs, `Buyer`). All hand-encode the layouts fro
 they move together. The admin script (`apps/web/scripts/wave-duel-admin.mjs`) adds
 `migrate-config`, `set-config`, `register-mint`, `set-mint`, `show-mints`, `create-devnet-mint`
 and `create-devnet-sgt`; docs/ESCROW.md has the operating notes.
+
+## Before mainnet
+
+- `init_config` is gated on the program's upgrade authority: the account that runs it must be
+  the ProgramData's `upgrade_authority_address`, so nobody can take the admin role between a
+  deployment and its configuration. The client passes the program and its ProgramData account;
+  LiteSVM tests grant their admin the authority first (`litesvmSupport.ts`).
+- `transfer_admin` hands the admin role to any address; there is no two-step accept, so tooling
+  confirms the address twice.
+- `buy_pack_token` pays the treasury named by the config at the time of purchase, its associated
+  token account for the mint; `set_config treasury=` therefore moves token revenue too.
+- Discounts: a mint's `discount_bps` is at most 4,900 and the config's `seeker_discount_bps` at
+  most 5,000, so their sum stays under 10,000.
+

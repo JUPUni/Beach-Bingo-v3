@@ -11,15 +11,15 @@ supply, and the exact steps in order.
 
 | Piece | State |
 |---|---|
-| Program | `programs/wave_duel`, one key pair for every cluster (`.secrets/wave_duel-keypair.json`), so the id is `6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` on devnet and on mainnet. Built with `cargo build-sbf` (platform-tools v1.57): 715,776 bytes, sha256 `e592b9b590ea5fe5a75db4e2ca900067bb135c82086098e84cb0957063370091`. 27 LiteSVM tests across `apps/web/src/solana/*.test.ts`. |
-| Admin model | `init_config` makes the signer admin and pauser and takes the treasury; `set_config` moves treasury, pauser, fee, pause, SGT group, pack sizes and SOL prices; `transfer_admin` hands the admin role to any address (a multisig vault included); `pause` is open to the pauser; per mint `set_mint` changes prices, tiers and `enabled`. Rounds and purchases snapshot what they need, so a config change never reaches money already in flight. |
+| Program | `programs/wave_duel`, one key pair for every cluster (`.secrets/wave_duel-keypair.json`), so the id is `6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH` on devnet and on mainnet. Built with `cargo build-sbf` (platform-tools v1.57): 771,256 bytes, sha256 `3eee376c1526262e6374d61d6a1a3d1f2bd7dc834c30e8a96db4ddadfe4d83ec`. 29 LiteSVM tests across `apps/web/src/solana/*.test.ts`. |
+| Admin model | `init_config` admits only the program's upgrade authority (nobody can claim the admin role in the seconds after a deployment); it makes that signer admin and pauser and takes the treasury; `set_config` moves treasury, pauser, fee, pause, SGT group, pack sizes and SOL prices; `transfer_admin` hands the admin role to any address (a multisig vault included); `pause` is open to the pauser; per mint `set_mint` changes prices, tiers and `enabled`. Token purchases pay the treasury of the moment (its associated token account for the mint, derived at purchase time), so moving the treasury moves every revenue stream at once; the per-mint discount caps at 4,900 bps and the Seeker discount at 5,000, so the two can never stack to a free pack. Rounds snapshot what they need, so a config change never reaches money already in flight. |
 | Client | Knows the program through `VITE_WAVE_DUEL_PROGRAM`; knowing it opens the chain shop (`CHAIN_SHOP_ENABLED`) and nothing else. Staked rooms need `VITE_ENABLE_ONCHAIN_STAKES=true` as well, which the mainnet build does not set. The RPC comes from `VITE_SOLANA_RPC_URL`; the Seeker group defaults to the mainnet group `GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te`. Pack prices, discounts and the mint list are read from the chain each session, so repricing needs no release. |
 | Operator tooling | `apps/web/scripts/wave-duel-admin.mjs` (`RPC_URL`, `KEYPAIR`, `WAVE_DUEL_PROGRAM`) for every instruction, explorer links following the cluster; `apps/web/scripts/mainnet/setup.mjs` with `plan`, `apply`, `reprice` and `handover`, driven by `apps/web/scripts/mainnet/registry.json`. |
 | Site and legal | Terms (Coins and shells, purchases final, 18+, not in Washington State, play limits), privacy notice, the age gate and `/api/geo`, spend caps and cool-off, the "opens soon" state until the program is on mainnet. |
 
 ## What only the owner supplies
 
-1. **Funding.** The mainnet deployer created in this checkout is `Bt6c83p9KGKUwPWExmMUFgHrnDBXq4XyhSx55XsMtYMR` (`.secrets/mainnet-deployer.json`, never committed). Send it **8 SOL**: about 3.9 SOL stays as the program account's rent (760,000 bytes of space, recoverable only by closing the program), the buffer's rent comes back once the deploy lands, and the configuration transactions cost well under 0.1 SOL. Alternatively run the deploy steps below from a machine holding your own keys and skip this address entirely.
+1. **Funding.** The mainnet deployer created in this checkout is `Bt6c83p9KGKUwPWExmMUFgHrnDBXq4XyhSx55XsMtYMR` (`.secrets/mainnet-deployer.json`, never committed). Send it **9 SOL**: about 4.3 SOL stays as the program account's rent (850,000 bytes of space, recoverable only by closing the program), the buffer's rent (about 3.9 SOL) comes back once the deploy lands, and the configuration transactions cost well under 0.1 SOL. Alternatively run the deploy steps below from a machine holding your own keys and skip this address entirely.
 2. **Addresses.** `TREASURY`: receives every pack payment and every fee (a Squads vault is the right home; a plain wallet works). `ADMIN`: may change prices, pause, register mints and upgrade the program after the handover. The admin script signs with a key pair file, so for day-to-day operation `ADMIN` is best a dedicated CLI key pair kept offline; a Squads vault can hold the role, but then every change is a vault transaction built from the instruction data (not wired into the script yet). `PAUSER` (optional): a hot key that may only pause.
 3. **RPC.** A provider URL (Helius, Triton, QuickNode) for `VITE_SOLANA_RPC_URL` and for the operator scripts. The public `api.mainnet-beta.solana.com` endpoint works for a soft launch and rate-limits under load.
 4. **Later, for the dApp Store build:** the release keystore (`android/README.md`) and the publisher wallet; the web shell loads the live site, so the shop reaches it without a rebuild.
@@ -38,11 +38,11 @@ Export once: `RPC_URL=<provider url> KEYPAIR=.secrets/mainnet-deployer.json WAVE
    solana program deploy programs/wave_duel/target/deploy/wave_duel.so \
      --program-id .secrets/wave_duel-keypair.json \
      --upgrade-authority .secrets/mainnet-deployer.json \
-     -k .secrets/mainnet-deployer.json -u mainnet-beta --max-len 760000
+     -k .secrets/mainnet-deployer.json -u mainnet-beta --max-len 850000 --use-rpc --max-sign-attempts 60
    solana program show 6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH -u mainnet-beta
    ```
    The build is deterministic for the same toolchain: `sha256sum` of the `.so` must match the table above before deploying.
-3. **Configure.** `$SETUP apply` runs, idempotently and in this order: `init-config` (fee 500 bps, `TREASURY`); `set-config` (SGT group, pack sizes 5,000 / 15,000 / 40,000 / 100,000, Seeker discount 500 bps, SOL pack prices, SOL Seeker fee 400 bps, `PAUSER`); `register-mint` for USDC, PYUSD, JUP and SKR (creating the treasury's token account for each; USDC and PYUSD at fee 500 / Seeker 400, JUP the same, SKR at 250 / 200 with the 2,000 bps shop discount). It prints the config and the four entries at the end. A step that already matches the chain is skipped.
+3. **Configure.** `$SETUP apply` runs, idempotently and in this order: `init-config` (fee 500 bps, `TREASURY`; signed by the deployer, which must still hold the upgrade authority at that moment, because the program admits no one else); `set-config` (SGT group, pack sizes 5,000 / 15,000 / 40,000 / 100,000, Seeker discount 500 bps, SOL pack prices, SOL Seeker fee 400 bps, `PAUSER`); `register-mint` for USDC, PYUSD, JUP and SKR (creating the treasury's token account for each; USDC and PYUSD at fee 500 / Seeker 400, JUP the same, SKR at 250 / 200 with the 2,000 bps shop discount). It prints the config and the four entries at the end. A step that already matches the chain is skipped.
 4. **Prove one purchase.** From any funded wallet's key pair: `KEYPAIR=<test key> $ADMIN shop-buy EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v 0` buys the 4.99 USDC pack and prints the Buyer PDA, the event and the treasury credit. (Or wait for step 6 and buy through the site.)
 5. **Hand over.** `$SETUP handover <ADMIN> --confirm <ADMIN>` runs `transfer-admin`, then moves the upgrade authority:
    ```bash
@@ -76,7 +76,7 @@ Export once: `RPC_URL=<provider url> KEYPAIR=.secrets/mainnet-deployer.json WAVE
 
 | Item | SOL |
 |---|---|
-| Program account rent, 760,000 bytes (stays; recoverable by closing the program) | 3.86 |
-| Buffer during deploy (returned when the deploy lands) | 3.6 |
+| Program account rent, 850,000 bytes (stays; recoverable by closing the program) | 4.32 |
+| Buffer during deploy (returned when the deploy lands) | 3.9 |
 | Config, four mint entries, four treasury token accounts, transactions | < 0.1 |
 | Each pack purchase (payer's fee) | 0.000005 to 0.00001 |

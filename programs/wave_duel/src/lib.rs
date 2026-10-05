@@ -120,7 +120,8 @@ pub mod wave_duel {
     ) -> Result<()> {
         require!(fee_bps <= MAX_FEE_BPS, DuelError::FeeTooHigh);
         require!(sol_seeker_fee_bps <= fee_bps, DuelError::FeeTooHigh);
-        require!(seeker_discount_bps <= 10_000, DuelError::DiscountTooHigh);
+        // Capped so that no mint's discount (at most 4,900 bps) can stack with it to a free pack.
+        require!(seeker_discount_bps <= 5_000, DuelError::DiscountTooHigh);
         let config = &mut ctx.accounts.config;
         config.treasury = ctx.accounts.treasury.key();
         config.fee_bps = fee_bps;
@@ -858,7 +859,8 @@ fn check_mint_terms(min_stake: u64, max_stake: u64, fee_bps: u16, seeker_fee_bps
     require!(min_stake >= 1 && min_stake <= max_stake && max_stake <= MAX_MINT_STAKE, DuelError::StakeBoundsInvalid);
     require!(fee_bps <= MAX_FEE_BPS, DuelError::FeeTooHigh);
     require!(seeker_fee_bps <= fee_bps, DuelError::FeeTooHigh);
-    require!(discount_bps <= 10_000, DuelError::DiscountTooHigh);
+    // At most 4,900 bps, so with the config's Seeker discount (at most 5,000) a pack is never free.
+    require!(discount_bps <= 4_900, DuelError::DiscountTooHigh);
     Ok(())
 }
 
@@ -1399,6 +1401,12 @@ pub struct InitConfig<'info> {
     pub admin: Signer<'info>,
     /// CHECK: any account may receive the fees.
     pub treasury: UncheckedAccount<'info>,
+    /// This program, so its upgrade authority can be read: only that key may initialise the config.
+    /// Otherwise anyone could claim the admin role in the seconds after a deployment.
+    #[account(constraint = program.programdata_address()? == Some(program_data.key()) @ DuelError::NotAdmin)]
+    pub program: Program<'info, crate::program::WaveDuel>,
+    #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()) @ DuelError::NotAdmin)]
+    pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,
 }
 
@@ -1873,7 +1881,7 @@ pub struct BuyPack<'info> {
 pub struct BuyPackToken<'info> {
     #[account(seeds = [b"config"], bump = config.bump)]
     pub config: Account<'info, Config>,
-    #[account(seeds = [b"mint", mint.key().as_ref()], bump = mint_entry.bump, has_one = mint, has_one = token_program, has_one = treasury_ata)]
+    #[account(seeds = [b"mint", mint.key().as_ref()], bump = mint_entry.bump, has_one = mint, has_one = token_program)]
     pub mint_entry: Account<'info, MintEntry>,
     #[account(mint::token_program = token_program)]
     pub mint: InterfaceAccount<'info, Mint>,
@@ -1883,8 +1891,15 @@ pub struct BuyPackToken<'info> {
     pub wallet: Signer<'info>,
     #[account(mut, token::mint = mint, token::authority = wallet, token::token_program = token_program)]
     pub wallet_ata: InterfaceAccount<'info, TokenAccount>,
-    /// The registered treasury account (by has_one on the entry).
-    #[account(mut, token::mint = mint, token::token_program = token_program)]
+    /// The treasury's associated token account for the mint, derived from the config's treasury at
+    /// the time of purchase, so `set_config` moving the treasury moves token revenue with it (the
+    /// entry's `treasury_ata` is a record of registration, not the destination).
+    #[account(
+        mut,
+        token::mint = mint,
+        token::token_program = token_program,
+        constraint = treasury_ata.key() == get_associated_token_address_with_program_id(&config.treasury, &mint.key(), &token_program.key()) @ DuelError::TreasuryMismatch,
+    )]
     pub treasury_ata: InterfaceAccount<'info, TokenAccount>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,

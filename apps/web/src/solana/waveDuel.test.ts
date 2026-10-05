@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { grantUpgradeAuthority } from './litesvmSupport.ts';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import {
   appendTransactionMessageInstructions,
@@ -123,6 +124,11 @@ describe.skipIf(!existsSync(SO))('wave_duel on LiteSVM', () => {
     }
     [admin, treasury, host, guest, stranger] = await Promise.all([wallet(), wallet(), wallet(), wallet(), wallet()]);
     for (const w of [admin, treasury, host, guest, stranger]) svm.airdrop(w.address, lamports(10n * SOL));
+    await grantUpgradeAuthority(svm, PROGRAM, admin.address);
+  });
+
+  it('admits init_config only from the upgrade authority', async () => {
+    await fails(stranger, [await initConfigIx(stranger.address, treasury.address, FEE_BPS)], 'NotAdmin');
   });
 
   it('initialises the config with a fee and a treasury', async () => {

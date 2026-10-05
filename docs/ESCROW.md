@@ -140,6 +140,17 @@ opens and reads only that copy afterwards, no config change, however the admin k
 move money in a round that is already running; the SOL settle and timeout instructions keep their
 account lists and check the treasury passed against the round's snapshot.
 
+### The admin role
+
+`init_config` admits only the program's upgrade authority, so a fresh deployment cannot have its
+admin role claimed by whoever sends the first transaction. `transfer_admin` hands the role to any
+address (a multisig vault included); the new admin does not sign, so the admin script asks for the
+address twice. `set_config` moves the treasury and the pauser. Token purchases pay the treasury's
+associated token account for the mint as derived at the moment of purchase, so a treasury change
+moves token revenue with it (the entry's `treasury_ata` is the record of registration, and the
+admin script creates the new treasury's accounts when `set-config treasury=` runs). A mint's shop
+discount caps at 4,900 bps and the Seeker discount at 5,000, so the two never stack to a free pack.
+
 ## The Seeker proof
 
 The host of an open room or hall may send `prove_seeker_room` / `prove_seeker_hall` with its

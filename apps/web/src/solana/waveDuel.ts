@@ -104,6 +104,15 @@ export function program(): Address {
   return programId;
 }
 
+/** The upgradeable loader, which owns every deployed program and its ProgramData account. */
+export const BPF_LOADER_UPGRADEABLE = 'BPFLoaderUpgradeab1e11111111111111111111111' as Address;
+
+/** The program's ProgramData account: `init_config` admits only its upgrade authority. */
+export async function programDataAddress(): Promise<Address> {
+  const [pda] = await getProgramDerivedAddress({ programAddress: BPF_LOADER_UPGRADEABLE, seeds: [getAddressEncoder().encode(program())] });
+  return pda;
+}
+
 export async function configAddress(): Promise<Address> {
   const [pda] = await getProgramDerivedAddress({ programAddress: program(), seeds: [utf8.encode('config')] });
   return pda;
@@ -298,6 +307,8 @@ export async function initConfigIx(admin: Address, treasury: Address, feeBps: nu
       meta(await configAddress(), AccountRole.WRITABLE),
       meta(admin, AccountRole.WRITABLE_SIGNER),
       meta(treasury, AccountRole.READONLY),
+      meta(program(), AccountRole.READONLY),
+      meta(await programDataAddress(), AccountRole.READONLY),
       meta(SYSTEM_PROGRAM, AccountRole.READONLY),
     ],
     data,

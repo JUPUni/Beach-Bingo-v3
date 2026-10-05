@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { grantUpgradeAuthority } from './litesvmSupport.ts';
 import { FailedTransactionMetadata, LiteSVM } from 'litesvm';
 import {
   appendTransactionMessageInstructions,
@@ -170,6 +171,7 @@ describe.skipIf(!existsSync(SO))('wave_duel halls on LiteSVM', () => {
     svm.setSlotHashes([{ slot: svm.getClock().slot, hash: getBase58Decoder().decode(SLOT_HASH) }]);
     [admin, treasury, host, stranger, ...guests] = await Promise.all(Array.from({ length: 11 }, wallet));
     for (const w of [admin, treasury, host, stranger, ...guests]) svm.airdrop(w.address, lamports(10n * SOL));
+    await grantUpgradeAuthority(svm, PROGRAM, admin.address);
     await ok(admin, [await initConfigIx(admin.address, treasury.address, FEE_BPS)]);
   });
 
