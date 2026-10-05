@@ -88,7 +88,7 @@ export function createChainShop(deps: ChainShopDeps): Shop {
       const ix =
         mint === 'SOL'
           ? await buyPackIx(deps.wallet, config!.treasury, index, proof)
-          : await buyPackTokenIx(deps.wallet, cat.mints[mint]!, index, proof);
+          : await buyPackTokenIx(deps.wallet, cat.mints[mint]!, index, proof, config!.treasury);
       const before = await fetchBuyer(deps.rpc, deps.wallet);
       const sent = await send(deps.rpc, deps.signer, [ix]);
       let coins: number | null = null;

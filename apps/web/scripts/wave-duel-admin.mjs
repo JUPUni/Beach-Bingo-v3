@@ -633,6 +633,8 @@ if (cmd === 'init-config') {
   }
   if (!ok) process.exit(1);
 } else if (cmd === 'shop-buy') {
+  const config = await fetchConfig(rpc);
+  if (!config) throw new Error('init-config first');
   // buy_pack (sol) or buy_pack_token (<mint>) by the key pair; `--seeker` passes its mock SGT. The
   // Buyer PDA before and after, the CoinsBought event of the confirmed transaction and the token
   // account deltas are checked against the registry's price arithmetic.
@@ -685,7 +687,7 @@ if (cmd === 'init-config') {
     const buyerAta = tokens.atas[0];
     const before = { buyer: await tokenBalance(rpc, buyerAta), treasury: await tokenBalance(rpc, entry.treasuryAta) };
     buyerBefore = await fetchBuyer(rpc, buyer.address);
-    sent = await sendSigned(rpc, buyer.address, [buyer.keyPair], [await buyPackTokenIx(buyer.address, entry, pack, buyerProof)]);
+    sent = await sendSigned(rpc, buyer.address, [buyer.keyPair], [await buyPackTokenIx(buyer.address, entry, pack, buyerProof, config.treasury)]);
     const after = { buyer: await tokenBalance(rpc, buyerAta), treasury: await tokenBalance(rpc, entry.treasuryAta) };
     moved = { buyer: before.buyer - after.buyer, treasury: after.treasury - before.treasury };
     console.log(`  list ${fmtUnits(list, entry, symbol(entry))} · discount ${entry.discountBps}${seeker ? ` + Seeker ${config.seekerDiscountBps}` : ''} bps → ${expectedPaid} base units (${fmtUnits(expectedPaid, entry, symbol(entry))})`);

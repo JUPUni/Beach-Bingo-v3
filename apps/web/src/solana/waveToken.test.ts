@@ -804,14 +804,14 @@ describe.skipIf(!existsSync(SO))('wave_duel tokens on LiteSVM', () => {
     const s = await entry(skr);
     const hostAta = await ataAddress(host.address, skr, TOKEN_PROGRAM);
     let tokensBefore = { host: tokens(hostAta)!, treasury: tokens(s.treasuryAta)! };
-    await ok(host, [await buyPackTokenIx(host.address, s, 1)]);
+    await ok(host, [await buyPackTokenIx(host.address, s, 1, null, treasury.address)]);
     expect(tokensBefore.host - tokens(hostAta)!).toBe(packPrice(25n * UNIT, 2_000));
     expect(tokens(s.treasuryAta)! - tokensBefore.treasury).toBe(packPrice(25n * UNIT, 2_000));
     tokensBefore = { host: tokens(hostAta)!, treasury: tokens(s.treasuryAta)! };
-    await ok(host, [await buyPackTokenIx(host.address, s, 1, { tokenAccount: sgtAccount, mint: sgtMint })]);
+    await ok(host, [await buyPackTokenIx(host.address, s, 1, { tokenAccount: sgtAccount, mint: sgtMint }, treasury.address)]);
     expect(tokensBefore.host - tokens(hostAta)!).toBe(packPrice(25n * UNIT, 3_000));
-    await fails(host, [await buyPackTokenIx(host.address, s, 2)], 'PackNotForSale');
-    await fails(host, [await buyPackTokenIx(host.address, await entry(usdc), 0)], 'PackNotForSale');
+    await fails(host, [await buyPackTokenIx(host.address, s, 2, null, treasury.address)], 'PackNotForSale');
+    await fails(host, [await buyPackTokenIx(host.address, await entry(usdc), 0, null, treasury.address)], 'PackNotForSale');
     expect(readBuyer()).toMatchObject({ coinsTotal: 2n * BigInt(c.packCoins[0]!) + 2n * BigInt(c.packCoins[1]!), purchases: 4 });
     // Another wallet's record is its own, and a wallet cannot pay into someone else's.
     await ok(guests[0]!, [await buyPackIx(guests[0]!.address, treasury.address, 0)]);

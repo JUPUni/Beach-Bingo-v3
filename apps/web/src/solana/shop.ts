@@ -174,7 +174,8 @@ export async function buyPackIx(wallet: Address, treasury: Address, pack: number
   };
 }
 
-export async function buyPackTokenIx(wallet: Address, entry: MintEntryAccount, pack: number, proof: SeekerProof | null = null): Promise<Instruction> {
+/** `treasury` is the config's treasury: the program pays its associated token account for the mint, derived at purchase time (so a treasury change moves token revenue too). */
+export async function buyPackTokenIx(wallet: Address, entry: MintEntryAccount, pack: number, proof: SeekerProof | null, treasury: Address): Promise<Instruction> {
   return {
     programAddress: program(),
     accounts: [
@@ -184,7 +185,7 @@ export async function buyPackTokenIx(wallet: Address, entry: MintEntryAccount, p
       meta(await buyerAddress(wallet), AccountRole.WRITABLE),
       meta(wallet, AccountRole.WRITABLE_SIGNER),
       meta(await ataAddress(wallet, entry.mint, entry.tokenProgram), AccountRole.WRITABLE),
-      meta(entry.treasuryAta, AccountRole.WRITABLE),
+      meta(await ataAddress(treasury, entry.mint, entry.tokenProgram), AccountRole.WRITABLE),
       meta(entry.tokenProgram, AccountRole.READONLY),
       meta(SYSTEM_PROGRAM, AccountRole.READONLY),
       ...seekerMetas(proof),
