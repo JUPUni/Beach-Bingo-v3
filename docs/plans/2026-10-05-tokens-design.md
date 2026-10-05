@@ -174,6 +174,20 @@ its owner nothing outside the game.
 3. The devnet build gets the token picker, the badges, the SKR boosts and the coin shop;
    production stays play money with none of this code loaded until the owner's go.
 
+## 7b. Devnet test tokens (created 2026-10-05, deployer `5VcGxKLHDJhPAFSN8VK9qpxkM4gniQtPKwRrMnUcqA8u` as authority)
+
+| Token | Devnet mint | Shape |
+|---|---|---|
+| USDC | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` | Circle's devnet USDC (SPL Token, 6 decimals, freeze authority); faucet.circle.com |
+| PYUSD | `CXk2AMBfi3TwaEL2468s6zP8xq9NxTXjp9gjMgzeUynM` | Paxos's devnet PYUSD (Token-2022, the mainnet extension set) |
+| JUP look-alike | `8r9rjzkMoUEJ4pxy38UvXwokiCjRkq9vWhWyJMMF1UCW` | SPL Token, 6 decimals, no freeze authority, deployer mints test balances (1,000,000 minted) |
+| SKR look-alike | `GY3JAeDQskMFYz25VJwdFUg8yDEVNhEfP6vUFDm4RPzz` | SPL Token, 6 decimals, no freeze authority, deployer mints test balances (1,000,000 minted) |
+| Mock Seeker Genesis group | `GRhL4t47LyWkVtHJ3ierasdcxyjXmzkE6uMJvv38CsHn` | Token-2022 group mint with metadata ("Mock Seeker Genesis Token", MSGT), max 100,000 members |
+| Mock SGT member (deployer) | `DajAyfr9wkxFgUDNeQ1pQBKBAscqdHRjmNFhh2FKJYTz` | Token-2022 member: metadata pointer and group member both point at the mock group; one token, mint authority revoked |
+
+A tester gets a mock SGT with the admin script's `create-devnet-sgt <wallet>` (or the three
+`spl-token` commands it wraps); the program's `sgt_group` on devnet is the mock group above.
+
 ## 8. Tests
 
 - Program: the 7 native vector tests unchanged; LiteSVM: the 11 SOL tests unchanged; token rooms
