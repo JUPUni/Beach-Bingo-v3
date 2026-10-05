@@ -5,7 +5,7 @@ import { useWalletAccountTransactionSendingSigner } from '@solana/react';
 import { Segmented } from '../../games/common.tsx';
 import { Badges } from '../../solana/Badges.tsx';
 import { rpc, walletClient } from '../../solana/client.ts';
-import { CHAIN, CLUSTER, shortAddress } from '../../solana/config.ts';
+import { CHAIN, CLUSTER, WAVE_DUEL_PROGRAM, shortAddress } from '../../solana/config.ts';
 import { formatAmount, formatStake } from '../../solana/tokens.ts';
 import * as duel from '../../solana/waveDuel.ts';
 import * as halls from '../../solana/waveHall.ts';
@@ -42,6 +42,14 @@ const CARDS = range(HALL_CARDS.min, HALL_CARDS.max);
 export default function StakePanel({ m }: { m: LiveRoomMachine }) {
   const connected = useConnectedWallet(walletClient);
   const openPopup = useGame((s) => s.openPopup);
+  // A stake on another program (another build, a crafted peer): this app cannot read or settle it, so no button.
+  if (m.stake && m.stake.program !== WAVE_DUEL_PROGRAM) {
+    return (
+      <div className="stake">
+        <p className="small-note">This stake is on a program this app does not know.</p>
+      </div>
+    );
+  }
   if (!connected) {
     return (
       <div className="stake">

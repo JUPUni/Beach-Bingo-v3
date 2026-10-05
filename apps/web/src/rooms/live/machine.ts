@@ -142,11 +142,15 @@ export interface MachineOptions {
   wallet: Wallet;
   connect: Connect;
   onEvent?: (event: LiveEvent) => void;
+  /** Guest: take the host's stake (the default). A build without staked rooms refuses it instead of storing it. */
+  acceptStakes?: boolean;
 }
 
 const TICK_MS = 100;
 const JOIN_TIMEOUT_MS = 25_000;
 const FEED_LENGTH = 6;
+/** What a guest whose build refuses stakes is told: once when the stake arrives, and on every refused buy. */
+const STAKE_REFUSED = 'This room plays for a stake on chain, which this app does not join';
 /** A seat whose wallet no peer announced is named by its address. */
 const shortWallet = (wallet: string) => `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
 
@@ -182,6 +186,8 @@ export class LiveRoomMachine {
   nextRoundReady = false;
   /** Staked rooms: the escrow the host opened. Seats are deposits, not coins. */
   stake: StakeInfo | null = null;
+  /** Guest: the host's room is staked and this build does not join staked rooms, so the stake was not kept. */
+  stakeRefused = false;
   myWallet: string | null = null;
   chain: ChainView | null = null;
   /** Signature of the settlement transaction, once somebody sent it from this screen. */
@@ -191,6 +197,7 @@ export class LiveRoomMachine {
   version = 0;
 
   private readonly opts: MachineOptions;
+  private readonly acceptStakes: boolean;
   private net: Net | null = null;
   private serverSeed = '';
   private lastStart: Extract<LiveMessage, { t: 'start' }> | null = null;
@@ -204,6 +211,7 @@ export class LiveRoomMachine {
     this.opts = opts;
     this.code = opts.code;
     this.host = opts.host;
+    this.acceptStakes = opts.acceptStakes ?? true;
     if (opts.host) {
       if (!opts.preset) throw new Error('a host needs a preset');
       this.preset = opts.preset;
@@ -344,6 +352,7 @@ export class LiveRoomMachine {
     const config = this.config;
     if (this.status !== 'lobby' || !config || count < 1) return;
     if (this.stake) return this.toast('This room is staked: your seat is your deposit', 'warn');
+    if (this.stakeRefused) return this.toast(STAKE_REFUSED, 'warn');
     const me = this.me;
     if (!me) return;
     const max = maxCardsFor(config);
@@ -556,10 +565,19 @@ export class LiveRoomMachine {
         }
         this.playing = msg.playing;
         this.currency = msg.currency ?? 'shells';
-        if (msg.stake) this.stake = msg.stake;
-        // The host called the escrow off while we were in the lobby: our seat, if we had one,
-        // was refunded on chain with it. (At the results the panel keeps the old stake to settle.)
-        else if (this.stake && (this.status === 'lobby' || this.status === 'connecting')) this.dropStake();
+        if (msg.stake && !this.acceptStakes) {
+          // A build without staked rooms (the shop on mainnet) keeps the stake off this screen:
+          // nothing reads as staked, buys are refused, and the lobby says why, once.
+          if (!this.stakeRefused) this.toast(STAKE_REFUSED, 'warn');
+          this.stakeRefused = true;
+        } else if (msg.stake) {
+          this.stake = msg.stake;
+        } else {
+          this.stakeRefused = false;
+          // The host called the escrow off while we were in the lobby: our seat, if we had one,
+          // was refunded on chain with it. (At the results the panel keeps the old stake to settle.)
+          if (this.stake && (this.status === 'lobby' || this.status === 'connecting')) this.dropStake();
+        }
         if (this.status === 'connecting') this.status = 'lobby';
         this.emit();
         return;

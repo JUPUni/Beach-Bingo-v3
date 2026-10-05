@@ -2,6 +2,7 @@ import { useCallback, useId, useSyncExternalStore } from 'react';
 import type { RoomPresetId } from '@beach-bingo/engine';
 import { callBall, say, sfx } from '../../lib/audio.ts';
 import { logExternalRound } from '../../lib/fair.ts';
+import { ONCHAIN_STAKES_ENABLED } from '../../solana/config.ts';
 import { useGame } from '../../state/store.ts';
 import { toast } from '../../ui/toast.ts';
 import { LiveRoomMachine, type LiveEvent } from './machine.ts';
@@ -45,6 +46,8 @@ export function useLiveRoom(opts: { code: string; host: boolean; preset?: RoomPr
           preset,
           // The host's table when the room opens is the room's currency for everyone in it.
           currency: useGame.getState().table,
+          // Only a build with staked rooms takes a host's stake; the shop build refuses it.
+          acceptStakes: ONCHAIN_STAKES_ENABLED,
           name: useGame.getState().profile.name,
           wallet: {
             blocked: (currency) => {

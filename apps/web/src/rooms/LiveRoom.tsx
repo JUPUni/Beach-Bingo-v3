@@ -150,7 +150,8 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
             : `Stages: ${config.stages.map((s) => `${s.pattern.name} ${Math.round(s.share * 100)}%`).join(' → ')}. Cards daub themselves.`}{' '}
           Everyone sees the same balls, and every phone checks every win.
         </p>
-        {!m.stake && (
+        {m.stakeRefused && <p className="small-note">This room plays for a stake on chain, which this app does not join.</p>}
+        {!m.stake && !m.stakeRefused && (
           <p className="small-note">
             {currency === 'coins' ? `A coin room: cards are ${config.cardPrice} coins each and prizes pay coins.` : `Cards are ${config.cardPrice} shells each and prizes pay shells.`}
           </p>
@@ -180,7 +181,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
             </li>
           ))}
         </ul>
-        {!m.stake && (
+        {!m.stake && !m.stakeRefused && (
           <div className="room__buy">
             {Array.from({ length: maxCardsFor(config) - m.myCards }, (_, i) => i + 1)
               .slice(0, 3)
@@ -198,7 +199,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
           </GreenButton>
         ) : (
           <p className="room__count t-outline t-outline--navy">
-            {m.myCards ? `Waiting for ${m.hostName} to start…` : m.stake ? 'Take a seat to play the next round' : 'Buy a card to play the next round'}
+            {m.myCards ? `Waiting for ${m.hostName} to start…` : m.stake ? 'Take a seat to play the next round' : m.stakeRefused ? 'Watching this room' : 'Buy a card to play the next round'}
           </p>
         )}
         <button type="button" className="room__fair" onClick={() => openPopup('fairness')}>
@@ -280,7 +281,7 @@ export default function LiveRoom({ code, host, preset }: { code: string; host: b
             }
           >
             <div className="popup-center">
-              {m.stake ? (
+              {STAKES && m.stake ? (
                 <StakeSide m={m} />
               ) : myWin > 0 ? (
                 <RewardPill amount={myWin} table={currency} />

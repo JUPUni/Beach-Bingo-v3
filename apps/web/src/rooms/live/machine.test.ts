@@ -69,7 +69,7 @@ function wallet(coins = 1000): Wallet & { coins: number; won: number } {
 const CODE = 'KRT7W';
 const tick = (ms: number) => vi.advanceTimersByTimeAsync(ms);
 
-function machine(hub: Hub, opts: { host: boolean; preset?: RoomPresetId; name: string; events?: LiveEvent[] }) {
+function machine(hub: Hub, opts: { host: boolean; preset?: RoomPresetId; name: string; events?: LiveEvent[]; acceptStakes?: boolean }) {
   const w = wallet();
   const m = new LiveRoomMachine({
     code: CODE,
@@ -79,6 +79,7 @@ function machine(hub: Hub, opts: { host: boolean; preset?: RoomPresetId; name: s
     wallet: w,
     connect: hub.connect,
     onEvent: (e) => opts.events?.push(e),
+    acceptStakes: opts.acceptStakes,
   });
   return { m, w };
 }
@@ -608,6 +609,43 @@ describe('a live room', () => {
     expect(b.m.myCards).toBe(0);
     expect(a.m.peers.get(b.m.selfId)).toMatchObject({ cards: 0, wallet: null });
     b.m.buy(1);
+    expect(b.w.coins).toBe(990);
+  });
+
+  it('keeps a guest whose build has no staked rooms out of the stake: refused, not stored, until the host calls it off', async () => {
+    const events: LiveEvent[] = [];
+    const a = machine(hub, { host: true, preset: 'waveRush', name: 'Ana' });
+    const b = machine(hub, { host: false, name: 'Bo', events, acceptStakes: false });
+    await a.m.open();
+    await b.m.open();
+    await tick(100);
+    const refusals = () => events.filter((e) => e.kind === 'toast' && e.text.includes('does not join')).length;
+    const stake = { kind: 'room' as const, lamports: '100000000', host: '2'.repeat(32), program: '3'.repeat(32), room: '4'.repeat(32) };
+    a.m.setStake(stake, stake.host);
+    await tick(100);
+    expect(a.m.stake).toEqual(stake);
+    expect(b.m.stake).toBeNull();
+    expect(b.m.staked).toBe(false);
+    expect(b.m.stakeRefused).toBe(true);
+    expect(refusals()).toBe(1);
+    // The host answers every join with the same room message: it does not nag.
+    hub.inject(CODE, a.m.selfId, { t: 'room', preset: 'waveRush', round: 1, commitment: a.m.commitment, playing: false, currency: 'shells', stake });
+    await tick(100);
+    expect(b.m.stakeRefused).toBe(true);
+    expect(refusals()).toBe(1);
+    // No seat and no coins while the room is staked; nobody hears of a card either.
+    b.m.buy(1);
+    await tick(100);
+    expect(b.m.myCards).toBe(0);
+    expect(b.w.coins).toBe(1000);
+    expect(refusals()).toBe(2);
+    expect(a.m.peers.get(b.m.selfId)?.cards).toBe(0);
+    // The host calls the table off: a room message without a stake, and the guest plays for shells again.
+    a.m.clearStake();
+    await tick(100);
+    expect(b.m.stakeRefused).toBe(false);
+    b.m.buy(1);
+    expect(b.m.myCards).toBe(1);
     expect(b.w.coins).toBe(990);
   });
 
