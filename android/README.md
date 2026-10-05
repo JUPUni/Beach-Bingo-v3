@@ -43,3 +43,17 @@ webshell CLI. `pnpm brand` from the repo root rewrites the adaptive icon layers
 (`drawable-nodpi/ic_launcher_background_sea.png`, `ic_launcher_foreground_inner.png`,
 `ic_launcher_monochrome_inner.png`), the legacy `mipmap-*/ic_launcher*.webp` files and the Teal in
 `values/colors.xml`. Don't re-run `webshell init --icon` over them.
+
+## What the shell tells the page
+
+The WebView's user agent carries three markers the game reads (all hints, since any browser can
+send the same string; nothing of value is granted on them):
+
+- `Solana Mobile Web Shell`: the marker the Solana Mobile CLI template sets; `isWebShell()` in the
+  web app orders the wallet list for Mobile Wallet Adapter and adjusts the copy.
+- `SeedVault/1`: added when the Seed Vault Wallet (`com.solanamobile.wallet`) is installed, which
+  marks a Seed Vault device; the manifest declares that package under `<queries>` so the check
+  works on Android 11 and later. `isSeedVaultDevice()` shows the "Seed Vault device" badge.
+- `Model/<Build.MODEL>` (for example `Model/Seeker`): `shellDeviceModel()`, for layout and copy.
+
+Seeker perks and fee tiers never rely on these: they go through the Seeker Genesis Token on chain.

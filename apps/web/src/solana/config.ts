@@ -27,6 +27,22 @@ export function isWebShell(): boolean {
   return typeof navigator !== 'undefined' && navigator.userAgent.includes('Solana Mobile Web Shell');
 }
 
+/**
+ * True when the Android shell found the Seed Vault Wallet on the device (it appends `SeedVault/1`
+ * to the user agent). A hint for badges and layout, never a proof: anything of value goes through
+ * the Seeker Genesis Token on chain.
+ */
+export function isSeedVaultDevice(): boolean {
+  return typeof navigator !== 'undefined' && /\bSeedVault\/\d/.test(navigator.userAgent);
+}
+
+/** The device model the shell reports (`Model/Seeker`), or null outside the shell. */
+export function shellDeviceModel(): string | null {
+  if (typeof navigator === 'undefined') return null;
+  const m = /\bModel\/([A-Za-z0-9._-]+)/.exec(navigator.userAgent);
+  return m ? m[1]! : null;
+}
+
 export function isAndroid(): boolean {
   return typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
 }

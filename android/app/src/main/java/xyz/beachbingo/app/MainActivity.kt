@@ -1,6 +1,8 @@
 package xyz.beachbingo.app
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
@@ -107,6 +109,7 @@ fun WebShellScreen() {
                 settings.userAgentString =
                     appendUserAgentMarker(
                         baseUserAgent = originalUa,
+                        context = context,
                     )
 
                 if (BuildConfig.DEBUG) {
@@ -303,15 +306,32 @@ private fun decodeJavascriptStringResult(rawResult: String?): String {
         .getOrDefault(rawResult)
 }
 
-private fun appendUserAgentMarker(baseUserAgent: String): String {
+/**
+ * The page reads two things from the user agent: the web-shell marker the Solana Mobile CLI
+ * template sets ("Solana Mobile Web Shell"), and the device markers added here, "SeedVault/1" when
+ * the Seed Vault Wallet is installed and "Model/<Build.MODEL>", so the game can say "Seed Vault
+ * device" and lay itself out for a Seeker. All three are hints: any browser can send the same
+ * string, so the page grants nothing of value on them (Seeker perks go through the Seeker Genesis
+ * Token on chain).
+ */
+private fun appendUserAgentMarker(
+    baseUserAgent: String,
+    context: Context,
+): String {
+    val parts = mutableListOf(baseUserAgent.trim())
     val marker = "Solana Mobile Web Shell"
-    if (marker.isEmpty()) return baseUserAgent.trim()
-    return if (baseUserAgent.contains(marker)) {
-        baseUserAgent.trim()
-    } else {
-        "${baseUserAgent.trim()} $marker".trim()
-    }
+    if (!baseUserAgent.contains(marker)) parts.add(marker)
+    if (!baseUserAgent.contains("SeedVault/") && hasSeedVaultWallet(context)) parts.add("SeedVault/1")
+    val model = (Build.MODEL ?: "").replace(Regex("[^A-Za-z0-9._-]"), "")
+    if (model.isNotEmpty() && !baseUserAgent.contains("Model/")) parts.add("Model/$model")
+    return parts.joinToString(" ").trim()
 }
+
+/** The Seed Vault Wallet is the Seeker's built-in wallet; its presence marks a Seed Vault device. */
+private fun hasSeedVaultWallet(context: Context): Boolean =
+    runCatching { context.packageManager.getPackageInfo(SEED_VAULT_WALLET_PACKAGE, 0) }.isSuccess
+
+private const val SEED_VAULT_WALLET_PACKAGE = "com.solanamobile.wallet"
 
 private fun normalizeHttpUrl(): String? {
     val trimmed = BuildConfig.SOLANA_MOBILE_URL.trim()
