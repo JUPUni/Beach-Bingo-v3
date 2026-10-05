@@ -6,6 +6,23 @@
 //   pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs round [stakeSol]
 //   pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs hall [stakeSol] [cards per seat...]
 //
+// The token registry, the config's new fields and the devnet mocks:
+//
+//   ... wave-duel-admin.mjs migrate-config                       grow a first-deployment config to the current layout (once)
+//   ... wave-duel-admin.mjs set-config key=value ...             fee, paused, pauser, sgt, packs, seekerDiscount, solPrices, solSeekerFee, treasury
+//   ... wave-duel-admin.mjs register-mint <mint> <min> <max> <feeBps> <seekerFeeBps> [discountBps] [packPrices csv]
+//   ... wave-duel-admin.mjs set-mint <mint> key=value ...        min, max, fee, seekerFee, discount, prices, enabled
+//   ... wave-duel-admin.mjs show-mints
+//   ... wave-duel-admin.mjs create-devnet-mint <spl|token2022> <decimals> <amount> [wallet] [--freeze] [--pyusd-like]
+//   ... wave-duel-admin.mjs create-devnet-sgt [wallet]
+//
+// Stakes and prices are base units. `create-devnet-mint` makes a look-alike with the deployer as
+// authority (JUP, SKR; `--freeze` for a USDC-like freeze authority; `--pyusd-like` for Token-2022
+// with a permanent delegate, a zero transfer fee, an empty transfer hook and a metadata pointer) and
+// mints `amount` whole tokens to `wallet` (default: the deployer). `create-devnet-sgt` makes a mock
+// Seeker Genesis Token group and mints one member token to `wallet`; put the group it prints in
+// `set-config sgt=<group>` so `prove_seeker_*` and the Seeker shop discount work on devnet.
+//
 // Environment: RPC_URL (default devnet), KEYPAIR (default .secrets/devnet-deployer.json),
 // WAVE_DUEL_PROGRAM (default the devnet deployment). `round` funds two throwaway wallets from the
 // key pair, plays open → join → settle, and checks the payout against the engine's own replay;
@@ -15,13 +32,31 @@ import {
   AccountRole,
   address,
   createKeyPairFromBytes,
+  createNoopSigner,
   createSolanaRpc,
   generateKeyPair,
+  getAddressEncoder,
   getAddressFromPublicKey,
   getStructEncoder,
   getU32Encoder,
   getU64Encoder,
+  none,
+  some,
 } from '@solana/kit';
+import {
+  getCreateAssociatedTokenIdempotentInstruction,
+  getInitializeGroupMemberPointerInstruction,
+  getInitializeGroupPointerInstruction,
+  getInitializeMetadataPointerInstruction,
+  getInitializeMint2Instruction,
+  getInitializePermanentDelegateInstruction,
+  getInitializeTokenGroupInstruction,
+  getInitializeTokenGroupMemberInstruction,
+  getInitializeTransferFeeConfigInstruction,
+  getInitializeTransferHookInstruction,
+  getMintSize,
+  getMintToInstruction,
+} from '@solana-program/token-2022';
 import { commitSeed, createServerSeed, rooms } from '../../../packages/engine/src/index.ts';
 import { buildRoom, makeCode } from '../src/rooms/live/protocol.ts';
 import {
@@ -32,13 +67,16 @@ import {
   formatSol,
   initConfigIx,
   joinRoomIx,
+  migrateConfigIx,
   openRoomIx,
   roomAddress,
   sendSigned,
+  setConfigIx,
   settleIx,
   SYSTEM_PROGRAM,
 } from '../src/solana/waveDuel.ts';
 import { fetchHall, hallAddress, hallRoster, joinHallIx, lockHallIx, openHallIx, settleHallIxs, splitHallPot } from '../src/solana/waveHall.ts';
+import { ataAddress, fetchMintEntries, fetchMintEntry, registerMintIx, setMintIx, TOKEN_2022_PROGRAM, TOKEN_PROGRAM } from '../src/solana/waveToken.ts';
 
 const RPC_URL = process.env.RPC_URL || 'https://api.devnet.solana.com';
 const KEYPAIR = process.env.KEYPAIR || new URL('../../../.secrets/devnet-deployer.json', import.meta.url).pathname;
@@ -225,7 +263,200 @@ if (cmd === 'init-config') {
   }
   console.log(`  swept back to the payer (${formatSol(await balance(payer.address))})`);
   if (!agree) process.exit(1);
+} else if (cmd === 'migrate-config') {
+  const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [await migrateConfigIx(payer.address)]);
+  console.log('config migrated', explorer(sent.signature));
+  console.log('config', await fetchConfig(rpc));
+} else if (cmd === 'set-config') {
+  // Starts from the config as it is; `treasury=` names the account, everything else a field.
+  const current = await fetchConfig(rpc);
+  if (!current) throw new Error('init-config first');
+  const kv = keyValues(args);
+  const csv = (v, map) => v.split(',').map(map);
+  const terms = {
+    feeBps: kv.fee !== undefined ? Number(kv.fee) : current.feeBps,
+    paused: kv.paused !== undefined ? kv.paused === 'true' : current.paused,
+    pauser: kv.pauser ? address(kv.pauser) : current.pauser,
+    sgtGroup: kv.sgt ? address(kv.sgt) : current.sgtGroup,
+    packCoins: kv.packs ? csv(kv.packs, Number) : current.packCoins,
+    seekerDiscountBps: kv.seekerDiscount !== undefined ? Number(kv.seekerDiscount) : current.seekerDiscountBps,
+    solPackPrices: kv.solPrices ? csv(kv.solPrices, BigInt) : current.solPackPrices,
+    solSeekerFeeBps: kv.solSeekerFee !== undefined ? Number(kv.solSeekerFee) : current.solSeekerFeeBps,
+  };
+  const treasury = kv.treasury ? address(kv.treasury) : current.treasury;
+  const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [await setConfigIx(payer.address, treasury, terms)]);
+  console.log('config set', explorer(sent.signature));
+  console.log('config', await fetchConfig(rpc));
+} else if (cmd === 'register-mint') {
+  const [mintArg, min, max, feeBps, seekerFeeBps, discountBps = '0', prices = '0,0,0,0'] = args;
+  if (!mintArg || !min || !max || feeBps === undefined || seekerFeeBps === undefined) throw new Error('register-mint <mint> <min> <max> <feeBps> <seekerFeeBps> [discountBps] [packPrices csv]');
+  const mint = address(mintArg);
+  const config = await fetchConfig(rpc);
+  if (!config) throw new Error('init-config first');
+  const tokenProgram = await tokenProgramOf(mint);
+  // The treasury's token account must exist before registration; the deployer creates it if needed.
+  const treasuryAta = await ataAddress(config.treasury, mint, tokenProgram);
+  if (!(await rpc.getAccountInfo(treasuryAta, { encoding: 'base64' }).send()).value) {
+    const created = await sendSigned(rpc, payer.address, [payer.keyPair], [
+      getCreateAssociatedTokenIdempotentInstruction({ payer: createNoopSigner(payer.address), ata: treasuryAta, owner: config.treasury, mint, tokenProgram }),
+    ]);
+    console.log(`  treasury token account ${treasuryAta} created: ${explorer(created.signature)}`);
+  }
+  const terms = { minStake: BigInt(min), maxStake: BigInt(max), feeBps: Number(feeBps), seekerFeeBps: Number(seekerFeeBps), packPrices: prices.split(',').map(BigInt), discountBps: Number(discountBps) };
+  const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [await registerMintIx(payer.address, config.treasury, mint, tokenProgram, terms)]);
+  console.log(`mint registered under ${tokenProgram === TOKEN_PROGRAM ? 'SPL Token' : 'Token-2022'}: ${explorer(sent.signature)}`);
+  console.log(await fetchMintEntry(rpc, mint));
+} else if (cmd === 'set-mint') {
+  const [mintArg, ...rest] = args;
+  if (!mintArg) throw new Error('set-mint <mint> key=value ... (min, max, fee, seekerFee, discount, prices, enabled)');
+  const mint = address(mintArg);
+  const entry = await fetchMintEntry(rpc, mint);
+  if (!entry) throw new Error('mint is not registered');
+  const kv = keyValues(rest);
+  const terms = {
+    minStake: kv.min ? BigInt(kv.min) : entry.minStake,
+    maxStake: kv.max ? BigInt(kv.max) : entry.maxStake,
+    feeBps: kv.fee !== undefined ? Number(kv.fee) : entry.feeBps,
+    seekerFeeBps: kv.seekerFee !== undefined ? Number(kv.seekerFee) : entry.seekerFeeBps,
+    packPrices: kv.prices ? kv.prices.split(',').map(BigInt) : entry.packPrices,
+    discountBps: kv.discount !== undefined ? Number(kv.discount) : entry.discountBps,
+  };
+  const enabled = kv.enabled !== undefined ? kv.enabled === 'true' : entry.enabled;
+  const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [await setMintIx(payer.address, mint, terms, enabled)]);
+  console.log('mint updated', explorer(sent.signature));
+  console.log(await fetchMintEntry(rpc, mint));
+} else if (cmd === 'show-mints') {
+  for (const entry of await fetchMintEntries(rpc)) console.log(entry);
+} else if (cmd === 'create-devnet-mint') {
+  const [kind, decimalsArg, amountArg, walletArg] = args.filter((a) => !a.startsWith('--'));
+  const flags = new Set(args.filter((a) => a.startsWith('--')));
+  if (!['spl', 'token2022'].includes(kind) || !decimalsArg || !amountArg) throw new Error('create-devnet-mint <spl|token2022> <decimals> <amount> [wallet] [--freeze] [--pyusd-like]');
+  const program = kind === 'spl' ? TOKEN_PROGRAM : TOKEN_2022_PROGRAM;
+  const decimals = Number(decimalsArg);
+  const to = address(walletArg || payer.address);
+  const pyusdLike = flags.has('--pyusd-like');
+  if (pyusdLike && program !== TOKEN_2022_PROGRAM) throw new Error('--pyusd-like needs token2022');
+  const zeroFee = { epoch: 0n, maximumFee: 0n, transferFeeBasisPoints: 0 };
+  const extensions = pyusdLike
+    ? [
+        { __kind: 'PermanentDelegate', delegate: payer.address },
+        { __kind: 'TransferFeeConfig', transferFeeConfigAuthority: payer.address, withdrawWithheldAuthority: payer.address, withheldAmount: 0n, olderTransferFee: zeroFee, newerTransferFee: zeroFee },
+        { __kind: 'TransferHook', authority: payer.address, programId: SYSTEM_PROGRAM },
+        { __kind: 'MetadataPointer', authority: some(payer.address), metadataAddress: none() },
+      ]
+    : [];
+  const mint = await createMint({
+    program,
+    decimals,
+    freezeAuthority: flags.has('--freeze') || pyusdLike ? payer.address : null,
+    extensions,
+    before: (m) =>
+      pyusdLike
+        ? [
+            getInitializePermanentDelegateInstruction({ mint: m, delegate: payer.address }),
+            getInitializeTransferFeeConfigInstruction({ mint: m, transferFeeConfigAuthority: payer.address, withdrawWithheldAuthority: payer.address, transferFeeBasisPoints: 0, maximumFee: 0n }),
+            getInitializeTransferHookInstruction({ mint: m, authority: payer.address, programId: null }),
+            getInitializeMetadataPointerInstruction({ mint: m, authority: payer.address, metadataAddress: m }),
+          ]
+        : [],
+  });
+  const amount = BigInt(amountArg) * 10n ** BigInt(decimals);
+  const ata = await mintTo(mint, program, to, amount);
+  console.log(`mint ${mint} (${kind}, ${decimals} decimals${pyusdLike ? ', PYUSD-like extensions' : ''}${flags.has('--freeze') ? ', freeze authority' : ''}); ${amountArg} minted to ${to} at ${ata}`);
+} else if (cmd === 'create-devnet-sgt') {
+  // A mock Seeker Genesis Token: a Token-2022 group, and one member token for the wallet. The
+  // member's metadata pointer and group membership both name the group, as the real SGT's do.
+  const to = address(args[0] || payer.address);
+  const group = await createMint({
+    program: TOKEN_2022_PROGRAM,
+    decimals: 0,
+    freezeAuthority: null,
+    extensions: [{ __kind: 'GroupPointer', authority: some(payer.address), groupAddress: none() }],
+    later: [{ __kind: 'TokenGroup', updateAuthority: some(payer.address), mint: payer.address, size: 0n, maxSize: 1_000_000n }],
+    before: (m) => [getInitializeGroupPointerInstruction({ mint: m, authority: payer.address, groupAddress: m })],
+    after: (m) => [getInitializeTokenGroupInstruction({ group: m, mint: m, mintAuthority: createNoopSigner(payer.address), updateAuthority: payer.address, maxSize: 1_000_000n })],
+  });
+  const member = await createMint({
+    program: TOKEN_2022_PROGRAM,
+    decimals: 0,
+    freezeAuthority: null,
+    extensions: [
+      { __kind: 'GroupMemberPointer', authority: some(payer.address), memberAddress: none() },
+      { __kind: 'MetadataPointer', authority: some(payer.address), metadataAddress: none() },
+    ],
+    later: [{ __kind: 'TokenGroupMember', mint: payer.address, group, memberNumber: 0n }],
+    before: (m) => [
+      getInitializeGroupMemberPointerInstruction({ mint: m, authority: payer.address, memberAddress: m }),
+      getInitializeMetadataPointerInstruction({ mint: m, authority: payer.address, metadataAddress: group }),
+    ],
+    after: (m) => [getInitializeTokenGroupMemberInstruction({ member: m, memberMint: m, memberMintAuthority: createNoopSigner(payer.address), group, groupUpdateAuthority: createNoopSigner(payer.address) })],
+  });
+  const ata = await mintTo(member, TOKEN_2022_PROGRAM, to, 1n);
+  console.log(`mock SGT group ${group}; member mint ${member} held by ${to} at ${ata}`);
+  console.log(`now: wave-duel-admin.mjs set-config sgt=${group}`);
 } else {
   console.error(`unknown command ${cmd}`);
   process.exit(2);
+}
+
+/* ---------- helpers for the token commands ---------- */
+
+function keyValues(list) {
+  const out = {};
+  for (const item of list) {
+    const at = item.indexOf('=');
+    if (at < 0) throw new Error(`expected key=value, got ${item}`);
+    out[item.slice(0, at)] = item.slice(at + 1);
+  }
+  return out;
+}
+
+async function tokenProgramOf(mint) {
+  const { value } = await rpc.getAccountInfo(mint, { encoding: 'base64' }).send();
+  if (!value) throw new Error(`no account at ${mint}`);
+  if (value.owner === TOKEN_PROGRAM) return TOKEN_PROGRAM;
+  if (value.owner === TOKEN_2022_PROGRAM) return TOKEN_2022_PROGRAM;
+  throw new Error(`${mint} is owned by ${value.owner}, not a token program`);
+}
+
+const createAccountIx = (from, newAccount, rent, space, owner) => ({
+  programAddress: SYSTEM_PROGRAM,
+  accounts: [
+    { address: from, role: AccountRole.WRITABLE_SIGNER },
+    { address: newAccount, role: AccountRole.WRITABLE_SIGNER },
+  ],
+  data: getStructEncoder([
+    ['ix', getU32Encoder()],
+    ['lamports', getU64Encoder()],
+    ['space', getU64Encoder()],
+    ['owner', getAddressEncoder()],
+  ]).encode({ ix: 0, lamports: rent, space, owner }),
+});
+
+/** A mint with the deployer as mint authority: extensions first, InitializeMint2, then group/member initialisers (which realloc, so their rent is pre-funded). */
+async function createMint({ program, decimals, freezeAuthority, extensions = [], later = [], before = () => [], after = () => [] }) {
+  const kp = await newWallet();
+  const mint = kp.address;
+  const space = program === TOKEN_PROGRAM ? 82 : getMintSize(extensions);
+  const finalSpace = program === TOKEN_PROGRAM ? 82 : getMintSize([...extensions, ...later]);
+  const rent = await rpc.getMinimumBalanceForRentExemption(BigInt(finalSpace)).send();
+  const ixs = [
+    createAccountIx(payer.address, mint, rent, BigInt(space), program),
+    ...before(mint),
+    getInitializeMint2Instruction({ mint, decimals, mintAuthority: payer.address, freezeAuthority }, { programAddress: program }),
+    ...after(mint),
+  ];
+  const sent = await sendSigned(rpc, payer.address, [payer.keyPair, kp.keyPair], ixs);
+  console.log(`  mint ${mint} created: ${explorer(sent.signature)}`);
+  return mint;
+}
+
+async function mintTo(mint, program, owner, amount) {
+  const ata = await ataAddress(owner, mint, program);
+  const sent = await sendSigned(rpc, payer.address, [payer.keyPair], [
+    getCreateAssociatedTokenIdempotentInstruction({ payer: createNoopSigner(payer.address), ata, owner, mint, tokenProgram: program }),
+    getMintToInstruction({ mint, token: ata, mintAuthority: createNoopSigner(payer.address), amount }, { programAddress: program }),
+  ]);
+  console.log(`  minted ${amount} base units to ${ata}: ${explorer(sent.signature)}`);
+  return ata;
 }
