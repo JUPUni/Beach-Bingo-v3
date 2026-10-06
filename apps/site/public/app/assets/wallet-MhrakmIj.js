@@ -1,0 +1,1 @@
+import{gn as e,mn as t}from"./jsx-runtime-Dm3nxscp.js";import"./index-WhHae2Gx.js";import"./waveToken--WQpQRwQ.js";var n=e(t(),1);function r(e,t){return e===t.admin?`admin`:e===t.pauser?`pauser`:null}function i(e){let[t,r]=(0,n.useState)(null);return(0,n.useEffect)(()=>{},[e]),t&&t.wallet===e?t.role:null}export{i as n,r as t};
