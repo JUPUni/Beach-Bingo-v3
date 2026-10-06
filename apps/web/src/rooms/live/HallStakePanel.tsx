@@ -16,6 +16,7 @@ import { toast } from '../../ui/toast.ts';
 import type { LiveRoomMachine } from './machine.ts';
 import { HALL_CARDS, HALL_PLAYERS } from './protocol.ts';
 import { loadConfig, needConfig } from './stakeConfig.ts';
+import { stakeAllowed } from './stakeGate.ts';
 import { minutesUntil, useAct, useHallAccount } from './stakeChain.ts';
 import { feeLine } from './stakeTokens.ts';
 import { VerifySeeker } from './VerifySeeker.tsx';
@@ -122,6 +123,7 @@ function HallActions({ m, account, slot, onChain }: { m: LiveRoomMachine; accoun
   };
 
   const takeSeat = () =>
+    stakeAllowed() &&
     act('Seat taken', async () => {
       const hall = await readHall();
       if (!hall) throw new Error('The table is gone');

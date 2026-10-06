@@ -16,6 +16,7 @@ import { toast } from '../../ui/toast.ts';
 import type { LiveRoomMachine } from './machine.ts';
 import { HALL_CARDS, HALL_PLAYERS } from './protocol.ts';
 import { needConfig } from './stakeConfig.ts';
+import { stakeAllowed } from './stakeGate.ts';
 import { minutesUntil, useAct, useRoomAccount, useStakeChoices } from './stakeChain.ts';
 import { choiceFor, defaultChoice, feeLine, type StakeChoice } from './stakeTokens.ts';
 import { VerifySeeker } from './VerifySeeker.tsx';
@@ -100,6 +101,7 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
   const proof = seekerToken ? { tokenAccount: address(seekerToken.tokenAccount), mint: address(seekerToken.mint) } : null;
 
   const openEscrow = () =>
+    stakeAllowed() &&
     act('Escrow opened', async () => {
       const ix = choice.entry ? await tok.openRoomTokenIx(wallet, m.code, stakeAmount, m.commitment, choice.entry) : await duel.openRoomIx(wallet, m.code, stakeAmount, m.commitment);
       const sent = await duel.send(rpc, signer, [ix]);
@@ -111,6 +113,7 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
     });
 
   const openHall = () =>
+    stakeAllowed() &&
     act('Table opened', async () => {
       const ix = choice.entry
         ? await tok.openHallTokenIx(wallet, m.code, stakeAmount, seats, hostCards, m.commitment, choice.entry)
@@ -129,6 +132,7 @@ function StakeActions({ m, account }: { m: LiveRoomMachine; account: Connected['
   const current = async (): Promise<duel.RoomAccount | null> => (stake ? duel.fetchRoom(rpc, address(stake.room)) : null);
 
   const takeSeat = () =>
+    stakeAllowed() &&
     act('Seat taken', async () => {
       const room = await current();
       if (!room) throw new Error('The escrow is not open any more');

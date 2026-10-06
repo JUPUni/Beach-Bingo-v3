@@ -276,6 +276,14 @@ export interface GameState {
    * through the age popup first ('gate'), or not at all in a blocked region ('blocked').
    */
   requestCoins(intent: 'shop' | 'table'): 'done' | 'gate' | 'blocked';
+  /** Why a real-money stake cannot be placed here: the coin tables' region block, or a cool-off. Null when it can. */
+  stakeBlockedReason(): string | null;
+  /**
+   * Before a real-money stake (opening an escrow, taking a seat): the same 18+ declaration and
+   * region block as the coin tables, and none during a cool-off. 'gate' opens the age popup and
+   * nothing else: the player taps again once confirmed. Settling, claiming and refunds never ask.
+   */
+  requestStake(): 'done' | 'gate' | 'blocked';
   /** The player confirmed 18+ and not in Washington; carries out the pending request. */
   confirmAge(): void;
   /** Shells always; coins only once the gate is passed. */
@@ -648,6 +656,21 @@ export const useGame = create<GameState>()(
         } else {
           // A player with nothing to play with sees the shop, not a dead end.
           set({ table: 'coins', popup: s.coins === 0 && s.freeGames === 0 ? 'shop' : s.popup === 'age' ? null : s.popup });
+        }
+        return 'done';
+      },
+      stakeBlockedReason: () => {
+        const s = get();
+        const region = s.coinsBlockedReason();
+        if (region) return region;
+        return s.limits.coolOffUntil > Date.now() ? `Cool-off active until ${new Date(s.limits.coolOffUntil).toLocaleString()}` : null;
+      },
+      requestStake: () => {
+        const s = get();
+        if (s.stakeBlockedReason()) return 'blocked';
+        if (!s.ageGate) {
+          set({ pendingCoins: null, popup: 'age' });
+          return 'gate';
         }
         return 'done';
       },

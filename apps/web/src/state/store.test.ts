@@ -346,3 +346,32 @@ describe('Seeker identity', () => {
     expect(playerName(useGame.getState())).toBe('poseid0n.skr');
   });
 });
+
+describe('the stake gate', () => {
+  beforeEach(reset);
+
+  it('asks for the age declaration before a first stake, without touching the table or opening the shop', () => {
+    expect(useGame.getState().requestStake()).toBe('gate');
+    expect(useGame.getState().popup).toBe('age');
+    expect(useGame.getState().pendingCoins).toBeNull();
+    useGame.getState().confirmAge();
+    const after = useGame.getState();
+    expect(after.popup).toBeNull();
+    expect(after.table).toBe('shells');
+    expect(after.requestStake()).toBe('done');
+    expect(useGame.getState().popup).toBeNull();
+  });
+
+  it('refuses a stake in Washington State and during a cool-off, with the reason', () => {
+    useGame.getState().confirmAge();
+    useGame.getState().setRegion({ country: 'US', region: 'WA' });
+    expect(useGame.getState().requestStake()).toBe('blocked');
+    expect(useGame.getState().stakeBlockedReason()).toBe(WASHINGTON_MESSAGE);
+    expect(useGame.getState().popup).toBeNull();
+    useGame.getState().setRegion({ country: 'US', region: 'CA' });
+    expect(useGame.getState().requestStake()).toBe('done');
+    useGame.setState({ limits: { ...useGame.getState().limits, coolOffUntil: Date.now() + 60_000 } });
+    expect(useGame.getState().requestStake()).toBe('blocked');
+    expect(useGame.getState().stakeBlockedReason()).toMatch(/^Cool-off active until /);
+  });
+});

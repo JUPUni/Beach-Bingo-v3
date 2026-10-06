@@ -37,12 +37,12 @@
 <header class="hero">
   <div class="top">
     <span><b><a href="/">Beach Bingo</a></b></span>
-    <span class="rt">Updated: <b>5 Oct 2026</b></span>
+    <span class="rt">Updated: <b>6 Oct 2026</b></span>
   </div>
   <div class="core">
     <p class="kicker"><b>Terms</b>How the game is played</p>
     <h1 class="h">Free to play. <em>Shells are free; coins stay in the game.</em></h1>
-    <p class="lede">These are the terms for playing Beach Bingo in a browser or in the Android app. They are short because the game is simple: shells are free, coins are bought and never cashed out, and nothing of value is ever paid out.</p>
+    <p class="lede">These are the terms for playing Beach Bingo in a browser or in the Android app. They are short because the game is simple: shells are free, coins are bought and never cashed out, and the only thing ever paid out is a staked room&rsquo;s prize, paid by the escrow program from the players&rsquo; own stakes (section 5).</p>
   </div>
   <div class="sea" aria-hidden="true"></div>
 </header>
@@ -55,7 +55,7 @@
     <h2>2. Coins and shells</h2>
     <p><strong>Shells</strong> are the game's free play money. The game gives them to you, more wash up on a timer when you run dry, and they are never bought or sold. They have no cash value and cannot be transferred, exchanged for anything of value or withdrawn.</p>
     <p><strong>Coins</strong> are bought in the Coin Shop, in packs paid with SOL, USDC, PYUSD, JUP or SKR, or granted by a promotion such as the Free Game ticket. A purchase is final: coins have no cash value, cannot be sold, transferred between players, exchanged for anything of value, refunded or withdrawn, and never leave the game. A prize won on a coin table is paid in coins and nothing else. We may change a pack's price or contents at any time; coins already bought are not affected.</p>
-    <p>Every mode plays with either currency at the same prices and the same prizes; the switch in the top bar picks which. Cards in the bingo halls, stakes in Casino Cove and prize pools are counted in shells or in coins and nothing else. Nothing of value is ever paid out.</p>
+    <p>Every mode plays with either currency at the same prices and the same prizes; the switch in the top bar picks which. Cards in the bingo halls, stakes in Casino Cove and prize pools are counted in shells or in coins and nothing else; shells and coins are never paid out. Staked rooms, which play for SOL or tokens, are the one exception, and section 5 covers them.</p>
 
     <h2>3. Fair play</h2>
     <p>Every draw comes from seeds the game commits to before you play, as described on the landing page and in the game under Settings → Provably fair. You may check any round yourself, and we encourage it. In a live room, the host's browser commits to the seed before anyone buys a card and every player's browser verifies the reveal, the cards and every win independently; a client that has been tampered with cannot change what the other players see.</p>
@@ -64,13 +64,23 @@
     <h2>4. Live rooms</h2>
     <p>Live rooms are played directly between the players' browsers, with public relays run by third parties used only to find each other. We operate no game server, hold no record of a room, and cannot restore a round that was interrupted by a lost connection, a closed tab or a relay that stopped answering. Coins spent on cards for a round that never started are returned by your own game; cards in a round that did start belong to that round.</p>
 
-    <h2>5. Age, and where coins are offered</h2>
-    <p>Beach Bingo asks for no personal details, and play with shells is free and open to everyone. The coin tables and the Coin Shop are for players aged 18 and over: before they open, you confirm once that you are 18 or older and not a resident of Washington State, and the game checks the region of your connection (see the privacy notice). Coins are not offered to players in Washington State. The game includes a play reminder, a daily loss limit, a daily cap on coins bought and a cool-off under Settings → Responsible play.</p>
+    <h2>5. Staked rooms</h2>
+    <p>Wave Rush rooms, one against one or a hall of two to eight players, may be opened as <strong>staked rooms</strong>: every player stakes the same amount of SOL or of a listed token (USDC, PYUSD, JUP or SKR) from their own wallet into an escrow program on Solana, and the program pays the winners. We do not hold your stake, cannot move it during a round and cannot reverse a payment.</p>
+    <ul>
+      <li><strong>The draw.</strong> The host commits to a seed before anyone stakes, and the chain adds its own randomness when the last player joins. The program replays the round from the revealed seed and pays the winning cards; a tie splits the prize.</li>
+      <li><strong>The fee.</strong> The program keeps a fee from each prize, shown in the room before you stake (at most 5%, less with SKR or for a verified Seeker), and sends it to the treasury. Network fees are paid by the player who sends each transaction.</li>
+      <li><strong>If a round stalls.</strong> A host may call off a room before anyone joins, and every deposit goes back. If a round is not settled about 20 minutes after it starts, anyone may close it: in a one-against-one room the guest receives the prize; in a hall the guests get their stakes back and share the host&rsquo;s.</li>
+      <li><strong>Your risk.</strong> You can lose your stake. Stakes, prizes and fees are final, and blockchain transactions cannot be undone. Only stake what you can afford to lose.</li>
+      <li><strong>Who may play.</strong> Staked rooms are for players aged 18 and over, are not offered in Washington State, and are closed during a cool-off. You are responsible for making sure playing for a stake is legal where you live; do not play if it is not.</li>
+    </ul>
 
-    <h2>6. The game as it is</h2>
-    <p>Beach Bingo is provided as it is and as available, without warranties of any kind, to the fullest extent the law allows. We may change, pause or stop the game, its modes, its rewards or these terms at any time; the date at the top of this page moves when the terms change. Because neither shells nor coins have cash value, a change to the game never takes anything of value from you.</p>
+    <h2>6. Age, and where coins and stakes are offered</h2>
+    <p>Beach Bingo asks for no personal details, and play with shells is free and open to everyone. The coin tables, the Coin Shop and staked rooms are for players aged 18 and over: before they open, you confirm once that you are 18 or older and not a resident of Washington State, and the game checks the region of your connection (see the privacy notice). Coins and staked rooms are not offered to players in Washington State. The game includes a play reminder, a daily loss limit, a daily cap on coins bought and a cool-off under Settings → Responsible play.</p>
 
-    <h2>7. Credits and licences</h2>
+    <h2>7. The game as it is</h2>
+    <p>Beach Bingo is provided as it is and as available, without warranties of any kind, to the fullest extent the law allows. We may change, pause or stop the game, its modes, its rewards or these terms at any time; the date at the top of this page moves when the terms change. Because neither shells nor coins have cash value, a change to the game never takes anything of value from you, and a change never touches a staked round already running: the program pays it out under the terms it opened with.</p>
+
+    <h2>8. Credits and licences</h2>
     <ul>
       <li>The Beach Bingo name, logo, brand and code are © 2026 Fete Labs. All rights reserved.</li>
       <li>In-game art is adapted from the "Island | mobile game" Figma Community file, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</li>

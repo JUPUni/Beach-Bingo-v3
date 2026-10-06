@@ -119,8 +119,10 @@ have no cash value; never a promise of money.
   before the first ball. Shells are free play money, never bought or sold. Coins, for the coin
   tables, come from the Coin Shop (SOL, USDC, PYUSD, JUP or SKR; linked Seekers 25% off with
   SKR) and have no cash value: no selling, no transfers, no refunds. The coin tables and the shop
-  are 18+ and not offered in Washington State. Link your Seeker and play under your Seeker ID
-  (your .skr name), with the Seeker deals and a welcome perk.
+  are 18+ and not offered in Washington State. Staked Wave Rush rooms let friends each stake the
+  same SOL or token into an on-chain escrow that pays the winner, less a fee shown before you
+  stake; 18+, not in Washington State, and you can lose your stake. Link your Seeker and play under
+  your Seeker ID (your .skr name), with the Seeker deals and a welcome perk.
 
   This copy describes the Coin Shop, so submit it only once the shop sells on beachbingo.xyz
   (docs/MAINNET.md): a reviewer who finds "The Coin Shop opens soon" against a listing that
@@ -131,8 +133,10 @@ have no cash value; never a promise of money.
 - **Category:** Games. **Age rating:** the questionnaire's answers for simulated casino-style play
   **with in-app purchases** (coin packs: digital goods consumed in the game, no cash value, no
   refunds) and an in-app 18+ gate on the coin tables and the shop; play with shells is open to all.
-  Real-money gambling no (nothing is paid out, in shells or in coins); a wallet signature is
-  requested only to pay for a pack.
+  **Real-money wagering yes:** staked Wave Rush rooms, where players stake SOL or tokens into the
+  escrow program and it pays the winners, less a fee. Declare it; an undeclared real-money feature
+  is the likeliest reason a listing is pulled. A wallet signature is requested to pay for a pack
+  and to stake, settle or claim in a staked room.
 - **Icon:** `packages/brand/kit/store/dapp-store-icon-512.png` (512 × 512).
 - **Banner:** `dapp-store-banner-1200x600.png`. **Feature graphic:** `dapp-store-feature-1200x1200.png`.
 - **Screenshots (1080 × 1920):** `screenshots/dapp-store-screenshot-01…06`. Portrait, no device
@@ -159,7 +163,8 @@ purchases **no**. Switch back to the copy above, and the questionnaire with it, 
 - **A WebView must load only trusted URLs.** The shell opens `https://beachbingo.xyz/app/` and
   hands anything outside that host to the system browser (`android/README.md`). Do not add other
   hosts to the shell.
-- **No misleading financial promises.** No copy says cash, real money or winnings. Shells are free
+- **No misleading financial promises.** No copy promises winnings or income, and staked rooms say
+  plainly that a stake can be lost. Shells are free
   play money; coins are bought, have no cash value and never leave the game, and the app, the terms
   (the "Coins and shells" section) and the listing all say so.
 - **In-app purchases and age.** The coin packs are declared as in-app purchases. The 18+
