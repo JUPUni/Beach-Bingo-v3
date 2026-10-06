@@ -86,10 +86,17 @@ export function SettingsPopup() {
         <button type="button" onClick={() => openPopup('credits')}>
           🌴 Credits &amp; legal
         </button>
+        <button type="button" onClick={() => window.open(TIP_JAR_URL, '_blank', 'noopener,noreferrer')}>
+          ◎ Tip jar (SOL)
+        </button>
       </div>
     </Popup>
   );
 }
+
+/** Solscan's SOL-only donate Blink, opened in dial.to: preset 0.001 / 0.01 / 0.1 SOL or a custom SOL amount. */
+const TIP_JAR_URL =
+  'https://dial.to/?action=solana-action%3Ahttps%3A%2F%2Faction.solscan.io%2Fapi%2Fdonate%3Freceiver%3D2hKVpSLM185vw7bgMdciS9y3KM8KG8HL753XS4XWZtBa';
 
 const AVATARS = ['🦀', '🐠', '🐬', '🦈', '🐙', '🐢', '🦩', '🐚', '🦜', '🏄', '🐳', '🌴'];
 
