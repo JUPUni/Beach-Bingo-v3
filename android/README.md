@@ -21,14 +21,19 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 ## Release Signing
 
-Saved from CLI configuration:
+Use `release.sh` from the repo root: `android/release.sh --new-key` the first time, then
+`android/release.sh` for every release. It makes the key, builds, signs, verifies the APK and
+refuses a build signed by any key other than the one recorded in `dappstore-cert.sha256`
+(docs/DAPP_STORE.md section 3).
 
-- Keystore path: `../.secrets/dappstore.keystore` (never commit it — see docs/DAPP_STORE.md)
+- Keystore: `.secrets/dappstore.keystore` at the repo root (git-ignored; never commit it, back it up)
 - Key alias: `beachbingo`
 - Store password env: `SOLANA_MOBILE_KEYSTORE_PASSWORD`
-- Key password env: `SOLANA_MOBILE_KEY_PASSWORD`
+- Key password env: `SOLANA_MOBILE_KEY_PASSWORD` (defaults to the store password)
 
-Export the password environment variables before running the CLI release build.
+Signing by hand, pass the keystore as an absolute path: Gradle resolves a relative
+`SOLANA_MOBILE_KEYSTORE_PATH` from `android/app/`, so `../.secrets/…` would point at
+`android/.secrets/`, not the repo root's.
 
 ## Notes
 
