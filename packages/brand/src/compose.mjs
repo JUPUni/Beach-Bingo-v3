@@ -226,7 +226,8 @@ export function storeFeature(W = 1200) {
  *  stacked logo on Teal. */
 export function pfp(kind = 'symbol', { W = 1080, ground = 'teal' } = {}) {
   if (kind === 'symbol') {
-    return svgDoc(W, W, `<g transform="scale(${f(W / TILE)})">${symbol(COLOR, { square: true, ground: GROUND[ground] })}</g>`);
+    // the ground first, full bleed: the symbol's own square stops short of the tile (shadow room), which left a transparent strip on the right and bottom
+    return svgDoc(W, W, `<rect width="${W}" height="${W}" fill="${GROUND[ground]}"/><g transform="scale(${f(W / TILE)})">${symbol(COLOR, { square: true, ground: GROUND[ground] })}</g>`);
   }
   const L = stackFor('teal');
   const top = W * 0.74;
