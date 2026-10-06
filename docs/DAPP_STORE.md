@@ -116,23 +116,23 @@ have no cash value; never a promise of money.
 - **Long description:** Free-to-play bingo on the beach: a 40-level island adventure across four
   islands, 75- and 90-ball halls you can play alone or open for friends, quick games in Casino
   Cove, and rounds you can check yourself. Every draw comes from a seed the game commits to
-  before the first ball. Everything is played with Shells: free play money from the tide, the
-  daily tasks and the adventure, never bought or sold, with no cash value. Link your Seeker and
-  play under your Seeker ID (your .skr name), with a welcome perk.
+  before the first ball. Shells are free play money, never bought or sold. Coins, for the coin
+  tables, come from the Coin Shop (SOL, USDC, PYUSD, JUP or SKR; linked Seekers 25% off with
+  SKR) and have no cash value: no selling, no transfers, no refunds. The coin tables and the shop
+  are 18+ and not offered in Washington State. Link your Seeker and play under your Seeker ID
+  (your .skr name), with the Seeker deals and a welcome perk.
 
-  This is the copy for the first submission, made while the Coin Shop is closed in production
-  (the app shows "The Coin Shop opens soon" and sells nothing). It names no purchase, so it
-  matches what the reviewer sees. When the shop opens on mainnet (docs/MAINNET.md), switch to the
-  copy under "When the shop opens" below and update the listing; the shop reaches the app through
-  the website, so no new APK is needed, but the listing and the questionnaire must change with it.
+  This copy describes the Coin Shop, so submit it only once the shop sells on beachbingo.xyz
+  (docs/MAINNET.md): a reviewer who finds "The Coin Shop opens soon" against a listing that
+  sells coins has a reason to reject it. If the app must be submitted before the shop opens, use
+  the copy under "Before the shop opens" below.
 - **What's new (0.1.0):** Season 3: the island adventure, five halls, live rooms with friends,
   and the fairness check.
 - **Category:** Games. **Age rating:** the questionnaire's answers for simulated casino-style play
-  with play money: **in-app purchases no** (the shop is closed in production); real-money gambling
-  no (nothing is paid out); the app reads a wallet address and the Seeker Genesis Token for the
-  welcome perk and asks for no signature that moves funds. Simulated gambling usually lands at the
-  questionnaire's 17+/18+ band whatever the purchases; answer it as the portal words it, and say
-  that the coin tables sit behind an in-app 18+ declaration.
+  **with in-app purchases** (coin packs: digital goods consumed in the game, no cash value, no
+  refunds) and an in-app 18+ gate on the coin tables and the shop; play with shells is open to all.
+  Real-money gambling no (nothing is paid out, in shells or in coins); a wallet signature is
+  requested only to pay for a pack.
 - **Icon:** `packages/brand/kit/store/dapp-store-icon-512.png` (512 × 512).
 - **Banner:** `dapp-store-banner-1200x600.png`. **Feature graphic:** `dapp-store-feature-1200x1200.png`.
 - **Screenshots (1080 × 1920):** `screenshots/dapp-store-screenshot-01…06`. Portrait, no device
@@ -143,15 +143,13 @@ have no cash value; never a promise of money.
 - **Alpha testers:** optional; the portal lets you list wallet addresses that can install a
   release before it is public.
 
-### When the shop opens
+### Before the shop opens
 
-Replace the second half of the long description with: Shells are free play money, never bought or
-sold. Coins, for the coin tables, come from the Coin Shop (SOL, USDC, PYUSD, JUP or SKR; linked
-Seekers 25% off with SKR) and have no cash value: no selling, no transfers, no refunds. The coin
-tables and the shop are 18+ and not offered in Washington State. Link your Seeker and play under
-your Seeker ID (your .skr name), with the Seeker deals and a welcome perk. Then change the
-questionnaire: in-app purchases **yes** (coin packs: digital goods consumed in the game, no cash
-value, no refunds), a wallet signature requested only to pay for a pack.
+Only if the app goes in while production still shows "The Coin Shop opens soon": replace the
+second half of the long description with "Everything is played with Shells: free play money from
+the tide, the daily tasks and the adventure, never bought or sold, with no cash value. Link your
+Seeker and play under your Seeker ID (your .skr name), with a welcome perk.", and answer in-app
+purchases **no**. Switch back to the copy above, and the questionnaire with it, when the shop opens.
 
 ## 6. Policy points that apply to this app
 
@@ -164,8 +162,7 @@ value, no refunds), a wallet signature requested only to pay for a pack.
 - **No misleading financial promises.** No copy says cash, real money or winnings. Shells are free
   play money; coins are bought, have no cash value and never leave the game, and the app, the terms
   (the "Coins and shells" section) and the listing all say so.
-- **In-app purchases and age.** Not declared in the first submission, because the shop is closed
-  in production. Once it opens, the coin packs are declared as in-app purchases. The 18+
+- **In-app purchases and age.** The coin packs are declared as in-app purchases. The 18+
   declaration and the Washington block (`apps/site/api/geo.js`, header-based, nothing stored; an
   unknown region fails open on the declaration) are described in the terms, and the privacy
   policy says the IP address is not kept. A purchase is one wallet-approved transaction to the
@@ -202,11 +199,12 @@ Only the owner can do these:
 - [ ] Run `android/release.sh --new-key` (section 3) with JDK 21 and the Android SDK; back up
       `.secrets/dappstore.keystore` and its password in two places; commit
       `android/dappstore-cert.sha256`.
-- [ ] Fill the listing from section 5 (the shop-closed copy), upload the media from
-      `packages/brand/kit/store/` and the signed APK, submit.
-- [ ] Answer the questionnaire as section 5 says: simulated casino-style play, play money, no
-      in-app purchases while the shop is closed; point the reviewer at the terms' "Coins and
-      shells" section and the 18+ gate.
+- [ ] Open the Coin Shop on mainnet first (docs/MAINNET.md) and buy one pack through
+      beachbingo.xyz.
+- [ ] Fill the listing from section 5, upload the media from `packages/brand/kit/store/` and the
+      signed APK, submit.
+- [ ] Answer the questionnaire's in-app-purchase items (coin packs, digital goods, no refunds) and
+      point the reviewer at the terms' "Coins and shells" section and the 18+ gate.
 - [ ] Watch the mailbox for the review; fix and resubmit with a higher version code if asked.
 - [ ] When it is live: flip the landing page's "Coming soon · Solana dApp Store" card to the store
       link, and the same on fetelabs.ai and in FetePass.
