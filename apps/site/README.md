@@ -95,7 +95,8 @@ the fonts (SIL Open Font License). The chrome itself carries only the wordmark. 
 button); the same markup sits before `</body>` on the three pages, styled in `index.html` and
 `assets/legal.css`, so edit all three together. A browser without the Popover API shows the card
 inline under the footer instead. The notices still name the operator in their own text, as a
-contract and a privacy notice must. The game keeps its credits behind Settings → Credits & legal.
+contract and a privacy notice must. `/#credits` opens the card on load; the game's Settings →
+Credits & legal links there instead of repeating the art and font credits.
 
 ## Rules the page keeps
 

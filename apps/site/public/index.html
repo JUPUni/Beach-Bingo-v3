@@ -338,5 +338,14 @@ a:hover{color:var(--lime)}
   <p class="credits__links"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p>
   <button type="button" class="credits__close" popovertarget="credits" popovertargetaction="hide">Close</button>
 </div>
+<script>
+// beachbingo.xyz/#credits (linked from the game's Credits popup) opens the credits card
+(() => {
+  const card = document.getElementById('credits');
+  const open = () => { if (location.hash === '#credits' && card && card.showPopover && !card.matches(':popover-open')) card.showPopover(); };
+  open();
+  addEventListener('hashchange', open);
+})();
+</script>
 </body>
 </html>

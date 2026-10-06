@@ -447,10 +447,13 @@ export function CreditsPopup() {
       <p>
         <b>Beach Bingo</b> v0.1 — beachbingo.xyz
       </p>
-      <h3>Art</h3>
+      <h3>Art and type</h3>
       <p className="small-note">
-        UI art adapted from the “Island | mobile game 🏝️” Figma Community file, licensed CC BY 4.0. Fonts: Lilita One, Luckiest
-        Guy and Fredoka (SIL Open Font License).
+        Art and font credits live on the website:{' '}
+        <a href="https://beachbingo.xyz/#credits" target="_blank" rel="noopener noreferrer">
+          beachbingo.xyz credits
+        </a>
+        .
       </p>
       <h3>Fair play</h3>
       <p className="small-note">
