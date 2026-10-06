@@ -37,7 +37,7 @@
 <header class="hero">
   <div class="top">
     <span><b><a href="/">Beach Bingo</a></b></span>
-    <span class="rt">Updated: <b>5 Oct 2026</b></span>
+    <span class="rt">Updated: <b>6 Oct 2026</b></span>
   </div>
   <div class="core">
     <p class="kicker"><b>Privacy</b>What the game knows about you</p>
@@ -57,7 +57,9 @@
       <dt>Your progress</dt>
       <dd>Stars, shells, coins, your Coin Shop purchases (the transaction signature, the pack, the token, the amount and the time), the date of your 18+ declaration, boosters, daily tasks, settings, the table you play on, the name and avatar you pick (and, while a Seeker is linked, its Seeker ID), and the seeds behind the fairness check. All of it lives in your browser's storage on your device (<code>localStorage</code>). It is never sent to us; there is no server to send it to. Clearing this site's data in your browser removes all of it, and there is no copy anywhere else.</dd>
       <dt>A linked wallet</dt>
-      <dd>If you link a Solana wallet, the game asks the wallet to sign a short message (nothing is sent anywhere) and keeps your public address in the same browser storage, to show it, to look up a Seeker Genesis Token for the welcome perk and the Coin Shop's Seeker deals, and to look up your Seeker ID, the <code>.skr</code> name registered to that address on Solana mainnet, which the game then shows as your player name while the wallet stays linked (to you, and to the people in a room you join). Those lookups send your public address to a Solana RPC endpoint (the public mainnet endpoint, or the provider we name in the app's build settings); that is the only thing they send, and we keep nothing from them except the answer, in your browser. The game never sees a private key, and asks you to sign a transaction only when you buy a coin pack in the Coin Shop. Unlinking removes the address and the name.</dd>
+      <dd>If you link a Solana wallet, the game asks the wallet to sign a short message (nothing is sent anywhere) and keeps your public address in the same browser storage, to show it, to look up a Seeker Genesis Token for the welcome perk and the Coin Shop's Seeker deals, and to look up your Seeker ID, the <code>.skr</code> name registered to that address on Solana mainnet, which the game then shows as your player name while the wallet stays linked (to you, and to the people in a room you join). Those lookups send your public address to a Solana RPC endpoint (the public mainnet endpoint, or the provider we name in the app's build settings); that is the only thing they send, and we keep nothing from them except the answer, in your browser. The game never sees a private key, and asks you to sign a transaction only when you buy a coin pack in the Coin Shop or open, join, settle or claim a staked room. Unlinking removes the address and the name.</dd>
+      <dt>What goes on the blockchain</dt>
+      <dd>A coin pack bought on chain and every staked room are Solana transactions: your wallet address, the amounts, the tokens and the times are recorded publicly on Solana, where anyone can read them, and nobody, us included, can change or delete them. We do not join that public record to anything else about you; the game reads it back only to show your purchases and settle your rooms.</dd>
       <dt>Nothing else</dt>
       <dd>No cookies, no analytics, no advertising identifiers, no crash reporting, no fingerprinting. The pages load their fonts, images and scripts from this domain.</dd>
     </dl>
@@ -67,7 +69,7 @@
     <p>We run none of this and keep none of it. The relays are the public ones the <code>trystero</code> library lists, unless you point the game at a relay of your own. The people in a room see the name you typed in your profile; pick one you are happy to show them.</p>
 
     <h2>The region check</h2>
-    <p>Once, when it loads, the game asks <code>beachbingo.xyz/api/geo</code>. That function reads the country and region that Vercel attaches to the request from your connection's address and returns them; it does not read, log or store the address itself, and we keep nothing from the call. The game uses the answer for one thing: keeping the Coin Shop and the coin tables closed in Washington State. If the call fails or answers nothing, play goes on with your own declaration. Play with shells is never affected by the answer.</p>
+    <p>Once, when it loads, the game asks <code>beachbingo.xyz/api/geo</code>. That function reads the country and region that Vercel attaches to the request from your connection's address and returns them; it does not read, log or store the address itself, and we keep nothing from the call. The game uses the answer for one thing: keeping the Coin Shop, the coin tables and staked rooms closed in Washington State. If the call fails or answers nothing, play goes on with your own declaration. Play with shells is never affected by the answer.</p>
 
     <h2>Server logs</h2>
     <p>The site is served by Vercel. As with any website, requests for its pages and files pass through its servers, which keep standard access logs (the address the request came from, the page asked for, the browser's user-agent string, the time) for a short period to run and protect the service. We do not add anything to those logs and do not use them to identify players.</p>
@@ -76,7 +78,7 @@
     <p>The app for Solana Seeker phones opens <code>beachbingo.xyz/app/</code> inside an app shell, so everything above applies to it unchanged. The shell asks for no permissions beyond the network. Installs and updates go through the Solana dApp Store under its own policies.</p>
 
     <h2>Children</h2>
-    <p>Beach Bingo is free to play with shells and asks for no personal details from anyone. The coin tables and the Coin Shop are for players aged 18 and over, behind a declaration kept on your device.</p>
+    <p>Beach Bingo is free to play with shells and asks for no personal details from anyone. The coin tables, the Coin Shop and staked rooms are for players aged 18 and over, behind a declaration kept on your device.</p>
 
     <h2>Your choices</h2>
     <ul>

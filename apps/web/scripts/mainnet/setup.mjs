@@ -19,7 +19,9 @@
 //
 // Environment: RPC_URL (a mainnet provider URL; default devnet, for rehearsals), KEYPAIR (the
 // deployer; default .secrets/mainnet-deployer.json on mainnet, .secrets/devnet-deployer.json
-// elsewhere), WAVE_DUEL_PROGRAM, TREASURY, PAUSER (optional), SGT_GROUP (optional override).
+// elsewhere), WAVE_DUEL_PROGRAM, TREASURY, PAUSER (optional; on mainnet it defaults to the
+// registry's pauser, solsurfers.skr), SGT_GROUP (optional override). On mainnet, handover refuses
+// any admin but the registry's (jola.skr) unless --other-admin is given.
 // Every transaction goes through wave-duel-admin.mjs, so what this script does, that one can
 // do by hand.
 import { execFileSync } from 'node:child_process';
@@ -43,6 +45,8 @@ const [cmd = 'plan', ...args] = process.argv.slice(2);
 const live = args.includes('--live');
 const reg = JSON.parse(readFileSync(REGISTRY, 'utf8'));
 const SGT_GROUP = process.env.SGT_GROUP || reg.sgtGroup;
+/** The pauser apply sets: PAUSER if given, else on mainnet the registry's Seeker wallet. */
+const PAUSER = process.env.PAUSER || (MAINNET ? reg.roles.pauser.address : '');
 
 /* ---------- prices ---------- */
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
@@ -109,7 +113,7 @@ function configChanges(config) {
   if (config.sgtGroup !== SGT_GROUP) kv.push(`sgt=${SGT_GROUP}`);
   if (!same(config.packCoins, reg.packs.coins)) kv.push(`packs=${csv(reg.packs.coins)}`);
   if (!same(config.solPackPrices, solPrices())) kv.push(`solPrices=${csv(solPrices())}`);
-  if (process.env.PAUSER && config.pauser !== process.env.PAUSER) kv.push(`pauser=${process.env.PAUSER}`);
+  if (PAUSER && config.pauser !== PAUSER) kv.push(`pauser=${PAUSER}`);
   if (process.env.TREASURY && config.treasury !== process.env.TREASURY) kv.push(`treasury=${process.env.TREASURY}`);
   return kv;
 }
@@ -130,7 +134,9 @@ function mintChanges(m) {
 /* ---------- commands ---------- */
 if (live) await refreshPrices();
 const payer = await payerAddress();
-console.log(`${MAINNET ? 'MAINNET' : 'devnet'} · rpc ${RPC_URL} · program ${PROGRAM}`);
+// Only the host: a provider URL carries its API key in the path or the query.
+console.log(`${MAINNET ? 'MAINNET' : 'devnet'} · rpc ${new URL(RPC_URL).host} · program ${PROGRAM}`);
+if (PAUSER) console.log(`pauser to set: ${PAUSER}${PAUSER === reg.roles.pauser.address ? ` (${reg.roles.pauser.seekerId})` : ''}`);
 if (payer) console.log(`deployer ${payer}: ${(Number((await rpc.getBalance(payer).send()).value) / 1e9).toFixed(4)} SOL (${KEYPAIR})`);
 else console.log(`no key pair at ${KEYPAIR}`);
 const state = await readState();
@@ -151,7 +157,7 @@ if (cmd === 'plan') {
   const steps = [];
   if (!state.program) steps.push('deploy the program (manual, docs/MAINNET.md step 2)');
   if (!state.config) steps.push(`init-config 500 ${process.env.TREASURY ?? '<TREASURY>'}`);
-  const kv = state.config ? configChanges(state.config) : ['sgt', 'packs', 'seekerDiscount', 'solPrices', 'solSeekerFee', process.env.PAUSER ? 'pauser' : null].filter(Boolean);
+  const kv = state.config ? configChanges(state.config) : ['sgt', 'packs', 'seekerDiscount', 'solPrices', 'solSeekerFee', PAUSER ? 'pauser' : null].filter(Boolean);
   if (kv.length) steps.push(`set-config ${kv.join(' ')}`);
   for (const m of state.mints) {
     if (!m.onCluster) continue;
@@ -184,6 +190,9 @@ if (cmd === 'plan') {
 } else if (cmd === 'handover') {
   const [who, flag, again] = args.filter((a) => !a.startsWith('--') || a === '--confirm');
   if (!who || flag !== '--confirm' || again !== who) throw new Error('handover <admin> --confirm <admin> [--upgrade-authority]');
+  if (MAINNET && who !== reg.roles.admin.address && !args.includes('--other-admin')) {
+    throw new Error(`the registry's admin is ${reg.roles.admin.seekerId} (${reg.roles.admin.address}); pass --other-admin to hand over to ${who} instead`);
+  }
   if (!payer) throw new Error(`no deployer key pair at ${KEYPAIR}`);
   admin('transfer-admin', who, '--confirm', who);
   const cli = ['program', 'set-upgrade-authority', PROGRAM, '--new-upgrade-authority', who, '--skip-new-upgrade-authority-signer-check', '-k', KEYPAIR, '-u', RPC_URL];

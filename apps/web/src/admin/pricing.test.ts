@@ -45,3 +45,11 @@ describe('admin roles', () => {
     expect(roleOf('11111111111111111111111111111111', config)).toBeNull();
   });
 });
+
+describe('the registry names the Seeker wallets', () => {
+  it('jola.skr is the admin and solsurfers.skr the pauser, two different wallets', () => {
+    expect(registry.roles.admin).toEqual({ seekerId: 'jola.skr', address: 'Dox9t9toz7BwwHJaqqsTpt9J74DWkXidP921FJQgWGE5' });
+    expect(registry.roles.pauser).toEqual({ seekerId: 'solsurfers.skr', address: 'ErPdwCQZAujo8TM6PZVvZkd1gdoxwDXnk3GFhAkBVbbD' });
+    expect(registry.roles.admin.address).not.toBe(registry.roles.pauser.address);
+  });
+});

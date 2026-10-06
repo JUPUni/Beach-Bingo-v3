@@ -38,7 +38,7 @@ All commands run at the repo root with the Solana CLI on the path
 (`export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"`) and
 `ADMIN="pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/wave-duel-admin.mjs"`,
 `SETUP="pnpm --filter @beach-bingo/engine exec tsx ../../apps/web/scripts/mainnet/setup.mjs"`.
-Export once: `RPC_URL=<provider url> KEYPAIR=.secrets/mainnet-deployer.json WAVE_DUEL_PROGRAM=6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH TREASURY=<address> PAUSER=<address or empty>`.
+Export once: `RPC_URL=<provider url> KEYPAIR=.secrets/mainnet-deployer.json WAVE_DUEL_PROGRAM=6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH TREASURY=<address>`. The admin and the pauser are in `registry.json` (`roles`): on mainnet `apply` sets the pauser to solsurfers.skr unless `PAUSER` says otherwise, and `handover` refuses any admin but jola.skr unless given `--other-admin`.
 
 1. **Preflight.** `$SETUP plan` prints the deployer's balance, whether the program and the config exist, the treasury token accounts that would be created, and the pack prices computed from `registry.json` (SOL, JUP and SKR from their USD prices; `--live` refreshes them from Jupiter's price API). Nothing is sent.
 2. **Deploy the program** (about 3.9 SOL of rent stays):
@@ -52,10 +52,10 @@ Export once: `RPC_URL=<provider url> KEYPAIR=.secrets/mainnet-deployer.json WAVE
    The build is deterministic for the same toolchain: `sha256sum` of the `.so` must match the table above before deploying.
 3. **Configure.** `$SETUP apply` runs, idempotently and in this order: `init-config` (fee 500 bps, `TREASURY`; signed by the deployer, which must still hold the upgrade authority at that moment, because the program admits no one else); `set-config` (SGT group, pack sizes 5,000 / 15,000 / 40,000 / 100,000, Seeker discount 500 bps, SOL pack prices, SOL Seeker fee 400 bps, `PAUSER`); `register-mint` for USDC, PYUSD, JUP and SKR (creating the treasury's token account for each; USDC and PYUSD at fee 500 / Seeker 400, JUP the same, SKR at 250 / 200 with the 2,000 bps shop discount). It prints the config and the four entries at the end. A step that already matches the chain is skipped.
 4. **Prove one purchase.** From any funded wallet's key pair: `KEYPAIR=<test key> $ADMIN shop-buy EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v 0` buys the 4.99 USDC pack and prints the Buyer PDA, the event and the treasury credit. (Or wait for step 6 and buy through the site.)
-5. **Hand over.** `$SETUP handover <ADMIN> --confirm <ADMIN>` runs `transfer-admin`, then moves the upgrade authority:
+5. **Hand over.** `$SETUP handover Dox9t9toz7BwwHJaqqsTpt9J74DWkXidP921FJQgWGE5 --confirm Dox9t9toz7BwwHJaqqsTpt9J74DWkXidP921FJQgWGE5` runs `transfer-admin`, then moves the upgrade authority:
    ```bash
    solana program set-upgrade-authority 6fvQTYJPaP6cTKxoF2Sp2zbKWRkhd2kwEMksnYEJnxaH \
-     --new-upgrade-authority <ADMIN> --skip-new-upgrade-authority-signer-check \
+     --new-upgrade-authority Dox9t9toz7BwwHJaqqsTpt9J74DWkXidP921FJQgWGE5 --skip-new-upgrade-authority-signer-check \
      -k .secrets/mainnet-deployer.json -u mainnet-beta
    ```
    After this the deployer key holds nothing but leftover SOL; sweep it to your wallet.
