@@ -21,7 +21,7 @@ export type Screen =
   /** A live room: the host picks the hall, guests learn it from the host. */
   | { name: 'live'; code: string; host: boolean; preset?: RoomPresetId };
 
-export type PopupName = 'settings' | 'profile' | 'tasks' | 'wallet' | 'fairness' | 'limits' | 'credits' | 'chest' | 'faucet' | 'shop' | 'age';
+export type PopupName = 'settings' | 'profile' | 'tasks' | 'wallet' | 'fairness' | 'limits' | 'credits' | 'chest' | 'faucet' | 'shop' | 'age' | 'admin';
 
 export type TaskId = 'daub' | 'bingo' | 'modes' | 'spins';
 

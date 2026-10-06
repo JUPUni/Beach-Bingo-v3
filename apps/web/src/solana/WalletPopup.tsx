@@ -9,6 +9,7 @@ import {
 } from '@solana/kit-plugin-wallet/react';
 import { SolanaMobileWalletAdapterWalletName } from '@solana-mobile/wallet-standard-mobile';
 import { sfx } from '../lib/audio.ts';
+import { useAdminRole } from '../admin/role.ts';
 import { SEEKER_PERK_SHELLS, useGame } from '../state/store.ts';
 import { GreenButton } from '../ui/kit.tsx';
 import { Popup } from '../ui/Popup.tsx';
@@ -49,6 +50,8 @@ export default function WalletPopup() {
   const address = connected?.account.address ?? null;
   const linkedHere = address !== null && linked === address;
   const found = link && link.wallet === address ? link : null;
+  const openPopup = useGame((s) => s.openPopup);
+  const adminRole = useAdminRole(address);
 
   useEffect(() => {
     if (!address) return;
@@ -227,6 +230,11 @@ export default function WalletPopup() {
                 Unlink
               </button>
             )}
+            {adminRole && (
+              <button type="button" className="wallet-admin" onClick={() => openPopup('admin')}>
+                Admin ({adminRole})
+              </button>
+            )}
             <button type="button" className="wallet-disconnect" onClick={() => disconnect.dispatch()}>
               Disconnect
             </button>
@@ -238,7 +246,9 @@ export default function WalletPopup() {
       <h3>SOL, USDC, PYUSD, JUP and SKR</h3>
       <p className="small-note">
         {ONCHAIN_STAKES_ENABLED
-          ? 'Devnet stakes are enabled: staked Wave Rush rooms and halls in SOL or a test token, and the Coin Shop paid in the same. A linked Seeker pays the Seeker fee tier once it is proved to the program, and gets the shop deals: 25% off with SKR, 5% off with the rest. Badges describe your wallet and never grant anything by themselves.'
+          ? CLUSTER === 'devnet'
+            ? 'Devnet stakes are enabled: staked Wave Rush rooms and halls in SOL or a test token, and the Coin Shop paid in the same. A linked Seeker pays the Seeker fee tier once it is proved to the program, and gets the shop deals: 25% off with SKR, 5% off with the rest. Badges describe your wallet and never grant anything by themselves.'
+            : 'Staked Wave Rush rooms and halls play for real SOL or tokens, 18+ and not in Washington State: every player stakes the same into the program, it pays the winners less its fee, and you can lose your stake. The Coin Shop takes the same five tokens. A linked Seeker pays the Seeker fee tier once it is proved to the program, and gets the shop deals: 25% off with SKR, 5% off with the rest. Badges describe your wallet and never grant anything by themselves.'
           : 'The Coin Shop takes these five tokens. A linked Seeker gets the deals: 25% off every pack with SKR, 5% off with the rest; everyone else pays the list price. Staked rooms stay switched off on this site: real-money bingo is regulated gambling, so they wait for licensing, geo-checks and age verification. Playing with shells is free for everyone.'}
       </p>
     </Popup>

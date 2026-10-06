@@ -5,6 +5,7 @@ import { SettingsPopup, ProfilePopup, TasksPopup, FaucetPopup, ChestPopup, Limit
 const FairnessPopup = lazy(() => import('./FairnessPopup.tsx'));
 const WalletPopup = lazy(() => import('../solana/WalletPopup.tsx'));
 const ShopPopup = lazy(() => import('./ShopPopup.tsx'));
+const AdminPopup = lazy(() => import('../admin/AdminPopup.tsx'));
 
 export function PopupHost() {
   const popup = useGame((s) => s.popup);
@@ -31,6 +32,8 @@ export function PopupHost() {
       return <ShopPopup />;
     case 'age':
       return <AgeGatePopup />;
+    case 'admin':
+      return <AdminPopup />;
     default:
       return null;
   }
