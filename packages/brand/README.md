@@ -51,10 +51,13 @@ its copies with `pnpm site` (see [`apps/site`](../../apps/site/README.md)).
 
 `kit/store/screenshots/` holds six 1080 x 1920 screenshots for the Solana dApp Store (it wants at least
 four, each at least 1080 px on both sides, all one orientation). Each is the app captured at 3x in the
-phone's screen shape, inside the Generic Phone from "Device Mockups With Long Shadows" on Figma
-Community, on Teal with a caption. The phone is drawn as vector from the component's own geometry and
-styles ([`devices/generic-phone/device.json`](devices/generic-phone/device.json)), with its long-shadow
-corners exported from the file (`shadows.svg`), so it stays sharp at any size.
+phone's screen shape, inside the iPhone 14 Pro Max from "Device Mockups With Long Shadows" on Figma
+Community, on Teal with a caption (the Generic Phone until 2026-10-07; both are in `devices/`, and
+`DEVICE_NAME` in `src/screens.mjs` picks one for the capture and the composer alike). The phone is
+drawn as vector from the component's own geometry and styles
+([`devices/iphone-14-pro-max/device.json`](devices/iphone-14-pro-max/device.json)), with its
+long-shadow corners and status-bar icons exported from the file (`shadows.svg`, `status-right.svg`),
+so it stays sharp at any size.
 
 To re-shoot them after the UI changes:
 

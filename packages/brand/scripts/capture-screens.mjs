@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Captures the app screens the dApp Store screenshots are made from, in the
-// mockup phone's screen shape (devices/generic-phone/device.json: 412 x 892 CSS
-// px at 3x, 1236 x 2676).
+// mockup phone's screen shape (devices/<DEVICE_NAME>/device.json; the iPhone 14
+// Pro Max's is 428 x 926 CSS px at 3x, 1284 x 2778).
 //
 //   pnpm dev                                   # the web app, in another shell
 //   pnpm --filter @beach-bingo/brand screens   # writes screens/captures/*.jpg
@@ -19,7 +19,10 @@ const { chromium } = require('playwright-core');
 const sharp = require('sharp');
 
 const OUT = fileURLToPath(new URL('../screens/captures/', import.meta.url));
-const { capture: CAP } = JSON.parse(readFileSync(new URL('../devices/generic-phone/device.json', import.meta.url), 'utf8'));
+// The device name is read out of src/screens.mjs as text, so this script does not load sharp's
+// composer, the fonts and the device art just to capture.
+const DEVICE_NAME = readFileSync(new URL('../src/screens.mjs', import.meta.url), 'utf8').match(/DEVICE_NAME = '([^']+)'/)[1];
+const { capture: CAP } = JSON.parse(readFileSync(new URL(`../devices/${DEVICE_NAME}/device.json`, import.meta.url), 'utf8'));
 const BASE = process.env.BASE_URL || 'http://localhost:5173/';
 
 // A player a week in: shells, a pack of coins, keys, boosters, and the first seven levels starred.
@@ -104,7 +107,7 @@ try {
       }
     }, JSON.stringify(SAVE));
     await page.goto(BASE, { waitUntil: 'networkidle' });
-    // Room for Android's status bar and gesture bar; the app pads for them.
+    // Room for the status bar and the home indicator or gesture bar; the app pads for them.
     await page.addStyleTag({ content: `:root{--safe-top:${CAP.statusBar}px !important;--safe-bottom:${CAP.gestureBar}px !important}` });
     await steps(page);
     await page.waitForTimeout(700);

@@ -1,9 +1,11 @@
 /* Solana dApp Store screenshots: the app, captured at the phone's screen shape
    (scripts/capture-screens.mjs), inside the Generic Phone from "Device Mockups
    With Long Shadows" on Figma Community, on the Teal ground with a caption and
-   the sea at the foot. The phone is drawn as vector from the component's own
-   geometry and styles (devices/generic-phone/device.json): frame, screen,
-   screen shine, buttons, its two drop shadows and its long-shadow corners
+   the sea at the foot. The phone is the file's iPhone 14 Pro Max (owner,
+   2026-10-07; it was the Generic Phone until then), drawn as vector from
+   the component's own geometry and styles (devices/<DEVICE_NAME>/device.json):
+   frame and its rim, screen, screen shine, buttons, frame splits, speaker,
+   Dynamic Island, its two drop shadows and its long-shadow corners
    (shadows.svg, exported from the file). 1080 x 1920: the store wants every
    image at least 1080 px on both sides, one orientation, one aspect ratio. */
 
@@ -18,7 +20,9 @@ import { svgDoc, tag, sparks, foot } from './compose.mjs';
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');
 
-const DEVICE_DIR = fileURLToPath(new URL('../devices/generic-phone/', import.meta.url));
+/** Which device from devices/ frames the screenshots. capture-screens.mjs reads the same name. */
+export const DEVICE_NAME = 'iphone-14-pro-max';
+const DEVICE_DIR = fileURLToPath(new URL(`../devices/${DEVICE_NAME}/`, import.meta.url));
 export const DEVICE = JSON.parse(readFileSync(`${DEVICE_DIR}device.json`, 'utf8'));
 export const CAPTURES = fileURLToPath(new URL('../screens/captures/', import.meta.url));
 
@@ -34,8 +38,24 @@ export const SCREENS = [
 
 export const capturesReady = () => SCREENS.every((s) => existsSync(`${CAPTURES}${s.file}.jpg`));
 
+/** The iPhone's status bar (9:41 beside the Dynamic Island, the file's own
+    signal, Wi-Fi and battery) and home indicator, over a capture W x H px. */
+function iosBars(W, H, bar) {
+  const { cssWidth } = DEVICE.capture;
+  const k = W / cssWidth;
+  const ink = bar === 'dark' ? C.ink : '#ffffff';
+  const S = DEVICE.screen;
+  const I = DEVICE.statusIcons;
+  const time = textPath('9:41', { font: FONTS.bodyBold, size: 18 * k, x: 73 * k, y: 42 * k, anchor: 'middle' }).d;
+  const icons = readFileSync(`${DEVICE_DIR}${I.file}`, 'utf8').replace(/white/g, ink)
+    .replace(/<svg[^>]*>/, `<svg x="${f((I.x - S.x) * k)}" y="${f((I.y - S.y) * k)}" width="${f(I.width * k)}" height="${f(I.height * k)}" viewBox="0 0 ${I.width} ${I.height}" xmlns="http://www.w3.org/2000/svg">`);
+  const cssH = H / k;
+  const home = `<rect x="${f((cssWidth / 2 - 67 + 0.5) * k)}" y="${f((cssH - 14) * k)}" width="${f(134 * k)}" height="${f(5 * k)}" rx="${f(2.5 * k)}" fill="${ink}"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><path d="${time}" fill="${ink}"/>${icons}${home}</svg>`;
+}
+
 /** Android's status bar and gesture handle, drawn over a capture W x H px. */
-function systemBars(W, H, bar) {
+function androidBars(W, H, bar) {
   const { cssWidth, statusBar } = DEVICE.capture;
   const k = W / cssWidth;
   const ink = bar === 'dark' ? C.ink : '#ffffff';
@@ -65,16 +85,17 @@ async function screenImage(file, bar, px) {
   const meta = await sharp(file).metadata();
   const { width, height } = DEVICE.screen;
   // sharp resizes before it composites, so draw the bars first, then resize.
-  const barred = await sharp(file).composite([{ input: Buffer.from(systemBars(meta.width, meta.height, bar)) }]).png().toBuffer();
+  const bars = DEVICE.os === 'ios' ? iosBars : androidBars;
+  const barred = await sharp(file).composite([{ input: Buffer.from(bars(meta.width, meta.height, bar)) }]).png().toBuffer();
   return sharp(barred)
     .resize(Math.round(width * px), Math.round(height * px), { fit: 'cover', position: 'top', kernel: 'lanczos3' })
     .png()
     .toBuffer();
 }
 
-/** The Generic Phone in its own units (694 x 1128), the screen showing `screen` (a PNG). */
+/** The device in its own units, the screen showing `screen` (a PNG). */
 function phone(screen) {
-  const { frame: F, screen: S, dropShadows, cornerShadows: CS, shine, buttons } = DEVICE;
+  const { frame: F, screen: S, dropShadows, cornerShadows: CS, shine, buttons, speaker: SP, splits = [], island: IS } = DEVICE;
   const id = nid('p');
   // CSS box-shadow blur B is a Gaussian of deviation B / 2.
   const drops = dropShadows.map((d, i) => `<filter id="${id}d${i}" filterUnits="userSpaceOnUse" x="-400" y="-400" width="1600" height="2000" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="${d.blur / 2}"/><feOffset dx="${d.dx}" dy="${d.dy}"/><feComponentTransfer><feFuncA type="linear" slope="${d.opacity}"/></feComponentTransfer></filter>`).join('');
@@ -99,8 +120,18 @@ function phone(screen) {
     + dropShadows.map((_, i) => `<rect ${frameRect} fill="#000" filter="url(#${id}d${i})"/>`).join('')
     + `<rect ${frameRect} fill="${F.fill}"/>`
     + `<g clip-path="url(#${id}s)"><image href="${png64(screen)}" x="${S.x}" y="${S.y}" width="${S.width}" height="${S.height}" preserveAspectRatio="none"/>`
-    + `<rect x="${S.x}" y="${S.y}" width="${S.width}" height="${S.height}" fill="url(#${id}g)" style="mix-blend-mode:screen"/></g>`
-    + btn;
+    + `<rect x="${S.x}" y="${S.y}" width="${S.width}" height="${S.height}" fill="url(#${id}g)"${shine.opacity != null ? ` opacity="${shine.opacity}"` : ''} style="mix-blend-mode:screen"/></g>`
+    // CSS draws the rim inside the frame's box, so the stroke sits half its width in.
+    + (F.rim ? `<rect x="${F.x + F.rim.width / 2}" y="${F.y + F.rim.width / 2}" width="${F.width - F.rim.width}" height="${F.height - F.rim.width}" rx="${F.radius - F.rim.width / 2}" fill="none" stroke="${F.rim.color}" stroke-opacity="${F.rim.opacity}" stroke-width="${F.rim.width}"/>` : '')
+    + (IS ? `<rect x="${IS.x}" y="${IS.y}" width="${IS.width}" height="${IS.height}" rx="${IS.height / 2}" fill="#000"/>` : '')
+    + btn
+    + (SP ? `<rect x="${SP.x}" y="${SP.y}" width="${SP.width}" height="${SP.height}" rx="${SP.height / 2}" fill="${SP.fill}" fill-opacity="${SP.opacity}"/>` : '')
+    + splits.map((p) => {
+      const across = p.width > p.height;
+      const a = across ? `x="${p.x}" y="${p.y}" width="${p.width / 4}" height="${p.height}"` : `x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height / 4}"`;
+      const b = across ? `x="${p.x + (p.width * 3) / 4}" y="${p.y}" width="${p.width / 4}" height="${p.height}"` : `x="${p.x}" y="${p.y + (p.height * 3) / 4}" width="${p.width}" height="${p.height / 4}"`;
+      return `<rect x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" fill="${p.fill}"/><rect ${a} fill="#fff" fill-opacity="${p.edge}"/><rect ${b} fill="#fff" fill-opacity="${p.edge}"/>`;
+    }).join('');
 }
 
 /** One store screenshot as an SVG with the screen embedded (rasterise it; don't ship the SVG). */

@@ -1,0 +1,33 @@
+{
+  "name": "iPhone 14 Pro Max, long shadow",
+  "source": "Device Mockups With Long Shadows (Figma Community), file fqbW6b0gj0UwaWHkT3h3dg, component 'iPhone 14 Pro Max' (644:308)",
+  "os": "ios",
+  "width": 747,
+  "height": 1233,
+  "frame": { "x": 6, "y": 3, "width": 460, "height": 958, "radius": 60, "fill": "#000000", "rim": { "width": 3, "color": "#ffffff", "opacity": 0.75 } },
+  "screen": { "x": 22, "y": 19, "width": 428, "height": 926, "radius": 50 },
+  "dropShadows": [
+    { "dx": 20, "dy": 20, "blur": 50, "opacity": 0.35 },
+    { "dx": 80, "dy": 80, "blur": 150, "opacity": 0.25 }
+  ],
+  "cornerShadows": { "file": "shadows.svg", "x": 12, "y": 7, "width": 745, "height": 1236 },
+  "shine": { "angle": 134.92504092877496, "stops": [[0.0067515, 0.25], [0.38684, 0]], "opacity": 0.6 },
+  "buttons": [
+    { "name": "Power", "x": 469, "y": 248, "width": 3, "height": 120, "side": "right" },
+    { "name": "Volume up", "x": 3, "y": 224, "width": 3, "height": 72, "side": "left" },
+    { "name": "Volume down", "x": 3, "y": 320, "width": 3, "height": 72, "side": "left" },
+    { "name": "Switch", "x": 3, "y": 154, "width": 3, "height": 36, "side": "left" }
+  ],
+  "speaker": { "x": 206, "y": 3, "width": 61, "height": 7, "fill": "#181818", "opacity": 0.75 },
+  "splits": [
+    { "x": 364, "y": 0, "width": 12, "height": 3, "fill": "#171717", "edge": 0.25 },
+    { "x": 469, "y": 93, "width": 3, "height": 12, "fill": "#070707", "edge": 0.25 },
+    { "x": 3, "y": 93, "width": 3, "height": 12, "fill": "#2e2e2e", "edge": 0.5 },
+    { "x": 3, "y": 859, "width": 3, "height": 12, "fill": "#070707", "edge": 0.1 },
+    { "x": 108, "y": 961, "width": 12, "height": 3, "fill": "#010101", "edge": 0.1 },
+    { "x": 466, "y": 859, "width": 3, "height": 12, "fill": "#000000", "edge": 0.1 }
+  ],
+  "island": { "x": 171, "y": 34, "width": 130, "height": 40 },
+  "statusIcons": { "file": "status-right.svg", "x": 346, "y": 47, "width": 77.401, "height": 13 },
+  "capture": { "cssWidth": 428, "cssHeight": 926, "scale": 3, "statusBar": 59, "gestureBar": 34 }
+}
